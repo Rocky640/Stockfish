@@ -266,6 +266,7 @@ namespace {
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
     Bitboard b;
+    Bitboard b2;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -277,16 +278,27 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
-        // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
-                         : pos.attacks_from<Pt>(s);
+        // Find possible moves by Pt
+        b = pos.attacks_from<Pt>(s); //no more x-ray here, which did not changed ei.attackedBy[Us][ALL] but were changing ei.attackedby[Us][Piece]
+        if (ei.pinnedPieces[Us] & s) 
+            b &= LineBB[pos.king_square(Us)][s];		
+ 
+        // Find also potential moves by our sliders which will be possible if 
+        // a) the opponent pin on that piece is released
+        // b) some of our non-pawn eventually move out of the way 
+        // Possible improvement (but expensive !!) for another test would be to remove also pawns which "can move out of the way"
 
-        if (ei.pinnedPieces[Us] & s)
-            b &= LineBB[pos.king_square(Us)][s];
+        b2 = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces(Them) | pos.pieces(Us, PAWN))
+           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces(Them) | pos.pieces(Us, PAWN))
+           : Pt ==  QUEEN ? attacks_bb<BISHOP>(s, pos.pieces(Them) | pos.pieces(Us, PAWN)) 
+                          | attacks_bb<  ROOK>(s, pos.pieces(Them) | pos.pieces(Us, PAWN))
+           : 0;  
+
+        b2 ^= (b & b2); //b2 contains squares which were not already computed in b
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
+        // in a further test, we can use b2 also in the following calculation with smaller weights.
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
@@ -304,7 +316,12 @@ namespace {
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt][mob];
+        //potential extra mobility. This will probably be just a small increment, 
+        //because although it shows some hidden possibilities, it can also show in some cases that some of our pieces are not well coordinated.
+        int mob2 = Pt != QUEEN ? popcount<Max15>(b2 & mobilityArea[Us])
+                              : popcount<Full >(b2 & mobilityArea[Us]);
+
+        mobility[Us] += MobilityBonus[Pt][mob+mob2/4];
 
         // Decrease score if we are attacked by an enemy pawn. The remaining part
         // of threat evaluation must be done later when we have full attack info.
@@ -901,3 +918,4 @@ namespace Eval {
   }
 
 } // namespace Eval
+
