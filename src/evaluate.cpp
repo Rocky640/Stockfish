@@ -156,7 +156,9 @@ namespace {
   const Score RookOnPawn       = S(10, 28);
   const Score RookOpenFile     = S(43, 21);
   const Score RookSemiOpenFile = S(19, 10);
-  const Score BishopPawns      = S( 8, 12);
+  //const Score BishopPawns      = S( 8, 12);
+  const Score OneBishopPawns   = S(16, 24); 
+  const Score TwoBishopPawns   = S( 2,  4); 
   const Score MinorBehindPawn  = S(16,  0);
   const Score TrappedRook      = S(92,  0);
   const Score Unstoppable      = S( 0, 20);
@@ -315,7 +317,13 @@ namespace {
         {
             // Penalty for bishop with same colored pawns
             if (Pt == BISHOP)
-                score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+            {
+                //first test, can be optimized.	We still keep a penalty when 2B, but way smaller
+                if (pos.count<BISHOP>(Us)==1)
+                     score -= OneBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s); 
+                else
+                     score -= TwoBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);		
+            }
 
             // Bishop and knight outpost square
             if (!(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
