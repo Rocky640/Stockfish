@@ -278,14 +278,14 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+        // Test 2 : we include also opponent pieces in the x-ray, but just for the kingring evaluation.
+
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN,BISHOP))
+          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
-
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
         {
@@ -295,6 +295,20 @@ namespace {
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
+
+		if (Pt==ROOK||Pt==BISHOP) {
+			//now, back to original b definition, because I do not want to mess with 
+			//the original mobility calculations
+			b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+			  : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+							 : pos.attacks_from<Pt>(s);
+
+			if (ei.pinnedPieces[Us] & s)
+				b &= LineBB[pos.king_square(Us)][s];
+		}
+
+        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+
 
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
