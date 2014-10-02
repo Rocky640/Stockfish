@@ -388,7 +388,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, b, b1, b2, safe;
+    Bitboard undefended, undefendedcorners, b, b1, b2, safe;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -402,17 +402,33 @@ namespace {
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
+                    & ~((  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
                         | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                        | ei.attackedBy[Us][QUEEN]));
 
+
+		undefendedcorners=undefended & PseudoAttacks[BISHOP][ksq];
+		//paradox: we will put a lesser toll for undefended corners. 
+
+		//When King must take on the corner, it leaves 5 Squares unprotected: 3 corners and 2 sides
+		//When King takes on the side, it leaves 3 squares unprotected: 2 corners and 1 side
+
+		//if king in the corner no change
+		//if king on the rank_8, if take on corner, leaves one siede and one corner. Otherwise no change.
+
+		
+		//we keep the avergae weight of undefended (sides) + undefended (corners) to 3
+
+		
+		
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index to the KingDanger[] array. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
         attackUnits =  std::min(20, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]) / 2)
-                     + 3 * (ei.kingAdjacentZoneAttacksCount[Them] + popcount<Max15>(undefended))
+					 + ((5 * popcount<Max15>(undefendedcorners))+(7*popcount<Max15>(undefended^undefendedcorners)))/4 
+                     + 3 * (ei.kingAdjacentZoneAttacksCount[Them])
                      + 2 * (ei.pinnedPieces[Us] != 0)
                      - mg_value(score) / 32
                      - !pos.count<QUEEN>(Them) * 15;
