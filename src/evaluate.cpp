@@ -407,27 +407,30 @@ namespace {
                         | ei.attackedBy[Us][QUEEN]));
 
 
-		undefendedcorners=undefended & PseudoAttacks[BISHOP][ksq];
-		//paradox: we will put a lesser toll for undefended corners. 
+        undefendedcorners=undefended & PseudoAttacks[BISHOP][ksq];
+        //We will put a higher toll for undefended corners. 
 
-		//When King must take on the corner, it leaves 5 Squares unprotected: 3 corners and 2 sides
-		//When King takes on the side, it leaves 3 squares unprotected: 2 corners and 1 side
+        //When King must take on the corner, it leaves 5 Squares unprotected: 3 corners and 2 sides
+        //Rough heuristic, but those 5 squares have one less defender, and makes room for opponent penetration.
+        
+        //When King takes on the side, it leaves 3 squares unprotected: 2 corners and 1 side
+        //So "only" 3 squares lose the King defnse, making relatively less room for opponent penetration.
+        //Also, the forward side was well covered by the King Ring (where an extra row if provided).
 
-		//if king in the corner no change
-		//if king on the rank_8, if take on corner, leaves one siede and one corner. Otherwise no change.
+        //if king in the corner no change
+        //if king on the rank_8, if take on corner, leaves one side and one corner. Otherwise no change.
+        //we keep the avergae weight of undefended (sides) + undefended (corners) to 3.
+        //In this attempt we penalize 5 and 7 and divide by 4. So same average as master code, which is 3.
 
-		
-		//we keep the avergae weight of undefended (sides) + undefended (corners) to 3
-
-		
-		
+        
+        
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index to the KingDanger[] array. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
         attackUnits =  std::min(20, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]) / 2)
-					 + ((5 * popcount<Max15>(undefendedcorners))+(7*popcount<Max15>(undefended^undefendedcorners)))/4 
+					 + ((7 * popcount<Max15>(undefendedcorners))+(5*popcount<Max15>(undefended^undefendedcorners)))/4 
                      + 3 * (ei.kingAdjacentZoneAttacksCount[Them])
                      + 2 * (ei.pinnedPieces[Us] != 0)
                      - mg_value(score) / 32
