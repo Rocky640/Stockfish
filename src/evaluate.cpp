@@ -405,15 +405,25 @@ namespace {
                     & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
                         | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
                         | ei.attackedBy[Us][QUEEN]);
+		
+		
+		
+		//for this test, we care only about a king in the corner
+		//For example if our King on H1, penalize a bit more the G2 square if unprotected, 
+		//Leave same penalty as before on the G1 and H2	
 
+		//the extra line will simply add 1 to the attackUnits.
+			
+		
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index to the KingDanger[] array. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
-        attackUnits =  std::min(20, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]) / 2)
-                     + 3 * (ei.kingAdjacentZoneAttacksCount[Them] + popcount<Max15>(undefended))
+        attackUnits =  std::min(20, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]) / 2)              
+                     + 3 * (ei.kingAdjacentZoneAttacksCount[Them]+popcount<Max15>(undefended))
                      + 2 * (ei.pinnedPieces[Us] != 0)
+					 +  ((ksq&CornersBB) && (undefended & InnerCornersBB)) 
                      - mg_value(score) / 32
                      - !pos.count<QUEEN>(Them) * 15;
 
