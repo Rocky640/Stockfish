@@ -56,6 +56,11 @@ const Bitboard Rank6BB = Rank1BB << (8 * 5);
 const Bitboard Rank7BB = Rank1BB << (8 * 6);
 const Bitboard Rank8BB = Rank1BB << (8 * 7);
 
+//const Bitboard ContourBB = Rank1BB|Rank8BB|FileABB|FileHBB;
+const Bitboard CornersBB = 1ULL<<SQ_A1|1ULL<<SQ_A8|1ULL<<SQ_H1|1ULL<<SQ_H8;
+const Bitboard InnerCornersBB = 1ULL<<SQ_B2|1ULL<<SQ_B7|1ULL<<SQ_G2|1ULL<<SQ_G7;
+
+
 CACHE_LINE_ALIGNMENT
 
 extern Bitboard RMasks[SQUARE_NB];

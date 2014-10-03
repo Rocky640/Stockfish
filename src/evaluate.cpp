@@ -29,6 +29,9 @@
 #include "thread.h"
 #include "ucioption.h"
 
+//foe debugginh
+#include <iostream>
+
 namespace {
 
   // Struct EvalInfo contains various information computed and collected
@@ -161,6 +164,7 @@ namespace {
   const Score TrappedRook      = S(92,  0);
   const Score Unstoppable      = S( 0, 20);
   const Score Hanging          = S(23, 20);
+ 
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -406,14 +410,38 @@ namespace {
                         | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
                         | ei.attackedBy[Us][QUEEN]);
 
+		//for this test, we care only about a king in the corner (or some other squares, see CornersBB)
+		//and some close square qhich is attacked and unprotected (see InnerCornersBB)
+		//Leave same penalty as master code in all the other cases.
+
+		//the new extra line will simply add 1 to the attackUnits.
+		//   + 1 * ((CornersBB & ksq) && (undefended & InnerCornersBB)) 
+
+		/*
+		if ((undefended & InnerCornersBB)&&(CornersBB & ksb)) {
+		sync_cout << "CornerBB: " << sync_endl;	
+		sync_cout << Bitboards::pretty(CornersBB)<< sync_endl;	
+		sync_cout << "InnerCornersBBB: " << sync_endl;	
+		sync_cout << Bitboards::pretty(InnerCornersBB)<< sync_endl;	
+		sync_cout << "Corner & ksq #" << ksq << sync_endl;	
+		sync_cout << Bitboards::pretty(CornersBB&ksq)<< sync_endl;	
+		sync_cout << "This should equal one :"<< ((CornersBB & ksq) && (undefended & InnerCornersBB)) << sync_endl;	
+		sync_cout << "The param weigth is currently : "<< Options["NewParam1"] << sync_endl;
+		sync_cout << "The added value is : "<< Options["NewParam1"] * ((CornersBB & ksq) && (undefended & InnerCornersBB)) << sync_endl;		
+		}
+		*/
+
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index to the KingDanger[] array. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
-        attackUnits =  std::min(20, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]) / 2)
-                     + 3 * (ei.kingAdjacentZoneAttacksCount[Them] + popcount<Max15>(undefended))
+
+
+        attackUnits =  std::min(20, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]) / 2)              
+                     + 3 * (ei.kingAdjacentZoneAttacksCount[Them]+popcount<Max15>(undefended))
                      + 2 * (ei.pinnedPieces[Us] != 0)
+                     + 1 * ((CornersBB & ksq) && (undefended & InnerCornersBB)) 
                      - mg_value(score) / 32
                      - !pos.count<QUEEN>(Them) * 15;
 
