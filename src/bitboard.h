@@ -57,9 +57,8 @@ const Bitboard Rank7BB = Rank1BB << (8 * 6);
 const Bitboard Rank8BB = Rank1BB << (8 * 7);
 
 //const Bitboard ContourBB = Rank1BB|Rank8BB|FileABB|FileHBB;
-const Bitboard CornersBB = 1ULL<<SQ_A1|1ULL<<SQ_A8|1ULL<<SQ_H1|1ULL<<SQ_H8;
-const Bitboard InnerCornersBB = 1ULL<<SQ_B2|1ULL<<SQ_B7|1ULL<<SQ_G2|1ULL<<SQ_G7;
-
+const Bitboard CornersBB = 1ULL<<SQ_B1|1ULL<<SQ_B8|1ULL<<SQ_G1|1ULL<<SQ_G8;
+const Bitboard InnerCornersBB = 1ULL<<SQ_C2|1ULL<<SQ_C7|1ULL<<SQ_F2|1ULL<<SQ_F7;
 
 CACHE_LINE_ALIGNMENT
 
