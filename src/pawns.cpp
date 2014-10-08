@@ -105,7 +105,8 @@ namespace {
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
-
+    
+    int mob[COLOR_NB]= {0,0}; // [light/dark squares]
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
     {
@@ -133,6 +134,9 @@ namespace {
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
 
+        if (!opposed || lever) 
+            mob[!!(DarkSquares & s)]+=1;			 
+                
         // Test for backward pawn.
         // If the pawn is passed, isolated, or connected it cannot be
         // backward. If there are friendly pawns behind on adjacent files
@@ -189,6 +193,8 @@ namespace {
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
+    e->mobilePawnsOnSquares[Us][WHITE]=mob[WHITE];
+    e->mobilePawnsOnSquares[Us][BLACK]=mob[BLACK];
 
     // In endgame it's better to have pawns on both wings. So give a bonus according
     // to file distance between left and right outermost pawns.
