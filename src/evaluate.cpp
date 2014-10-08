@@ -156,9 +156,11 @@ namespace {
   const Score RookOnPawn       = S(10, 28);
   const Score RookOpenFile     = S(43, 21);
   const Score RookSemiOpenFile = S(19, 10);
-  //const Score BishopPawns      = S( 8, 12);
-  const Score OneBishopPawns   = S( 8, 12); 
-  const Score TwoBishopPawns   = S( 6, 10); 
+  const Score OneBishopPawns   = S( 8, 12); //will be adjusted by SPSA
+  const Score TwoBishopPawns   = S( 8, 12); //will be adjusted by SPSA see init
+  const Score OneBishopMobPawns= S( 0,  0);  //will be adjusted by SPSA
+  const Score TwoBishopMobPawns= S( 0,  0);  //will be adjusted by SPSA see init
+
   const Score MinorBehindPawn  = S(16,  0);
   const Score TrappedRook      = S(92,  0);
   const Score Unstoppable      = S( 0, 20);
@@ -316,13 +318,12 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Penalty for bishop with same colored pawns
-            if (Pt == BISHOP)
-            {
-                //second test, can be optimized.	Penalties closer to original values
-                if (pos.count<BISHOP>(Us)==1)
-                     score -= OneBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s); 
+          
+            if (Pt == BISHOP) {
+                 if (pos.count<BISHOP>(Us)==1)
+                    score -= (OneBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s) - OneBishopMobPawns * ei.pi->mobile_pawns_on_same_color_squares(Us, s));
                 else
-                     score -= TwoBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);		
+                    score -= (TwoBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s) - TwoBishopMobPawns * ei.pi->mobile_pawns_on_same_color_squares(Us, s));
             }
 
             // Bishop and knight outpost square
