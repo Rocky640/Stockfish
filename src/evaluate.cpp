@@ -156,10 +156,11 @@ namespace {
   const Score RookOnPawn       = S(10, 28);
   const Score RookOpenFile     = S(43, 21);
   const Score RookSemiOpenFile = S(19, 10);
-  const Score OneBishopPawns   = S( 8, 12); //will be adjusted by SPSA
-  const Score TwoBishopPawns   = S( 8, 12); //will be adjusted by SPSA see init
-  const Score OneBishopMobPawns= S( 0,  0);  //will be adjusted by SPSA
-  const Score TwoBishopMobPawns= S( 0,  0);  //will be adjusted by SPSA see init
+  
+  const Score OneBishopPawns   = S( 6, 20); 
+  const Score TwoBishopPawns   = S( 5, 20);
+  const Score OneBishopMobPawns= S( 2,  1);
+  const Score TwoBishopMobPawns= S( 6,  3);
 
   const Score MinorBehindPawn  = S(16,  0);
   const Score TrappedRook      = S(92,  0);
