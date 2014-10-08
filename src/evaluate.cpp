@@ -156,6 +156,7 @@ namespace {
   const Score RookOnPawn       = S(10, 28);
   const Score RookOpenFile     = S(43, 21);
   const Score RookSemiOpenFile = S(19, 10);
+ 
   const Score OneBishopPawns   = S( 6, 20);  
   const Score TwoBishopPawns   = S( 5, 20); 
   const Score OneBishopMobPawns= S( 2,  1); 
@@ -318,8 +319,12 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Penalty for bishop with same colored pawns
-            if (Pt == BISHOP)
-                score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+            if (Pt == BISHOP) {
+                 if (pos.count<BISHOP>(Us)==1)
+                    score -= (OneBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s) - OneBishopMobPawns * ei.pi->mobile_pawns_on_same_color_squares(Us, s));
+                else
+                    score -= (TwoBishopPawns * ei.pi->pawns_on_same_color_squares(Us, s) - TwoBishopMobPawns * ei.pi->mobile_pawns_on_same_color_squares(Us, s));
+            }
 
             // Bishop and knight outpost square
             if (!(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
