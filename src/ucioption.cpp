@@ -67,6 +67,19 @@ void init(OptionsMap& o) {
   o["Minimum Thinking Time"] << Option(20, 0, 5000);
   o["Slow Mover"]            << Option(80, 10, 1000);
   o["UCI_Chess960"]          << Option(false);
+
+  //SPSA test
+  o["RookRank58_Mg"]         << Option(10, 0, 40);
+  o["RookRank58_Eg"]         << Option(28, 10, 80);
+
+  o["RookRank14_Mg"]         << Option(10, 0, 40); //not covered before !
+  o["RookRank14_Eg"]         << Option(28, 10, 80); 
+
+  o["RookFromFront_Mg"]      << Option(10, 0, 40); //not covered before when rook on rank 1-4
+  o["RookFromFront_Eg"]      << Option(28, 10, 80);
+
+  o["RookFromBehind_Mg"]     << Option(10, 0, 90); //not covered before when rook on rank 2-4
+  o["RookFromBehind_Eg"]     << Option(28, 10, 100);
 }
 
 

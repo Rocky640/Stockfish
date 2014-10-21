@@ -154,7 +154,13 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne        = S(2 , 58);
   const Score KingOnMany       = S(6 ,125);
-  const Score RookOnPawn       = S(10, 28);
+  //const Score RookOnPawn       = S(10, 28);
+
+  Score RookFromFront;
+  Score RookFromBehind;
+  Score RookRank58;
+  Score RookRank14;
+
   const Score RookOpenFile     = S(43, 21);
   const Score RookSemiOpenFile = S(19, 10);
   const Score BishopPawns      = S( 8, 12);
@@ -330,13 +336,19 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Rook piece attacking enemy pawns on the same rank/file
-            if (relative_rank(Us, s) >= RANK_5)
-            {
-                Bitboard pawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
-                if (pawns)
-                    score += popcount<Max15>(pawns) * RookOnPawn;
+            // Rook piece directly attacking enemy pawns on the same rank           
+            Bitboard rankpawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s] & RankBB[rank_of(s)];
+            if (rankpawns)
+                score += popcount<Max15>(rankpawns) * ( relative_rank(Us, s) >= RANK_5 ? RookRank58 : RookRank14);
+
+            // Rook piece directly attacking enemy pawns on the same file 
+            Bitboard filepawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s] & FileBB[file_of(s)];         
+            while (filepawns) {
+                Square sp = pop_lsb(&filepawns);
+                score += relative_rank(Us, s) < relative_rank(Us, sp) ? RookFromFront : RookFromBehind;
             }
+                           
+            //score += popcount<Max15>(pawns) * ( relative_rank(Us, s) >= RANK_5 ? RookRank58 : RookRank14);
 
             // Give a bonus for a rook on a open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
@@ -871,8 +883,18 @@ namespace {
 
 namespace Eval {
 
+   void init_spsa_params() {
+    RookRank58           = make_score(int(Options["RookRank58_mg"]),  int(Options["RookRank58_eg"]));
+    RookRank14           = make_score(int(Options["RookRank14_mg"]),  int(Options["RookRank14_eg"]));
+    RookFromBehind       = make_score(int(Options["RookFromBehind_mg"]),  int(Options["RookFromBehind_eg"]));
+    RookFromFront        = make_score(int(Options["RookFromFront_mg"]),  int(Options["RookFromFront_eg"]));
+    
+   }
+
+
   /// evaluate() is the main evaluation function. It returns a static evaluation
   /// of the position always from the point of view of the side to move.
+  
 
   Value evaluate(const Position& pos) {
     return do_evaluate<false>(pos);
@@ -902,5 +924,5 @@ namespace Eval {
         KingDanger[i] = apply_weight(make_score(t, 0), Weights[KingSafety]);
     }
   }
-
+ 
 } // namespace Eval
