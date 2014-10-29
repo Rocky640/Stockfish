@@ -149,10 +149,10 @@ namespace {
   // consider number of non=pawn attackers on a piece, and number nom-pawn defenders
   // -when more attackers than defenders, this is overattack
   // -when exactly one more protection than attacks, this is OverProtectionOne
-  // -when 2 or more protections than attack there will be no bonus (and no penalty)
-  const Score OverAttack           = S(21,19);
-  const Score OverProtectionOne    = S(21,19);
-  //const Score OverProtectionExtra  = S(0,0);
+  // -when 2 or more protections this it counted only once and this is overprotectionextra
+  Score OverAttack           = S(19,21);
+  Score OverProtectionOne    = S(0,7);
+  Score OverProtectionExtra  = S(7,0);
 
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
   // type is attacked by an enemy pawn.
@@ -522,8 +522,8 @@ namespace {
   Score evaluate_coordination(const Position& pos, const EvalInfo& ei) {
     Bitboard b;
     int overattack = 0;
-    int overprotectionone = 0;
- 
+    int overprotection = 0;
+    int overprotectionextra = 0;
 
     Score score=SCORE_ZERO;
 
@@ -546,18 +546,19 @@ namespace {
         //score are calculated from WHITE's point of view, but we compute both sides at once
         if (pos.pieces(WHITE) & sq) {
             overattack -= (blackattacks > whiteattacks);
-            overprotectionone += (whiteattacks == blackattacks + 1);
+            overprotection += (whiteattacks > blackattacks);
+            overprotectionextra += (whiteattacks > (blackattacks+1));
         }
         else {
             overattack += (whiteattacks > blackattacks);
-            overprotectionone -= (blackattacks == whiteattacks + 1);
-            //overprotection -= (blackattacks > whiteattacks);
-            //overprotectionextra -= (blackattacks > (whiteattacks+1));
+            overprotection -= (blackattacks > whiteattacks);
+            overprotectionextra -= (blackattacks > (whiteattacks+1));
         }
     }
 
     score += OverAttack * overattack;
-    score += OverProtectionOne * overprotectionone;
+    score += OverProtectionOne * (overprotection-overprotectionextra);
+    score += OverProtectionExtra * overprotectionextra;
 
     return score;
   }
@@ -943,6 +944,16 @@ namespace {
 
 
 namespace Eval {
+
+   void init_spsa_params() {
+  
+    OverAttack =make_score(int(Options["OverAttack_Mg"]),int(Options["OverAttack_Eg"])); //use same for both
+    OverProtectionOne =make_score(int(Options["OverProtectionOne_Mg"]),int(Options["OverProtectionOne_Eg"])); //use same for both
+    OverProtectionExtra =make_score(int(Options["OverProtectionExtra_Mg"]),int(Options["OverProtectionExtra_Eg"])); //use same for both
+    
+    
+   }
+
 
   /// evaluate() is the main evaluation function. It returns a static evaluation
   /// of the position always from the point of view of the side to move.
