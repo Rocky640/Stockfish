@@ -145,6 +145,15 @@ namespace {
     { S(0, 0), S(7, 28), S(20, 49), S(20, 49), S(8 , 42), S(23, 44) }  // Major
   };
 
+  // Bonus for some piece attack and defense on a non-pawn Piece.
+  // consider number of non=pawn attackers on a piece, and number nom-pawn defenders
+  // -when more attackers than defenders, this is overattack
+  // -when exactly one more protection than attacks, this is OverProtectionOne
+  // -when 2 or more protections than attack there will be no bonus (and no penalty)
+  const Score OverAttack           = S(21,19);
+  const Score OverProtectionOne    = S(21,19);
+  //const Score OverProtectionExtra  = S(0,0);
+
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
   // type is attacked by an enemy pawn.
   const Score ThreatenedByPawn[] = {
@@ -506,6 +515,52 @@ namespace {
     return PAWN;
   }
 
+  // evaluate_coordination() assigns bonuses according to coordination of attacks 
+  // and defence
+
+  //here we evaluate in one pass the WHITE and BLACK score, from WHITE point's of view
+  Score evaluate_coordination(const Position& pos, const EvalInfo& ei) {
+    Bitboard b;
+    int overattack = 0;
+    int overprotectionone = 0;
+ 
+
+    Score score=SCORE_ZERO;
+
+    //pieces from both colors which are attacked or defended by another piece.
+    //we do not consider pressured pawns, or any square attacked or defended by a Pawn.
+    //we also exclude the checkers, since they can easily move away and give a check.
+
+    Bitboard pressuredpieces = (pos.pieces() ^ pos.pieces(PAWN))
+                      & (ei.attackedBy[WHITE][ALL_PIECES] | ei.attackedBy[BLACK][ALL_PIECES])
+                      & ~ei.attackedBy[WHITE][PAWN] & ~ ei.attackedBy[BLACK][PAWN]
+                      & ~pos.checkers();
+    
+    while (pressuredpieces) {
+        Square sq = pop_lsb(&pressuredpieces);       
+        b = pos.attackers_to(sq,pos.pieces());
+
+        int whiteattacks=popcount<Max15>(b & pos.pieces(WHITE));
+        int blackattacks=popcount<Max15>(b & pos.pieces(BLACK));
+
+        //score are calculated from WHITE's point of view, but we compute both sides at once
+        if (pos.pieces(WHITE) & sq) {
+            overattack -= (blackattacks > whiteattacks);
+            overprotectionone += (whiteattacks == blackattacks + 1);
+        }
+        else {
+            overattack += (whiteattacks > blackattacks);
+            overprotectionone -= (blackattacks == whiteattacks + 1);
+            //overprotection -= (blackattacks > whiteattacks);
+            //overprotectionextra -= (blackattacks > (whiteattacks+1));
+        }
+    }
+
+    score += OverAttack * overattack;
+    score += OverProtectionOne * overprotectionone;
+
+    return score;
+  }
 
   // evaluate_threats() assigns bonuses according to the type of attacking piece
   // and the type of attacked one.
@@ -731,6 +786,7 @@ namespace {
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
     score += apply_weight(mobility[WHITE] - mobility[BLACK], Weights[Mobility]);
+    score += evaluate_coordination(pos, ei);
 
     // Evaluate kings after all other pieces because we need complete attack
     // information when computing the king safety evaluation.
