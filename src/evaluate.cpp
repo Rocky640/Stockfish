@@ -154,9 +154,13 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne        = S(2 , 58);
   const Score KingOnMany       = S(6 ,125);
-  const Score RookOnPawn       = S(10, 28);
+  
+  const Score RookRankPawnPressure  =  S(10, 28);//was 10, 28. We found (12, 31) for rank 5-8 and (8-28) for rank 1-4
+  const Score RookFrontPawnPressure =  S(21, 28); //formerly RookSemiOpenFile, was 19,10) and with our pawns in the way, was (2,18)
+  const Score RookBehindPawnPressure = S(6 , 28); //was 10,28 for rook on rank 5 and above
+
   const Score RookOpenFile     = S(43, 21);
-  const Score RookSemiOpenFile = S(19, 10);
+
   const Score BishopPawns      = S( 8, 12);
   const Score MinorBehindPawn  = S(16,  0);
   const Score TrappedRook      = S(92,  0);
@@ -330,17 +334,34 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Rook piece attacking enemy pawns on the same rank/file
-            if (relative_rank(Us, s) >= RANK_5)
-            {
-                Bitboard pawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
-                if (pawns)
-                    score += popcount<Max15>(pawns) * RookOnPawn;
-            }
+            //direct attacks of rook on pawn are handled in threats
 
-            // Give a bonus for a rook on a open or semi-open file
-            if (ei.pi->semiopen_file(Us, file_of(s)))
-                score += ei.pi->semiopen_file(Them, file_of(s)) ? RookOpenFile : RookSemiOpenFile;
+            //here we roughly consider potential pressure on rank pawns, whether there are pieces in between or not.
+
+            Bitboard rankpawns = pos.pieces(Them, PAWN) & RankBB[rank_of(s)];
+            if (rankpawns)
+                //go where there is a potential ennemy pawn lunch 
+                //Usually for 7th rank, but formula works well for other ranks as well.
+                //was only for ranks 5,6,7 before.
+                score += popcount<Max15>(rankpawns) * RookRankPawnPressure;
+           
+            //looking at potential rook pressure on ennemy pawns along a file, 
+            //as long as our pawns are not in the way !
+            Bitboard their_filepawns = pos.pieces(Them,PAWN) & FileBB[file_of(s)];
+            Bitboard our_filepawns = pos.pieces(Us,PAWN) & FileBB[file_of(s)];
+
+            if (!their_filepawns && !our_filepawns)
+                score += RookOpenFile;
+            else {
+                while (their_filepawns) {
+                        Square sp = pop_lsb(&their_filepawns);                       
+                        if (!(our_filepawns & LineBB[s][sp]))
+                            //RookFrontPawnPressure was formelry SemiOpenFile, but here it works too if our Rook is in front of a white pawn and attacking black in front.
+                            //RookBehindPawnPressure was handled in master code for a rook on rank 5-7, it works fine too for rook on rank 2-4.
+
+                            score += relative_rank(Us, s) < relative_rank(Us, sp) ? RookFrontPawnPressure : RookBehindPawnPressure;
+                }             
+            }
 
             if (mob > 3 || ei.pi->semiopen_file(Us, file_of(s)))
                 continue;
