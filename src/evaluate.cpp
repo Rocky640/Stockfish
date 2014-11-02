@@ -155,11 +155,13 @@ namespace {
   const Score KingOnOne        = S(2 , 58);
   const Score KingOnMany       = S(6 ,125);
   
-  const Score RookRankPawnPressure  =  S(10, 28);//was 10, 28. We found (12, 31) for rank 5-8 and (8-28) for rank 1-4
-  const Score RookFrontPawnPressure =  S(21, 28); //formerly RookSemiOpenFile, was 19,10) and with our pawns in the way, was (2,18)
-  const Score RookBehindPawnPressure = S(6 , 28); //was 10,28 for rook on rank 5 and above
+  const Score RookRank57PawnPressure = S( 9, 29); //close to master RookOnPawn (10,28)
+  const Score RookRank24PawnPressure = S( 6, 32);
 
-  const Score RookOpenFile     = S(43, 21);
+  const Score RookFrontPawnPressure  = S( 9, 19);  //semi open file was 19,10 ?!
+  const Score RookBehindPawnPressure = S(27, 34);  //was only 10,28 for rook on pawn
+
+  const Score RookOpenFile           = S(50, 25);  //was 43,21
 
   const Score BishopPawns      = S( 8, 12);
   const Score MinorBehindPawn  = S(16,  0);
@@ -336,28 +338,33 @@ namespace {
         {
             //direct attacks of rook on pawn are handled in threats
 
-            //here we roughly consider potential pressure on rank pawns, whether there are pieces in between or not.
+            //here we roughly consider potential pressure on rank pawns, 
+            //whether there are black or white pieces in between or not.
 
             Bitboard rankpawns = pos.pieces(Them, PAWN) & RankBB[rank_of(s)];
             if (rankpawns)
                 //go where there is a potential ennemy pawn lunch 
                 //Usually for 7th rank, but formula works well for other ranks as well.
-                //was only for ranks 5,6,7 before.
-                score += popcount<Max15>(rankpawns) * RookRankPawnPressure;
+                //was only for ranks 5,6,7 in previous master
+                score += popcount<Max15>(rankpawns) * ((relative_rank(Us,s)>RANK_4) ? RookRank57PawnPressure : RookRank24PawnPressure);
+                //score += popcount<Max15>(rankpawns) * RookRankPawnPressure;
            
-            //looking at potential rook pressure on ennemy pawns along a file, 
-            //as long as our pawns are not in the way !
-            Bitboard their_filepawns = pos.pieces(Them,PAWN) & FileBB[file_of(s)];
-            Bitboard our_filepawns = pos.pieces(Us,PAWN) & FileBB[file_of(s)];
-
-            if (!their_filepawns && !our_filepawns)
+            //looking at potential rook pressure on ennemy pawns along a file
+            //there might be pieces in between but not some of our pawns
+            Bitboard pawns = pos.pieces(PAWN) & FileBB[file_of(s)];
+            
+            if (!pawns)
                 score += RookOpenFile;
-            else {
-                while (their_filepawns) {
+            else 
+            {
+                Bitboard their_filepawns=pawns & pos.pieces(Them);
+
+                while (their_filepawns) 
+                {
                         Square sp = pop_lsb(&their_filepawns);                       
-                        if (!(our_filepawns & LineBB[s][sp]))
-                            //RookFrontPawnPressure was formelry SemiOpenFile, but here it works too if our Rook is in front of a white pawn and attacking black in front.
-                            //RookBehindPawnPressure was handled in master code for a rook on rank 5-7, it works fine too for rook on rank 2-4.
+                        if (!(pawns & pos.pieces(Us) & LineBB[s][sp]))
+                            //RookFrontPawnPressure was formerly SemiOpenFile, but here it works too if our Rook is in front of a white pawn and still attacking black in front.
+                            //RookBehindPawnPressure was handled in previous master code for a rook on rank 5-7, it works fine too for rook on any rank (1-8).
 
                             score += relative_rank(Us, s) < relative_rank(Us, sp) ? RookFrontPawnPressure : RookBehindPawnPressure;
                 }             
