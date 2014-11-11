@@ -28,6 +28,10 @@
 #include "pawns.h"
 #include "thread.h"
 
+#include "uci.h"
+
+//#include <iostream> //for debugging
+
 namespace {
 
   // Struct EvalInfo contains various information computed and collected
@@ -163,6 +167,11 @@ namespace {
   const Score TrappedRook      = S(92,  0);
   const Score Unstoppable      = S( 0, 20);
   const Score Hanging          = S(31, 26);
+
+  Score ShieldedOutpost        = S(11, 16); //11,16 was 11,20
+  Score RetaliateOutpost       = S( 7, -8); //7, -8  was 6, -2
+  Score MixedOutpost           = S( 4,  7); //4,7 was 9,9
+  //Score PureOutpost            = S(-3, -2); //was 0,0
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -316,11 +325,57 @@ namespace {
             // Penalty for bishop with same colored pawns
             if (Pt == BISHOP)
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
-
+            Score outpostscore=evaluate_outpost<Pt, Us>(pos, ei, s); //is this a square which have outpostvalue.
             // Bishop and knight outpost square
-            if (!(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
-                score += evaluate_outpost<Pt, Us>(pos, ei, s);
+            if ( outpostscore!=SCORE_ZERO) {
+                Bitboard opponents=pos.pieces(Them, PAWN) & pawn_attack_span(Us, s);
+                if (!opponents)
+                    //master code. no pawns can ever attack the outpost.
+                    score += outpostscore;// PureOutpost;
+                else if (!(ei.attackedBy[Them][PAWN] & s)) {
+                    // sync_cout << Bitboards::pretty(opponents) << sync_endl;
+                    //currently no direct attack by a pawn 
+                    //const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+                    int res1, res2, res3;
+                    res1=res2=res3=0;
+                    do {                        
+                        Square opp1=pop_lsb(&opponents);
+                        Bitboard controlled= forward_bb(Them,opp1) & in_front_bb(Us,rank_of(s)) & ((ei.attackedBy[Us][PAWN] & !ei.attackedBy[Them][PAWN])|pos.pieces(Us,PAWN));
+                       //sync_cout << Bitboards::pretty(forward_bb(Them,opp1) & in_front_bb(Us,rank_of(s))) << sync_endl;
+                      // sync_cout << Bitboards::pretty() << sync_endl;
+                      // sync_cout << Bitboards::pretty(pos.pieces(Us,PAWN)|ei.attackedBy[Us][PAWN]) << sync_endl;
+                      
+                        if (controlled) {                   
+                            //and if some pawn attack, we have a pawn to neutralize, and they can't retaliate.
+                            //of some pieces in the way of potential pawn attacks, which leaves us with two moves to imprive.
+                           // sync_cout << Bitboards::pretty(controlled) << sync_endl;
+                           // sync_cout << pos << sync_endl; 
+                            res1+=1;                          
 
+                        }
+                        //else if (shift_bb<Down>(opponents) & pos.pieces()) {
+                        //else if (more_than_one(forward_bb(Them,opp1) & pos.pieces() & in_front_bb(Us,rank_of(s)))
+                           // ||
+                           // forward_bb(Them,opp1) & pos.pieces(Us) & in_front_bb(Us,rank_of(s))) {
+                           else if (forward_bb(Them,opp1) & pos.pieces() & in_front_bb(Us,rank_of(s))) {
+                           // sync_cout << pos << sync_endl;
+                            res2+=1;                       
+                        } 
+                        else {
+                            //not outpost
+                            res3+=1;
+                        }
+                     } while (opponents);
+                     if (!res3) {
+                        score += outpostscore;
+                        if (res1 && res2) 
+                            score+=MixedOutpost;
+                        else
+                            score+=res1 ? RetaliateOutpost : ShieldedOutpost;
+
+                     }                                     
+                }
+            } //end outpost
             // Bishop or knight behind a pawn
             if (    relative_rank(Us, s) < RANK_5
                 && (pos.pieces(PAWN) & (s + pawn_push(Us))))
@@ -897,7 +952,13 @@ namespace Eval {
 
 
   /// init() computes evaluation weights.
+  void init_spsa() {
+      ShieldedOutpost    = make_score(Options["O1a"],Options["O1b"]);
+      RetaliateOutpost   = make_score(Options["O2a"],Options["O2b"]);
+      MixedOutpost       = make_score(Options["O3a"],Options["O3b"]);
+      //PureOutpost        = make_score(Options["O4a"],Options["O4b"]);
 
+  }
   void init() {
 
     const double MaxSlope = 30;
