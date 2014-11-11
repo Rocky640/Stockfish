@@ -28,7 +28,7 @@
 #include "pawns.h"
 #include "thread.h"
 
-#include "uci.h"
+//#include "uci.h"
 
 //#include <iostream> //for debugging
 
@@ -168,10 +168,10 @@ namespace {
   const Score Unstoppable      = S( 0, 20);
   const Score Hanging          = S(31, 26);
 
-  Score ShieldedOutpost        = S(11, 16); //11,16 was 11,20
-  Score RetaliateOutpost       = S( 7, -8); //7, -8  was 6, -2
-  Score MixedOutpost           = S( 4,  7); //4,7 was 9,9
-  //Score PureOutpost            = S(-3, -2); //was 0,0
+  const Score ShieldedOutpost  = S(12, 21);
+  const Score RetaliateOutpost = S(-3,-10);
+  const Score MixedOutpost     = S(12, 16);
+
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -952,13 +952,6 @@ namespace Eval {
 
 
   /// init() computes evaluation weights.
-  void init_spsa() {
-      ShieldedOutpost    = make_score(Options["O1a"],Options["O1b"]);
-      RetaliateOutpost   = make_score(Options["O2a"],Options["O2b"]);
-      MixedOutpost       = make_score(Options["O3a"],Options["O3b"]);
-      //PureOutpost        = make_score(Options["O4a"],Options["O4b"]);
-
-  }
   void init() {
 
     const double MaxSlope = 30;
