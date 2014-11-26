@@ -319,7 +319,7 @@ namespace {
                     //if Q cannot exchange against Q, reduce mobility
                     //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.     
 
-                    if (!(s & ei.attackedBy[Them][QUEEN]))
+                    if (!(ei.attackedBy[Them][QUEEN] & s))
                         mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2;                
                 }
                 else 
