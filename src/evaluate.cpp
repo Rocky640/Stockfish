@@ -264,7 +264,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b;//,safeb;
+    Bitboard b;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -296,42 +296,17 @@ namespace {
         }
         
         if (Pt == QUEEN) {
-            b &= ~((  ei.attackedBy[Them][KNIGHT]
+            b &= ~( ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]) ^ pos.pieces(Them,QUEEN));
+                   | ei.attackedBy[Them][ROOK]) 
+                 | pos.pieces(Them,QUEEN);
         }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & (mobilityArea[Us]|(pos.pieces(Them) ^ pos.pieces(Them, PAWN))))
-                              : popcount<Full >(b & (mobilityArea[Us]|pos.pieces(Them, QUEEN)));
+                              : popcount<Full >(b & (mobilityArea[Us]| pos.pieces(Them, QUEEN)));
 
         mobility[Us] += MobilityBonus[Pt][mob];
-      /*
-        if (mob>2) {
-            //evaluating if piece can move, in case of emergency, to a non-attacked square 
-            //note: there might be some defended squares where we can go, but we do not care here
-      
-            safeb= b & ~(ei.attackedBy[Them][ALL_PIECES]|pos.pieces(Us));
-            if (!more_than_one(safeb)) {  
-                //there is only 0 or 1 non-attacked square where we can go
-                                                      
-                if (Pt==QUEEN) {
-                    //if Q cannot exchange against Q, reduce mobility
-                    //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.     
-
-                    if (!(ei.attackedBy[Them][QUEEN] & s))
-                        mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2;                
-                }
-                else 
-                    //if Pt cannot exchange against any other non-pawn piece, reduce mobility
-                    //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.                 
-                    if (!(b & (pos.pieces(Them) ^ pos.pieces(Them,PAWN))))
-                        mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2; 
-            }
-                
-                
-        }
-        */
-
+     
         // Decrease score if we are attacked by an enemy pawn. The remaining part
         // of threat evaluation must be done later when we have full attack info.
         if (ei.attackedBy[Them][PAWN] & s)
