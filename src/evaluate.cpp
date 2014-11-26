@@ -264,7 +264,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b;
+    Bitboard b,safeb;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -284,6 +284,8 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+       
+
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -294,7 +296,7 @@ namespace {
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
-
+       
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
@@ -304,6 +306,23 @@ namespace {
                               : popcount<Full >(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
+
+
+
+        if (mob>1) {
+            //not already penalized ! so run the safemob calculation.
+
+            //evaluating if piece can move to a completely safe place.
+            //if it is only busy defending our pieces, it can easily be overloaded
+            safeb= b & ~(ei.attackedBy[Them][ALL_PIECES]|pos.pieces(Us));
+            int safemob = Pt != QUEEN ? popcount<Max15>(safeb)
+                                      : popcount<Full >(safeb);
+
+            //MobilityBonus[][0] or MobilityBonus[][1] are negative values.
+            if (safemob<=1)
+                mobility[Us] += MobilityBonus[Pt][safemob]; 
+        }
+
 
         // Decrease score if we are attacked by an enemy pawn. The remaining part
         // of threat evaluation must be done later when we have full attack info.
@@ -416,7 +435,7 @@ namespace {
                      - mg_value(score) / 32
                      - !pos.count<QUEEN>(Them) * 15;
 
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
+        // Analyze the enemy's safe queen contact checks. Firstly, find the
         // undefended squares around the king that are attacked by the enemy's
         // queen...
         b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
