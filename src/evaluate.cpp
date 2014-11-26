@@ -294,29 +294,42 @@ namespace {
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
-       
-        if (Pt == QUEEN)
+        
+
+        if (Pt == QUEEN) {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+        }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
-
-        if (mob>1) {
-            //not already penalized ! so run the safemob calculation.
-
-            //evaluating if piece can move to a completely safe place.
-            //if it is only busy defending our pieces, it can easily be overloaded
+      
+        if (mob>2) {
+            //evaluating if piece can move, in case of emergency, to a non-attacked square 
+            //note: there might be some defended squares where we can go, but we do not care here
+      
             safeb= b & ~(ei.attackedBy[Them][ALL_PIECES]|pos.pieces(Us));
-            int safemob = Pt != QUEEN ? popcount<Max15>(safeb)
-                                      : popcount<Full >(safeb);
+            if (!more_than_one(safeb)) {  
+                //there is only 0 or 1 non-attacked square where we can go
+                                                      
+                if (Pt==QUEEN) {
+                    //if Q cannot exchange against Q, reduce mobility
+                    //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.     
 
-            //MobilityBonus[][0] or MobilityBonus[][1] are negative values.
-            if (safemob<=1)
-                mobility[Us] += MobilityBonus[Pt][safemob]; 
+                    if (!(s & ei.attackedBy[Them][QUEEN]))
+                        mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2;                
+                }
+                else 
+                    //if Pt cannot exchange against any other non-pawn piece, reduce mobility
+                    //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.                 
+                    if (!(b & (pos.pieces(Them) ^ pos.pieces(Them,PAWN))))
+                        mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2; 
+            }
+                
+                
         }
 
         // Decrease score if we are attacked by an enemy pawn. The remaining part
