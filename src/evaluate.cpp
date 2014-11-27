@@ -302,7 +302,7 @@ namespace {
         }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & (mobilityArea[Us]|(pos.pieces(Them) ^ pos.pieces(Them, PAWN))))
-                              : popcount<Full >(b & (mobilityArea[Us]);
+                              : popcount<Full >(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
      
