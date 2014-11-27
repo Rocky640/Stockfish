@@ -43,6 +43,9 @@ namespace {
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
+    Bitboard attackedByOne[32];
+    int abo;
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -264,7 +267,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b,safeb;
+    Bitboard b;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -276,6 +279,8 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
+        ei.abo++;
+
         // Find attacked squares, including x-ray attacks for bishops and rooks
         b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
@@ -285,6 +290,7 @@ namespace {
             b &= LineBB[pos.king_square(Us)][s];
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+        ei.attackedByOne[ei.abo]=b;
 
         if (b & ei.kingRing[Them])
         {
@@ -295,7 +301,6 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
         
-
         if (Pt == QUEEN) {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
@@ -305,32 +310,7 @@ namespace {
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt][mob];
-      
-        if (mob>2) {
-            //evaluating if piece can move, in case of emergency, to a non-attacked square 
-            //note: there might be some defended squares where we can go, but we do not care here
-      
-            safeb= b & ~(ei.attackedBy[Them][ALL_PIECES]|pos.pieces(Us));
-            if (!more_than_one(safeb)) {  
-                //there is only 0 or 1 non-attacked square where we can go
-                                                      
-                if (Pt==QUEEN) {
-                    //if Q cannot exchange against Q, reduce mobility
-                    //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.     
-
-                    if (!(ei.attackedBy[Them][QUEEN] & s))
-                        mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2;                
-                }
-                else 
-                    //if Pt cannot exchange against any other non-pawn piece, reduce mobility
-                    //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.                 
-                    if (!(b & (pos.pieces(Them) ^ pos.pieces(Them,PAWN))))
-                        mobility[Us] += MobilityBonus[Pt][safeb ? 1 : 0] / 2; 
-            }
-                
-                
-        }
+        mobility[Us] += MobilityBonus[Pt][mob];           
 
         // Decrease score if we are attacked by an enemy pawn. The remaining part
         // of threat evaluation must be done later when we have full attack info.
@@ -406,6 +386,54 @@ namespace {
   template<>
   Score evaluate_pieces<KING, WHITE,  true>(const Position&, EvalInfo&, Score*, Bitboard*) { return SCORE_ZERO; }
 
+  template<PieceType Pt, Color Us, bool Trace>
+  Score evaluate_pieces2(const Position& pos, EvalInfo& ei) {
+
+      const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
+      const Color Them = (Us == WHITE ? BLACK : WHITE);
+      const Square* pl = pos.list<Pt>(Us);
+      Square s;
+      Score score = SCORE_ZERO;
+      while ((s = *pl++) != SQ_NONE)
+      {
+          ei.abo++;
+          if (more_than_one(ei.attackedByOne[ei.abo])) {
+                //piece was not already too penalized.
+
+                //evaluating if piece can move, in case of emergency, to a non-attacked square 
+                //note: there might be some defended squares where we can go, but we do not care here
+          
+              Bitboard safeb= ei.attackedByOne[ei.abo] & ~(ei.attackedBy[Them][ALL_PIECES]|pos.pieces(Us));
+              if (!more_than_one(safeb)) {  
+                  //there is only 0 or 1 non-attacked square where we can go
+
+                  if (Pt==QUEEN) {
+                      //if Q cannot exchange against Q, reduce mobility
+                      //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.     
+
+                      if (!(ei.attackedByOne[ei.abo] & pos.pieces(Them, QUEEN)))
+                          score += MobilityBonus[Pt][safeb ? 1 : 0] / 2;                
+                  }
+                  else {
+                      //if Pt cannot exchange against any other non-pawn piece, reduce mobility
+                      //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.                 
+                      if (!(ei.attackedByOne[ei.abo] & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))))
+                          score += MobilityBonus[Pt][safeb ? 1 : 0] / 2; 
+                  }
+             }
+         }
+      }
+
+      if (Trace)
+          Tracing::write(Pt, Us, score);
+
+      return score - evaluate_pieces2<NextPt, Them, Trace>(pos, ei);
+  }
+
+  template<>
+  Score evaluate_pieces2<KING, WHITE, false>(const Position&, EvalInfo&) { return SCORE_ZERO; }
+  template<>
+  Score evaluate_pieces2<KING, WHITE,  true>(const Position&, EvalInfo&) {  return SCORE_ZERO; }
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
@@ -722,6 +750,8 @@ namespace {
     // Score is computed from the point of view of white.
     score = pos.psq_score();
 
+ 
+
     // Probe the material hash table
     ei.mi = Material::probe(pos, thisThread->materialTable, thisThread->endgames);
     score += ei.mi->material_value();
@@ -747,8 +777,12 @@ namespace {
                                 ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK, PAWN, KING)) };
 
     // Evaluate pieces and mobility
+    ei.abo=0;
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
-    score += apply_weight(mobility[WHITE] - mobility[BLACK], Weights[Mobility]);
+    ei.abo=0;
+    Score mobadjust=evaluate_pieces2<KNIGHT, WHITE, Trace>(pos, ei);
+
+    score += apply_weight(mobility[WHITE] - mobility[BLACK]  + mobadjust, Weights[Mobility]);
 
     // Evaluate kings after all other pieces because we need complete attack
     // information when computing the king safety evaluation.
