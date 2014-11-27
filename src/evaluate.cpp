@@ -412,13 +412,13 @@ namespace {
                       //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.     
 
                       if (!(ei.attackedByOne[ei.abo] & pos.pieces(Them, QUEEN)))
-                          score += MobilityBonus[Pt][safeb ? 1 : 0] ;                
+                          score += MobilityBonus[Pt][safeb ? 1 : 0]/4 ;                
                   }
                   else {
                       //if Pt cannot exchange against any other non-pawn piece, reduce mobility
                       //note: MobilityBonus[][0] or MobilityBonus[][1] are negative values.                 
                       if (!(ei.attackedByOne[ei.abo] & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))))
-                          score += MobilityBonus[Pt][safeb ? 1 : 0] ; 
+                          score += MobilityBonus[Pt][safeb ? 1 : 0]/4 ; 
                   }
              }
          }
