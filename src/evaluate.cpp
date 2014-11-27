@@ -298,12 +298,11 @@ namespace {
         if (Pt == QUEEN) {
             b &= ~( ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]) 
-                 | pos.pieces(Them,QUEEN);
+                   | ei.attackedBy[Them][ROOK]);
         }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & (mobilityArea[Us]|(pos.pieces(Them) ^ pos.pieces(Them, PAWN))))
-                              : popcount<Full >(b & (mobilityArea[Us]| pos.pieces(Them, QUEEN)));
+                              : popcount<Full >(b & (mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
      
