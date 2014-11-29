@@ -276,13 +276,13 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
-        // Find attacked squares, including x-ray attacks for bishops and rooks
+        // Find attacked squares, including x-ray attacks for bishops and rooks through our Queens
 
-        // Consider also Skewers on higher value pieces: if the attacked piece move, which is likely, 
-        // our mobility will be extended
+        // x-ray also through opponent QUEENS, because once the attacked QUEEN moves, which is likely, 
+        // our piece mobility will be extended
          
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ (pos.pieces(Us, QUEEN) | pos.pieces(Them,QUEEN,ROOK)))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ (pos.pieces(Us, ROOK, QUEEN) | pos.pieces(Them,QUEEN)))
+        b =   Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
+            : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^(pos.pieces(QUEEN) | pos.pieces(Us, ROOK)))
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
