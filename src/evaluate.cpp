@@ -42,7 +42,7 @@ namespace {
     // attacked by a given color and piece type, attackedBy[color][ALL_PIECES]
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
-
+    
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -277,15 +277,19 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+
+        // Consider also Skewers on higher value pieces: if the attacked piece move, which is likely, 
+        // our mobility will be extended
+         
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ (pos.pieces(Us, QUEEN) | pos.pieces(Them,QUEEN,ROOK)))
+          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ (pos.pieces(Us, ROOK, QUEEN) | pos.pieces(Them,QUEEN)))
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
-
+    
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
@@ -294,7 +298,7 @@ namespace {
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
-
+        
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
@@ -303,7 +307,7 @@ namespace {
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt][mob];
+        mobility[Us] += MobilityBonus[Pt][mob];           
 
         // Decrease score if we are attacked by an enemy pawn. The remaining part
         // of threat evaluation must be done later when we have full attack info.
@@ -379,7 +383,6 @@ namespace {
   template<>
   Score evaluate_pieces<KING, WHITE,  true>(const Position&, EvalInfo&, Score*, Bitboard*) { return SCORE_ZERO; }
 
-
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
   template<Color Us, bool Trace>
@@ -416,7 +419,7 @@ namespace {
                      - mg_value(score) / 32
                      - !pos.count<QUEEN>(Them) * 15;
 
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
+        // Analyze the enemy's safe queen contact checks. Firstly, find the
         // undefended squares around the king that are attacked by the enemy's
         // queen...
         b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
@@ -430,7 +433,7 @@ namespace {
                 attackUnits +=  QueenContactCheck * popcount<Max15>(b);
         }
 
-        // Analyse the enemy's safe rook contact checks. Firstly, find the
+        // Analyze the enemy's safe rook contact checks. Firstly, find the
         // undefended squares around the king that are attacked by the enemy's
         // rooks...
         b = undefended & ei.attackedBy[Them][ROOK] & ~pos.pieces(Them);
@@ -448,7 +451,7 @@ namespace {
                 attackUnits +=  RookContactCheck * popcount<Max15>(b);
         }
 
-        // Analyse the enemy's safe distance checks for sliders and knights
+        // Analyze the enemy's safe distance checks for sliders and knights
         safe = ~(pos.pieces(Them) | ei.attackedBy[Us][ALL_PIECES]);
 
         b1 = pos.attacks_from<ROOK>(ksq) & safe;
