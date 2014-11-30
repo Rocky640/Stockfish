@@ -197,25 +197,26 @@ void Bitboards::init() {
               }
 
       for (Square s = SQ_A1; s <= SQ_H8; ++s) {
-              KingRingBB[WHITE][s] = StepAttacksBB[make_piece(WHITE, KING)][s];
-              KingRingBB[BLACK][s] = StepAttacksBB[make_piece(BLACK, KING)][s];
+              KingRingBB[WHITE][s] = KingRingBB[BLACK][s] = StepAttacksBB[make_piece(WHITE, KING)][s];
 
               //current master definition would be equivalent to
               KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);
               KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]); 
             
-              //now for a BLACK KING on H8, we also add the F8 Square
-              //now for a BLACK KING on G8, we also add the E8 Square
-              //and for a BLACK KING on F8, we add the D8 and H8 Square
+              //now for a BLACK KING on H8, we also add the F7 Square
+              //now for a BLACK KING on G8, we also add the E7 Square
+              //and for a BLACK KING on F8, we add the D7 and H7 Square
              
-              if (file_of(s)>FILE_B) {            
-                KingRingBB[WHITE][s] |=s + DELTA_W + DELTA_W;
-                KingRingBB[BLACK][s] |=s + DELTA_W + DELTA_W;
-              }
-              if (file_of(s)<FILE_G) {  
-                KingRingBB[WHITE][s] |=s + DELTA_E + DELTA_E;
-                KingRingBB[BLACK][s] |=s + DELTA_E + DELTA_E;
-              }
+              if (file_of(s)>FILE_B && rank_of(s)<RANK_8)            
+                KingRingBB[WHITE][s] |=s + DELTA_W + DELTA_NW;
+              if (file_of(s)<FILE_G && rank_of(s)<RANK_8)            
+                KingRingBB[WHITE][s] |=s + DELTA_E + DELTA_NE;	
+
+              if (file_of(s)>FILE_B && rank_of(s)>RANK_1)            
+                KingRingBB[BLACK][s] |=s + DELTA_W + DELTA_SW;
+              if (file_of(s)<FILE_G && rank_of(s)>RANK_1)            
+                KingRingBB[BLACK][s] |=s + DELTA_E + DELTA_SE;
+            
         }
 
   Square RDeltas[] = { DELTA_N,  DELTA_E,  DELTA_S,  DELTA_W  };
