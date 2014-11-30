@@ -222,7 +222,8 @@ namespace {
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
-        ei.kingRing[Them] = b | shift_bb<Down>(b);
+        ei.kingRing[Them] = KingRingBB[Them][pos.king_square(Them)];
+
         b &= ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
         ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;

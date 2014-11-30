@@ -47,6 +47,7 @@ Bitboard ForwardBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
 Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
+Bitboard KingRingBB[COLOR_NB][SQUARE_NB];
 
 int SquareDistance[SQUARE_NB][SQUARE_NB];
 
@@ -194,6 +195,21 @@ void Bitboards::init() {
                   if (is_ok(to) && distance(s, to) < 3)
                       StepAttacksBB[make_piece(c, pt)][s] |= to;
               }
+
+      for (Square s = SQ_A1; s <= SQ_H8; ++s) {
+              KingRingBB[WHITE][s] = StepAttacksBB[make_piece(WHITE, KING)][s];
+              KingRingBB[BLACK][s] = StepAttacksBB[make_piece(BLACK, KING)][s];
+
+              //master definition
+              //KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);
+              //KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]);
+              
+
+              KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);
+              KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]);
+              KingRingBB[WHITE][s] |= StepAttacksBB[make_piece(BLACK, KNIGHT)][s];
+              KingRingBB[BLACK][s] |= StepAttacksBB[make_piece(WHITE, KNIGHT)][s];
+        }
 
   Square RDeltas[] = { DELTA_N,  DELTA_E,  DELTA_S,  DELTA_W  };
   Square BDeltas[] = { DELTA_NE, DELTA_SE, DELTA_SW, DELTA_NW };
