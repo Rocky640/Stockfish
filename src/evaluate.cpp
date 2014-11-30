@@ -212,7 +212,7 @@ namespace {
   void init_eval_info(const Position& pos, EvalInfo& ei) {
 
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    //const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
 

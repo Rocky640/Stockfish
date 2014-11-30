@@ -200,24 +200,22 @@ void Bitboards::init() {
               KingRingBB[WHITE][s] = StepAttacksBB[make_piece(WHITE, KING)][s];
               KingRingBB[BLACK][s] = StepAttacksBB[make_piece(BLACK, KING)][s];
 
-              //master definition would be equivalent to
-              //KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);
-              //KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]); 
+              //current master definition would be equivalent to
+              KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);
+              KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]); 
             
-              //now for a BLACK KING on H8, we also add the F6 Square
-              //now for a BLACK KING on G8, we also add the E6 Square
-              //and for a BLACK KING on F8, we add the D6 and H6 Square
-              KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);              
-              if (file_of(s)>FILE_B && rank_of(s)<RANK_7)              
-                KingRingBB[WHITE][s] |=s + DELTA_NW + DELTA_NW;
-              if (file_of(s)<FILE_G && rank_of(s)<RANK_7)   
-                KingRingBB[WHITE][s] |=s + DELTA_NE + DELTA_NE;
-                
-              KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]);
-              if (file_of(s)>FILE_B && rank_of(s)>RANK_2)              
-                KingRingBB[BLACK][s] |=s + DELTA_SW + DELTA_SW;
-              if (file_of(s)<FILE_G && rank_of(s)>RANK_2)   
-                KingRingBB[BLACK][s] |=s + DELTA_SE + DELTA_SE;
+              //now for a BLACK KING on H8, we also add the F8 Square
+              //now for a BLACK KING on G8, we also add the E8 Square
+              //and for a BLACK KING on F8, we add the D8 and H8 Square
+             
+              if (file_of(s)>FILE_B) {            
+                KingRingBB[WHITE][s] |=s + DELTA_W + DELTA_W;
+                KingRingBB[BLACK][s] |=s + DELTA_W + DELTA_W;
+              }
+              if (file_of(s)<FILE_G) {  
+                KingRingBB[WHITE][s] |=s + DELTA_E + DELTA_E;
+                KingRingBB[BLACK][s] |=s + DELTA_E + DELTA_E;
+              }
         }
 
   Square RDeltas[] = { DELTA_N,  DELTA_E,  DELTA_S,  DELTA_W  };
