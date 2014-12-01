@@ -203,19 +203,13 @@ void Bitboards::init() {
               KingRingBB[WHITE][s] |= shift_bb<DELTA_N>(KingRingBB[WHITE][s]);
               KingRingBB[BLACK][s] |= shift_bb<DELTA_S>(KingRingBB[BLACK][s]); 
             
-              //now for a BLACK KING on H8, we also add the F7 Square
-              //now for a BLACK KING on G8, we also add the E7 Square
-              //and for a BLACK KING on F8, we add the D7 and H7 Square
-             
-              if (file_of(s)>FILE_B && rank_of(s)<RANK_8)            
-                KingRingBB[WHITE][s] |=s + DELTA_W + DELTA_NW;
-              if (file_of(s)<FILE_G && rank_of(s)<RANK_8)            
-                KingRingBB[WHITE][s] |=s + DELTA_E + DELTA_NE;	
+              //now for a BLACK KING on H6, we also add the H8 Square
+              //now for a BLACK KING on G6, we also add the G8 Square
 
-              if (file_of(s)>FILE_B && rank_of(s)>RANK_1)            
-                KingRingBB[BLACK][s] |=s + DELTA_W + DELTA_SW;
-              if (file_of(s)<FILE_G && rank_of(s)>RANK_1)            
-                KingRingBB[BLACK][s] |=s + DELTA_E + DELTA_SE;
+              if (rank_of(s)>RANK_2)           
+                KingRingBB[WHITE][s] |=s + DELTA_S + DELTA_S;
+              if (rank_of(s)<RANK_7)           
+                KingRingBB[BLACK][s] |=s + DELTA_N + DELTA_N; 
             
         }
 
