@@ -490,6 +490,24 @@ Bitboard Position::check_blockers(Color c, Color kingColor) const {
   return result;
 }
 
+Bitboard Position::check_blockersQ(Color queenColor, Square qsq) const {
+
+  Bitboard b, pinners, result = 0;
+  
+    // Pinners are lower value sliders that attack QUEEN when a (relative) pinned piece is removed
+    pinners = (  (pieces(  ROOK) & PseudoAttacks[ROOK  ][qsq])
+                | (pieces(BISHOP) & PseudoAttacks[BISHOP][qsq])) & pieces(~queenColor);
+
+    while (pinners)
+    {
+        b = between_bb(qsq, pop_lsb(&pinners)) & pieces();
+
+        if (!more_than_one(b))
+            result |= b & pieces(queenColor);
+    }
+ 
+  return result;
+}
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
 /// given square. Slider attacks use the occ bitboard to indicate occupancy.
