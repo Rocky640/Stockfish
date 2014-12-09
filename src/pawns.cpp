@@ -100,6 +100,9 @@ namespace {
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+    e->weaklyDefended[Us] = 0;
+    Bitboard dblAttacks = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
+    
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -175,10 +178,17 @@ namespace {
 
         if (lever)
             value += Lever[relative_rank(Us, s)];
+
+        if (unsupported & lever) 
+             //pawn on b2 and opponent on a3, we add a3 and c3 as "weaklyDefended"
+             //however if a3 or c3 is defended also by another pawn, it will be removed at the end.
+             e->weaklyDefended[Us] |= pos.attacks_from<PAWN>(s, Us); 
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
+
+    e->weaklyDefended[Us] &= ~dblAttacks; //weaklyDefended are only defended once
 
     return value;
   }

@@ -34,6 +34,7 @@ struct Entry {
 
   Score pawns_value() const { return value; }
   Bitboard pawn_attacks(Color c) const { return pawnAttacks[c]; }
+  Bitboard weakly_defended(Color c) const { return weaklyDefended[c]; }
   Bitboard passed_pawns(Color c) const { return passedPawns[c]; }
 
   int semiopen_file(Color c, File f) const {
@@ -68,6 +69,8 @@ struct Entry {
   Score value;
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
+  Bitboard weaklyDefended[COLOR_NB];
+
   Square kingSquares[COLOR_NB];
   Score kingSafety[COLOR_NB];
   int minKPdistance[COLOR_NB];
