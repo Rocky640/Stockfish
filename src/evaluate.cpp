@@ -397,6 +397,7 @@ namespace {
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
+
         // Find the attacked squares around the king which have no defenders
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
@@ -473,6 +474,30 @@ namespace {
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
         if (b)
             attackUnits += KnightCheck * popcount<Max15>(b);
+
+      
+       //When KingSqProtected, there are less chance of a follow-up check
+	   //if not protected, then most likely, after a King Move, there will be other holes in the position.
+	   bool kingSqProtected  = ei.attackedBy[Us][ALL_PIECES] & ksq;
+       attackUnits += (kingSqProtected ? -1 : 1);
+
+       //Compute the King escape possibilities
+       Bitboard safeSquares  = ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Us)); 
+       Bitboard zone1Escapes = ei.attackedBy[Us][KING] & safeSquares; //squares where King can move
+       Bitboard zone2Escapes = 0;
+       Bitboard zone2        = DistanceRingsBB[ksq][1]; //if King g8, then zone2 is e8, e7, e6, f6, g6 and h6
+
+       while (zone1Escapes) {
+            attackUnits--;
+
+            Square s = pop_lsb(&zone1Escapes);
+            //our King, can possibly move to s. From s, can it go further away ?
+            Bitboard escape2 = (PseudoAttacks[KING][s] & safeSquares & zone2);
+            if (escape2)
+                zone2Escapes |= escape2;
+        }
+        attackUnits -= popcount<Max15>(zone2Escapes)/3;
+        //end of computation of King escape possibilities
 
         // To index KingDanger[] attackUnits must be in [0, 99] range
         attackUnits = std::min(99, std::max(0, attackUnits));
