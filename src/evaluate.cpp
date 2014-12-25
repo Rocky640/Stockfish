@@ -98,8 +98,10 @@ namespace {
   #define S(mg, eg) make_score(mg, eg)
 
   // MobilityBonus[PieceType][attacked] contains bonuses for middle and end
-  // game, indexed by piece type and number of attacked squares not occupied by
-  // friendly pieces.
+  // game, indexed by piece type and number of attacked squares 
+  // which are not attacked by their pawns,
+  // It includes attacks on our own pieces (excluding some pawns and King)
+  // For Queen, we exclude also the squares attacked by opponent Bishop, Knight or Rook
   const Score MobilityBonus[][32] = {
     {}, {},
     { S(-65,-50), S(-42,-30), S(-9,-10), S( 3,  0), S(15, 10), S(27, 20), // Knights
@@ -295,15 +297,13 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
-        b &= ~pos.pieces(Us);
-        
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
-                              : popcount<Full >(b & mobilityArea[Us]);
+                              : popcount<Full >(b & mobilityArea[Us] & ~pos.pieces(Us));
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
@@ -717,9 +717,13 @@ namespace {
     ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
-    // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
-    Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
-                                ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK, PAWN, KING)) };
+    //find out mobile pawns
+    Bitboard pmobw =  shift_bb<DELTA_S>(shift_bb<DELTA_N>(pos.pieces(WHITE, PAWN)) & ~pos.pieces() & (~ei.attackedBy[BLACK][PAWN] | ei.attackedBy[WHITE][PAWN])) & ~(RANK_2 | RANK_3);
+    Bitboard pmobb =  shift_bb<DELTA_N>(shift_bb<DELTA_S>(pos.pieces(BLACK, PAWN)) & ~pos.pieces() & (~ei.attackedBy[WHITE][PAWN] | ei.attackedBy[BLACK][PAWN])) & ~(RANK_7 | RANK_6);
+   
+    // Do not include in mobility squares protected by enemy pawns or occupied by king or non-mobile-pawns
+    Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | (pos.pieces(WHITE, PAWN, KING) ^ pmobw)) ,
+                                ~(ei.attackedBy[WHITE][PAWN] | (pos.pieces(BLACK, PAWN, KING) ^ pmobb)) };
 
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
