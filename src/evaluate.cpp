@@ -305,6 +305,12 @@ namespace {
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
 
+        //reduce mob calculation if defending more than one piece 
+        //(because if we are defending, say 8 pieces with a Knight, this Knight is rather... immobile.
+
+        b &= mobilityArea[Us] & pos.pieces(Us);
+        if (b && more_than_one(b)) mob -= popcount<Max15>(b)/2;
+
         mobility[Us] += MobilityBonus[Pt][mob];
 
         // Decrease score if we are attacked by an enemy pawn. The remaining part
@@ -717,13 +723,9 @@ namespace {
     ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
-    //find out mobile pawns
-    Bitboard pmobw =  shift_bb<DELTA_S>(shift_bb<DELTA_N>(pos.pieces(WHITE, PAWN)) & ~pos.pieces()) & ~(RANK_2 | RANK_3);
-    Bitboard pmobb =  shift_bb<DELTA_N>(shift_bb<DELTA_S>(pos.pieces(BLACK, PAWN)) & ~pos.pieces()) & ~(RANK_7 | RANK_6);
-   
-    // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
-    Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | (pos.pieces(WHITE, PAWN, KING) ^ pmobw)) ,
-                                ~(ei.attackedBy[WHITE][PAWN] | (pos.pieces(BLACK, PAWN, KING) ^ pmobb)) };
+    Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)) ,
+                                ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK, PAWN, KING)) };
+
 
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
