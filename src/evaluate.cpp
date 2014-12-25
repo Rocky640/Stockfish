@@ -307,9 +307,9 @@ namespace {
 
         //reduce mob calculation if defending more than one piece 
         //(because if we are defending, say 8 pieces with a Knight, this Knight is rather... immobile.
-
+        
         b &= mobilityArea[Us] & pos.pieces(Us);
-        if (b && more_than_one(b)) mob -= popcount<Max15>(b)/2;
+        if (b && more_than_one(b)) mob -= popcount<Max15>(b)/3;
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
