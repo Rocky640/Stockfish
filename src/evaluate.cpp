@@ -69,6 +69,9 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+
+    Bitboard pawnAttackers[COLOR_NB]; //can take something
+    Bitboard pawnPushers[COLOR_NB];   //can push
   };
 
   namespace Tracing {
@@ -157,6 +160,7 @@ namespace {
   const Score RookOnPawn       = S( 7, 27);
   const Score RookOpenFile     = S(43, 21);
   const Score RookSemiOpenFile = S(19, 10);
+  const Score RookExpOpenFile  = S(10,  5);
   const Score BishopPawns      = S( 8, 12);
   const Score MinorBehindPawn  = S(16,  0);
   const Score TrappedRook      = S(92,  0);
@@ -339,6 +343,9 @@ namespace {
             // Give a bonus for a rook on a open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
                 score += ei.pi->semiopen_file(Them, file_of(s)) ? RookOpenFile : RookSemiOpenFile;
+            else if (ei.pawnAttackers[Us] & file_bb(s)) 
+                //get ready for a file that can open        
+               score += RookExpOpenFile;
 
             if (mob > 3 || ei.pi->semiopen_file(Us, file_of(s)))
                 continue;
@@ -715,6 +722,16 @@ namespace {
     ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
+    //find out mobile pawns
+    Bitboard wpawns         = pos.pieces(WHITE, PAWN);
+    ei.pawnPushers[WHITE]   = shift_bb<DELTA_S >(shift_bb<DELTA_N >(wpawns) & ~pos.pieces());
+    ei.pawnAttackers[WHITE] = shift_bb<DELTA_SE>(shift_bb<DELTA_NW>(wpawns) & pos.pieces(BLACK)) |
+                              shift_bb<DELTA_SW>(shift_bb<DELTA_NE>(wpawns) & pos.pieces(BLACK));
+
+    Bitboard bpawns         = pos.pieces(BLACK, PAWN);
+    ei.pawnPushers[BLACK]   = shift_bb<DELTA_N >(shift_bb<DELTA_S >(bpawns) & ~pos.pieces());
+    ei.pawnAttackers[BLACK] = shift_bb<DELTA_NE>(shift_bb<DELTA_SW>(bpawns) & pos.pieces(WHITE)) |
+                              shift_bb<DELTA_NW>(shift_bb<DELTA_SE>(bpawns) & pos.pieces(WHITE));
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
                                 ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK, PAWN, KING)) };
