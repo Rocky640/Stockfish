@@ -151,6 +151,7 @@ namespace {
     S(0, 0), S(0, 0), S(87, 118), S(84, 122), S(114, 203), S(121, 217)
   };
 
+
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne        = S( 2, 58);
   const Score KingOnMany       = S( 6,125);
@@ -162,6 +163,17 @@ namespace {
   const Score TrappedRook      = S(92,  0);
   const Score Unstoppable      = S( 0, 20);
   const Score Hanging          = S(31, 26);
+
+  //Rook has (too) many squares to choose from.
+  //Small incentives to chose safe squares for the next 1 or 2 moves
+  const Score RookThreatenedByBishop = S(0, 4);  //not attacked by Bishop
+  const Score RookSafeOnBishopLine   = S(3, 3);  //not aligned with Bishop
+  const Score RookSafeOnBishopMove   = S(0, 10); //Cannot be attacked by a Bishop move 
+
+  const Score RookThreatenedByKnight = S(7, 1);  //not attacked by Knight
+  const Score RookSafeOnKnightMove   = S(7, 7);  //Cannot be attacked by a Knight move 
+    
+
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -334,6 +346,27 @@ namespace {
                 Bitboard pawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (pawns)
                     score += popcount<Max15>(pawns) * RookOnPawn;
+            }
+
+            // Rook and bishop
+            int bcount=pos.count<BISHOP>(Them);
+            if (bcount>0) {
+                if ( !(PseudoAttacks[BISHOP][s] & pos.pieces(Them,BISHOP)))
+                    score += RookSafeOnBishopLine;               
+                else if (ei.attackedBy[Them][BISHOP] & s)
+                    score -= RookThreatenedByBishop;
+
+                if (!(ei.attackedBy[Them][BISHOP] & PseudoAttacks[BISHOP][s] & ~ei.attackedBy[Us][PAWN] & ~pos.pieces(Them)))
+                    score += RookSafeOnBishopMove;
+            }
+
+            // Rook and Knight
+            int ncount=pos.count<KNIGHT>(Them);
+            if (ncount>0) {
+                if (ei.attackedBy[Them][KNIGHT] & s)
+                    score -= RookThreatenedByKnight;
+                if (!(ei.attackedBy[Them][KNIGHT] & PseudoAttacks[KNIGHT][s] & ~ei.attackedBy[Us][PAWN] & ~pos.pieces(Them)))
+                    score += RookSafeOnKnightMove;
             }
 
             // Give a bonus for a rook on a open or semi-open file
