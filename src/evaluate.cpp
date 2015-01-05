@@ -44,15 +44,7 @@ namespace {
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     Bitboard kingAttacker[COLOR_NB];   
-    Bitboard kingAttackerAttacks[COLOR_NB];
-    Bitboard kingDefender[COLOR_NB];
-    Bitboard kingDefenderAttacks[COLOR_NB];
-
-    Bitboard nonkingAttacker[COLOR_NB];
-    Bitboard nonkingAttackerAttacks[COLOR_NB];
-    Bitboard nonkingDefender[COLOR_NB];
-    Bitboard nonkingDefenderAttacks[COLOR_NB];
-
+    
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -198,15 +190,6 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   const int KingAttackWeights[] = { 0, 0, 6, 2, 5, 5 };
 
-  //SPSA variables (to tune)
-  const int D1=3;
-  const int D2=1;
-  const int D3=4;
-  const int D4=9;
-  const int A1=19;
-  const int A2=3;
-  const int A3=6;
-  
   // Bonuses for enemy's safe checks
   const int QueenContactCheck = 92;
   const int RookContactCheck  = 68;
@@ -239,15 +222,13 @@ namespace {
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
-    ei.kingAttacker[Us]             = ei.nonkingAttacker[Us] = ei.kingDefender[Us] =  ei.nonkingDefender[Them] = 
-    ei.kingAttackerAttacks[Us]      = ei.nonkingAttackerAttacks[Us] =ei.kingDefenderAttacks[Us]= ei.nonkingDefenderAttacks[Us] = 0;
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
         b &= ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
-        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
+        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = ei.kingAttacker[Us] = 0;
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
@@ -310,24 +291,12 @@ namespace {
 
         if (b & ei.kingRing[Them])
         {
-            ei.kingAttackerAttacks[Us] |= b;
             ei.kingAttacker[Us] |= s;
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             Bitboard bb = b & ei.attackedBy[Them][KING];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
-        }
-        else
-            ei.nonkingAttackerAttacks[Us] |= b;
-
-        if (b & ei.kingRing[Us]) {
-            ei.kingDefender[Us] |= s;
-            ei.kingDefenderAttacks[Us] |= b;
-        }
-        else {
-            ei.nonkingDefender[Us] |= s;
-            ei.nonkingDefenderAttacks[Us] |= b;
         }
 
         if (Pt == QUEEN)
@@ -445,50 +414,14 @@ namespace {
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
-        attackUnits =  std::min(77, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
+        attackUnits =  std::min(77, (ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
+		                            - (15 * popcount<Max15>(ei.kingAttacker[Them] & ei.attackedBy[Us][ALL_PIECES])))
                      + 10 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 19 * popcount<Max15>(undefended)
                      +  9 * (ei.pinnedPieces[Us] != 0)
                      - mg_value(score) * 63 / 512
                      - !pos.count<QUEEN>(Them) * 60;
 
-        //test: find the attacks on the king defenders
-        //defenders inside the kingring
-        Bitboard defattacked1 = ei.kingDefender[Us] & ei.kingAttackerAttacks[Them] & ei.kingRing[Us];
-    
-        //defenders outside the kingring
-        Bitboard defattacked2 = ei.kingDefender[Us] & ei.kingAttackerAttacks[Them] & ~ei.kingRing[Us];
-        
-        //defenders attacked by other non king attackers
-        Bitboard defattacked3 = ei.kingDefender[Us] & ei.nonkingAttackerAttacks[Them];
-
-        Bitboard defattacked4 = defattacked2 & defattacked3;
-
-        //6 1 0 6
-        //2 0 6 8
-        //3 1 4 9
-                
-        //our defender are attacked. This is not good for us, increase the attackUnits
-        attackUnits          += (D1 * popcount<Max15>(defattacked1) + 
-                                 D2 * popcount<Max15>(defattacked2^defattacked4) +
-                                 D3 * popcount<Max15>(defattacked3^defattacked4) +
-                                 D4 * popcount<Max15>(defattacked4)); 
-        
-        
-        //compute attacks on the king attackers
-        Bitboard attattacked1 = ei.kingAttacker[Them] & ei.kingDefenderAttacks[Us];
-        Bitboard attattacked2 = ei.kingAttacker[Them] & ei.nonkingDefenderAttacks[Us];
-        Bitboard attattacked3 = attattacked1 & attattacked2;
-
-        //decrease the attackUnits, because some of the attackers are attacked by Us.        
-        //A1: exclusively from our king defenders 23 20  20
-        //A2: exclusively from non king defenders  0  3   3
-        //A3: from both types of defenders.        7  8   6
-        attackUnits -= (A1 * popcount<Max15>(attattacked1 ^ attattacked3) + 
-                        A2 * popcount<Max15>(attattacked2 ^ attattacked3) + 
-                        A3 * popcount<Max15>(attattacked3)); 
-
-        
         // Analyse the enemy's safe queen contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy queen...
         b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
