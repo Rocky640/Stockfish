@@ -415,11 +415,20 @@ namespace {
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
 
-        // The attacker weight is reduced by TWO for each attacker which is attacked by Us
+        // The attacker weight is reduced by THREE for each attacker which is attacked by Us
+		// (this may cancel out some weights, but on average it might do the job)
+		// example: 3 attackers with weight 2, 6 and 5. Master gives: 3 * (2+6+5) = 39
+		// 1 is attacked. This code will give 3 * (2+6+5-3) = 30
+		// if 2 are attacked, this code will give 3 * (2+6+5-3-3) = 21
+		// if all three are attacked, this code will give 3 * (2+6+5-3-3-3) = 12
+		
+		//example: 2 attackers with weight 5 and 5. Master gives 2 * 10 = 20
+		//if one is attacked, this code gives 2 * 7 = 14
+		//if both are attacked, this code gives 2 * 4 = 8 
 
         attackUnits =  std::min(77, ei.kingAttackersCount[Them] * 
                                          (ei.kingAttackersWeight[Them]-
-                                               2 * popcount<Max15>(ei.kingAttacker[Them] & ei.attackedBy[Us][ALL_PIECES])
+                                               3 * popcount<Max15>(ei.kingAttacker[Them] & ei.attackedBy[Us][ALL_PIECES])
                                          )
                                 )
                      + 10 * ei.kingAdjacentZoneAttacksCount[Them]
