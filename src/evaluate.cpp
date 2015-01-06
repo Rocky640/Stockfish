@@ -27,7 +27,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
-
+#include "uci.h" //for spsa
 namespace {
 
   // Struct EvalInfo contains various information computed and collected
@@ -43,8 +43,6 @@ namespace {
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
-    Bitboard kingAttacker[COLOR_NB];   
-    
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -53,9 +51,9 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     Bitboard kingRing[COLOR_NB];
 
-    // kingAttackersCount[color] is the number of pieces of the given color
+    // kingAttackers[color] is a bitboard representing pieces of the given color
     // which attack a square in the kingRing of the enemy king.
-    int kingAttackersCount[COLOR_NB];
+    Bitboard kingAttackers[COLOR_NB];   
 
     // kingAttackersWeight[color] is the sum of the "weight" of the pieces of the
     // given color which attack a square in the kingRing of the enemy king. The
@@ -190,6 +188,9 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   const int KingAttackWeights[] = { 0, 0, 6, 2, 5, 5 };
 
+  //special variable for this experiment
+  double A[17][17];
+  
   // Bonuses for enemy's safe checks
   const int QueenContactCheck = 92;
   const int RookContactCheck  = 68;
@@ -216,6 +217,8 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Square DLeft = (Us == WHITE ? DELTA_SE: DELTA_NE);
+    const Square DRight = (Us == WHITE ? DELTA_SW: DELTA_NW);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
 
@@ -227,11 +230,21 @@ namespace {
     {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
         b &= ei.attackedBy[Us][PAWN];
-        ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
-        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = ei.kingAttacker[Us] = 0;
+
+        //master code was:
+        //ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;  
+        //but this is not accurate. The attacked squares are not the same as the attacker
+        //so lets find the attackers
+        ei.kingAttackers[Us] = b ? (shift_bb<DLeft>(b) | shift_bb<DRight>(b)) & pos.pieces(Us, PAWN) : 0;
+         
+        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
+
+        //we might want also to test what happens if we include pawns in the adjacent count 
+        //if (b & ei.attackedBy[Them][KING])
+        //    ei.kingAdjacentZoneAttacksCount[Us] = popcount<Max15> (b & ei.attackedBy[Them][KING]);
     }
     else
-        ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+        ei.kingRing[Them] = ei.kingAttackers[Us] = 0;
   }
 
 
@@ -291,8 +304,7 @@ namespace {
 
         if (b & ei.kingRing[Them])
         {
-            ei.kingAttacker[Us] |= s;
-            ei.kingAttackersCount[Us]++;
+            ei.kingAttackers[Us] |= s;           
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             Bitboard bb = b & ei.attackedBy[Them][KING];
             if (bb)
@@ -399,7 +411,7 @@ namespace {
     Score score = ei.pi->king_safety<Us>(pos, ksq);
 
     // Main king safety evaluation
-    if (ei.kingAttackersCount[Them])
+    if (ei.kingAttackers[Them])
     {
         // Find the attacked squares around the king which have no defenders
         // apart from the king itself
@@ -409,28 +421,25 @@ namespace {
                         | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
                         | ei.attackedBy[Us][QUEEN]);
 
+        //get rid of kingattackerscount. There was a popcount in init which is now done only once.
+        int numattacker = popcount<Max15>(ei.kingAttackers[Them]);
+        int numattacked  = popcount<Max15>(ei.kingAttackers[Them] & ei.attackedBy[Us][ALL_PIECES]);
+
+        //add 0.5 to insure conversion to (int) will round up or down correctly.
+        //previous master code was simply equivalent to 
+        //int force = numattacker * ei.kingAttackersWeight[Them]
+        //here we introduce A[][] which is a fraction. It will be used to measure exactly
+        //if any effect of numattacked vs num attacker
+        //also, will see if A[numattacker] in general is close to numattacker as the master code implies.
+
+        int force = (int) (A[numattacker][numattacked] * ei.kingAttackersWeight[Them] + 0.5);
+     
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
-
-        // The attacker weight is reduced by THREE for each attacker which is attacked by Us
-		// (this may cancel out some weights, but on average it might do the job)
-		// example: 3 attackers with weight 2, 6 and 5. Master gives: 3 * (2+6+5) = 39
-		// 1 is attacked. This code will give 3 * (2+6+5-3) = 30
-		// if 2 are attacked, this code will give 3 * (2+6+5-3-3) = 21
-		// if all three are attacked, this code will give 3 * (2+6+5-3-3-3) = 12
-		
-		//example: 2 attackers with weight 5 and 5. Master gives 2 * 10 = 20
-		//if one is attacked, this code gives 2 * 7 = 14
-		//if both are attacked, this code gives 2 * 4 = 8 
-
-        attackUnits =  std::min(77, ei.kingAttackersCount[Them] * 
-                                         (ei.kingAttackersWeight[Them]-
-                                               3 * popcount<Max15>(ei.kingAttacker[Them] & ei.attackedBy[Us][ALL_PIECES])
-                                         )
-                                )
+        attackUnits =  std::min(77,force)
                      + 10 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 19 * popcount<Max15>(undefended)
                      +  9 * (ei.pinnedPieces[Us] != 0)
@@ -919,6 +928,38 @@ namespace Eval {
         t = std::min(Peak, std::min(0.025 * i * i, t + MaxSlope));
         KingDanger[i] = apply_weight(make_score(int(t), 0), Weights[KingSafety]);
     }
+    //SPSA
+    
+    A[1][0] = (double) Options["A10"]/32;
+    A[1][1] = (double) Options["A11"]/32;
+
+    A[2][0] = (double) Options["A20"]/32;
+    A[2][1] = (double) Options["A21"]/32;
+    A[2][2] = (double) Options["A22"]/32; 
+
+    A[3][0] = (double) Options["A30"]/32;
+    A[3][1] = (double) Options["A31"]/32;
+    A[3][2] = (double) Options["A32"]/32;
+    A[3][3] = (double) Options["A32"]/32; //using A32 here to simplify
+
+    A[4][0] = (double) Options["A40"]/32;
+    A[4][1] = (double) Options["A41"]/32;
+    A[4][2] = (double) Options["A42"]/32;
+    A[4][3] = (double) Options["A42"]/32; //using A42 here to simplify
+    A[4][4] = (double) Options["A42"]/32; //using A42 here to simplify
+
+    A[5][0] = (double) Options["A50"]/32;
+    A[5][1] = (double) Options["A51"]/32;
+    A[5][2] = (double) Options["A52"]/32;
+    A[5][3] = (double) Options["A52"]/32; //using A52 here to simplify
+    A[5][4] = (double) Options["A52"]/32; //using A52 here to simplify
+    A[5][5] = (double) Options["A52"]/32; //using A52 here to simplify
+    
+    //rare cases. just keep with original values for now.
+    for (int i = 6; i < 17; ++i)
+        for (int j =0; j <=i; ++j)
+            A[i][j]=i;
+
   }
 
 } // namespace Eval
