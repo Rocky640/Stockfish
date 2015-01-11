@@ -75,80 +75,76 @@ void init(OptionsMap& o) {
   //SPSA 
 
   //formula was numattackers * weightsum
-  //weight is P=0, N=6, B=2, R=5, Q=5
-  //A5pn is 2*(P+N)=2*(0+6)=12
+  //weight was P=0, N=6, B=2, R=5, Q=5
+  //A5pn was 2*(P+N)=2*(0+6)=12
 
+  o["A1p"]    << Option(7, 0, 64); //was 0
+  o["A4n"]    << Option(8, 0, 64); //was 6
+  o["A16b"]   << Option(12, 0, 64);//was 2
+  o["A64r"]   << Option(9, 0, 64); //was 5
+  o["A256q"]  << Option(2, 0, 64); //was 5
+
+  o["A2pp"]   << Option(3, 0, 64); //was 0
+  o["A5pn"]   << Option(5, 0, 64); //was 12
+  o["A17pb"]  << Option(5, 0, 64); //was 4
+  o["A65pr"]  << Option(5, 0, 64); //was 10
+  o["A257pq"] << Option(18, 0, 64);//was 10
  
+  o["A8nn"]   << Option(29, 0, 64);//was 24
+  o["A20nb"]  << Option(14, 0, 64);//was 16
+  o["A68nr"]  << Option(26, 0, 64);//was 22
+  o["A260nq"] << Option(16, 0, 64);//was 22
 
-  o["A1p"]              << Option(1, 0, 64);
-  o["A4n"]              << Option(11, 0, 64);
-  o["A16b"]             << Option(8, 0, 64);
-  o["A64r"]             << Option(12, 0, 64);
-  o["A256q"]            << Option(2, 0, 64);
+  o["A32bb"]  << Option(5, 0, 64); //was 8
+  o["A80br"]  << Option(26, 0, 64);//was 14 *** plus 12 !
+  o["A272bq"] << Option(9, 0, 64); //was 14
 
- 
-  o["A2pp"]             << Option(1, 0, 64);
-  o["A5pn"]             << Option(12, 0, 64);
-  o["A17pb"]            << Option(1, 0, 64);
-  o["A65pr"]            << Option(8, 0, 64);
-  o["A257pq"]           << Option(9, 0, 64);
- 
-  o["A8nn"]             << Option(35, 0, 64);
-  o["A20nb"]            << Option(16, 0, 64);
-  o["A68nr"]            << Option(28, 0, 64);
-  o["A260nq"]           << Option(13, 0, 64);
+  o["A128rr"] << Option(37, 0, 64);//was 20 *** plus 17 !!
+  o["A320rq"] << Option(21, 0, 64);//was 20
+  o["A512qq"] << Option(19, 0, 64);//was 20
 
-  o["A32bb"]            << Option(5, 0, 64);
-  o["A80br"]            << Option(20, 0, 64);
-  o["A272bq"]           << Option(10, 0, 64);
+  o["A3ppp"]  << Option(3, 0, 64); //was 0
+  o["A6ppn"]  << Option(14, 0, 64);//was 18
+  o["A18ppb"] << Option(11, 0, 64);//was 6
+  o["A66ppr"] << Option(17, 0, 64);//was 15
+  o["A258ppq"]<< Option(10, 0, 64);//was 15
 
-  o["A128rr"]           << Option(34, 0, 64);
-  o["A320rq"]           << Option(21, 0, 64);
-  o["A512qq"]           << Option(23, 0, 64);
+  o["A9pnn"]  << Option(36, 0, 64);//was 36
+  o["A21pnb"] << Option(33, 0, 64);//was 24 *** plus 9 !
+  o["A69pnr"] << Option(37, 0, 64);//was 33
+  o["A261pnq"]<< Option(39, 0, 64);//was 33
 
-  o["A3ppp"]  << Option(4, 0, 64);
-  o["A6ppn"]  << Option(12, 0, 64);
-  o["A18ppb"] << Option(14, 0, 64);
-  o["A66ppr"] << Option(19, 0, 64);
-  o["A258ppq"]<< Option(13, 0, 64);
+  o["A33pbb"] << Option(17, 0, 64);//was 12
+  o["A81pbr"] << Option(29, 0, 64);//was 21
+  o["A273pbq"]<< Option(24, 0, 64);//was 21
+  o["A129prr"]<< Option(28, 0, 64);//was 30
+  o["A321prq"]<< Option(25, 0, 64);//was 30
+  o["A513pqq"]<< Option(30, 0, 64);//was 30
 
-  o["A9pnn"]  << Option(36, 0, 64);
-  o["A21pnb"] << Option(32, 0, 64);
-  o["A69pnr"] << Option(36, 0, 64);
-  o["A261pnq"]<< Option(40, 0, 64);
+  o["A12nnn"] << Option(44, 0, 64);//was 54
+  o["A24nnb"] << Option(44, 0, 64);//was 42
+  o["A72nnr"] << Option(58, 0, 64);//was 51
+  o["A264nnq"]<< Option(51, 0, 64);//was 51
+  o["A36nbb"] << Option(23, 0, 64);//was 30
+  o["A84nbr"] << Option(38, 0, 64);//was 39
+  o["A276nbq"]<< Option(28, 0, 64);//was 39 *** minus 11
+  o["A132nrr"]<< Option(45, 0, 64);//was 48
+  o["A324nrq"]<< Option(48, 0, 64);//was 48
+  o["A516nqq"]<< Option(41, 0, 64);//was 48
 
+  o["A48bbb"] << Option(24, 0, 64);//was 18
+  o["A96bbr"] << Option(29, 0, 64);//was 27
+  o["A288bbq"]<< Option(21, 0, 64);//was 27
+  o["A144brr"]<< Option(33, 0, 64);//was 36
+  o["A336brq"]<< Option(41, 0, 64);//was 36
+  o["A528bqq"]<< Option(26, 0, 64);//was 36
 
-  o["A33pbb"] << Option(9, 0, 64);
-  o["A81pbr"] << Option(25, 0, 64);
-  o["A273pbq"]<< Option(18, 0, 64);
-  o["A129prr"]<< Option(26, 0, 64);
-  o["A321prq"]<< Option(31, 0, 64);
-  o["A513pqq"]<< Option(33, 0, 64);
+  o["A192rrr"]<< Option(51, 0, 64);//was 45
+  o["A384rrq"]<< Option(30, 0, 64);//was 45 *** minus 15
+  o["A576rqq"]<< Option(47, 0, 64);//was 45
 
-  o["A12nnn"] << Option(48, 0, 64);
-  o["A24nnb"] << Option(43, 0, 64);
-  o["A72nnr"] << Option(54, 0, 64);
-  o["A264nnq"]<< Option(52, 0, 64);
-  o["A36nbb"] << Option(29, 0, 64);
-  o["A84nbr"] << Option(44, 0, 64);
-  o["A276nbq"]<< Option(33, 0, 64);
-  o["A132nrr"]<< Option(47, 0, 64);
-  o["A324nrq"]<< Option(49, 0, 64);
-  o["A516nqq"]<< Option(43, 0, 64);
+  o["A738qqq"]<< Option(45, 0, 64);//was 45
 
-  o["A48bbb"] << Option(23, 0, 64);
-  o["A96bbr"] << Option(27, 0, 64);
-  o["A288bbq"]<< Option(19, 0, 64);
-  o["A144brr"]<< Option(34, 0, 64);
-  o["A336brq"]<< Option(41, 0, 64);
-  o["A528bqq"]<< Option(31, 0, 64);
-
-  o["A192rrr"]<< Option(44, 0, 64);
-  o["A384rrq"]<< Option(36, 0, 64);
-  o["A576rqq"]<< Option(47, 0, 64);
-
-  o["A738qqq"]<< Option(44, 0, 64);
-    
 }
 
 
