@@ -43,6 +43,11 @@ namespace {
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
+    //attackedBy2[COLOR_NB] is a bitboard representing squares  
+    //attacked AR LEAST 2. More exactly,  "a pawn and a piece", or "2 non pawn pieces"
+    //Used to speed up attackUnits and safe contact checks calculations and undefended calculation
+    Bitboard attackedBy2[COLOR_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -218,7 +223,7 @@ namespace {
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
-    ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -285,6 +290,8 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+        //order is important here.
+        ei.attackedBy2[Us] |= (b & ei.attackedBy[Us][ALL_PIECES]);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -388,7 +395,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, b, b1, b2, safe;
+    Bitboard undefended, contactCheckCandidates, b, b1, b2, safe;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -402,9 +409,7 @@ namespace {
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                    & ~ei.attackedBy2[Us];       
 
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
@@ -418,32 +423,18 @@ namespace {
                      - mg_value(score) * 63 / 512
                      - !pos.count<QUEEN>(Them) * 60;
 
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
-        // undefended squares around the king reachable by the enemy queen...
-        b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
-        if (b)
-        {
-            // ...and then remove squares not supported by another enemy piece
-            b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK];
-
+        //find undefended squares around King where we have at least 2 attackers (and where we can land a piece). 
+        contactCheckCandidates = undefended & ei.attackedBy2[Them] & ~pos.pieces(Them);
+        if (contactCheckCandidates) {
+            b = contactCheckCandidates & ei.attackedBy[Them][QUEEN];
+            //this version includes contact check supported by Their King or by another Queen
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
-        }
 
-        // Analyse the enemy's safe rook contact checks. Firstly, find the
-        // undefended squares around the king reachable by the enemy rooks...
-        b = undefended & ei.attackedBy[Them][ROOK] & ~pos.pieces(Them);
-
-        // Consider only squares where the enemy's rook gives check
-        b &= PseudoAttacks[ROOK][ksq];
-
-        if (b)
-        {
-            // ...and then remove squares not supported by another enemy piece
-            b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN]);
-
+            b = contactCheckCandidates & ei.attackedBy[Them][ROOK] & PseudoAttacks[ROOK][ksq];
+            //this version includes contact check supported by their King or by another Rook
+            //PseudoAttacks[ROOK][ksq] insures that the rook can actually land on the square 
+            //(in other words, it is not an xray attack !) and that it is a square orthogonal to the King.
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
         }
@@ -700,8 +691,11 @@ namespace {
     init_eval_info<WHITE>(pos, ei);
     init_eval_info<BLACK>(pos, ei);
 
-    ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
-    ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
+    ei.attackedBy2[WHITE] = ei.attackedBy[WHITE][KING] & ei.attackedBy[WHITE][PAWN];
+    ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[WHITE][PAWN] | ei.attackedBy[WHITE][KING];
+
+    ei.attackedBy2[BLACK] = ei.attackedBy[BLACK][KING] & ei.attackedBy[BLACK][PAWN];
+    ei.attackedBy[BLACK][ALL_PIECES] = ei.attackedBy[BLACK][PAWN] | ei.attackedBy[BLACK][KING];
 
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
