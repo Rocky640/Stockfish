@@ -288,7 +288,7 @@ namespace {
 
         // Find attacked squares, including x-rays (x-rays through BISHOPS are rare or uninteresting for current code)
         bWithXray = Pt == BISHOP ?  attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+                  : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                   : Pt ==  QUEEN ? (attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, BISHOP, QUEEN)) |
                                     attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN)))
                   : b;
@@ -297,7 +297,7 @@ namespace {
             b &= LineBB[pos.king_square(Us)][s];
 
         //order is important here.
-        ei.attackedBy[Us][AT_LEAST_2] |= (b & ei.attackedBy[Us][ALL_PIECES]);
+        ei.attackedBy[Us][AT_LEAST_2] |= (bWithXray & ei.attackedBy[Us][ALL_PIECES]);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (bWithXray & ei.kingRing[Them])
