@@ -195,7 +195,6 @@ namespace {
   // Bonuses for enemy's safe checks
   const int QueenContactCheck  = 92;
   const int RookContactCheck   = 68;
-  const int BishopContactCheck = 10;
   const int QueenCheck         = 50;
   const int RookCheck          = 36;
   const int BishopCheck        = 7;
@@ -300,19 +299,18 @@ namespace {
         ei.attackedBy[Us][AT_LEAST_2] |= (bWithXray & ei.attackedBy[Us][ALL_PIECES]);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
-        if (bWithXray & ei.kingRing[Them])
+        if (Pt == BISHOP || Pt == ROOK) b = bWithXray;
+
+        if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
 
-            //here we just look at direct attacks (no x-rays).
             Bitboard bb = b & ei.attackedBy[Them][KING];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
-        //for mobility calculation, keeping in sync with previous master,
-        //we use the b for the QUEEN and the bWithXray for the other pieces
         if (Pt == QUEEN) {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
@@ -320,7 +318,7 @@ namespace {
             mob = popcount<Full>(b & mobilityArea[Us]);
         }
         else
-            mob = popcount<Max15>(bWithXray & mobilityArea[Us]);
+            mob = popcount<Max15>(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
@@ -454,14 +452,6 @@ namespace {
                  & PseudoAttacks[ROOK][ksq];
             if (b)            
                  attackUnits += RookContactCheck * popcount<Max15>(b);
-
-            //find the safe and supported contact check squares by a Bishop
-            //The last term insures that the contact square is diagonal to the King (is a bishop check !)
-            b = contactCheckCandidates 
-                 & ei.attackedBy[Them][BISHOP]
-                 & PseudoAttacks[BISHOP][ksq];
-            if (b)
-                 attackUnits += BishopContactCheck * popcount<Max15>(b);
         }
 
         // Analyse the enemy's safe distance checks for sliders and knights
