@@ -212,16 +212,22 @@ namespace {
   template<Color Us>
   void init_eval_info(const Position& pos, EvalInfo& ei) {
 
-    const Color  Them = (Us == WHITE ? BLACK : WHITE);
+    const Color  Them  = (Us == WHITE ? BLACK : WHITE);
+
+    const Square Down  = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
+    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
 
-    const Square Down =  (Us == WHITE ? DELTA_S : DELTA_N);
-    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SE);
-    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SW);
-
+    //Square ksq=pos.king_square(Them);
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    Bitboard freePawns  = pos.pieces(Us, PAWN) & ~ ei.pinnedPieces[Us];
-    ei.attackedBy[Us][PAWN] = shift_bb<Right>(freePawns) | shift_bb<Left>(freePawns);
+
+    //calculate attacks by pawn. Do not consider attacks by horizontally or vertically pinned pawns.
+    //Take 2: this time the diagonally pinned pawns are considered freePawns. 
+    //(so both attacks for them are included, as previous master code)
+
+    Bitboard freePawns = pos.pieces(Us, PAWN) & ~(ei.pinnedPieces[Them] & pos.attacks_from<ROOK>(pos.king_square(Us)));
+    ei.attackedBy[Us][PAWN] = shift_bb<Left>(freePawns) | shift_bb<Right>(freePawns);
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
     // Init king safety tables only if we are going to use them

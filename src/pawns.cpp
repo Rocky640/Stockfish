@@ -99,8 +99,8 @@ namespace {
 
     const Color  Them  = (Us == WHITE ? BLACK    : WHITE);
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
-    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
-    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+    //    const Square Left    = (Us == WHITE ? DELTA_NE  : DELTA_SE);
+    //        const Square Right    = (Us == WHITE ? DELTA_NW  : DELTA_SW);
 
     Bitboard b, p, doubled, connected;
     Square s;
@@ -115,7 +115,7 @@ namespace {
     e->passedPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
-    e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+  
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
