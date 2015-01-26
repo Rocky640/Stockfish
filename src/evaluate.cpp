@@ -226,7 +226,7 @@ namespace {
     //Take 2: this time the diagonally pinned pawns are considered freePawns. 
     //(so both attacks for them are included, as previous master code)
 
-    Bitboard freePawns = pos.pieces(Us, PAWN) & ~(ei.pinnedPieces[Them] & pos.attacks_from<ROOK>(pos.king_square(Us)));
+    Bitboard freePawns = pos.pieces(Us, PAWN) & ~(ei.pinnedPieces[Us] & pos.attacks_from<ROOK>(pos.king_square(Us)));
     ei.attackedBy[Us][PAWN] = shift_bb<Left>(freePawns) | shift_bb<Right>(freePawns);
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
