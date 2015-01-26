@@ -213,13 +213,17 @@ namespace {
   void init_eval_info(const Position& pos, EvalInfo& ei) {
 
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+
+
+    const Square Down =  (Us == WHITE ? DELTA_S : DELTA_N);
+    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SE);
+    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SW);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
+    Bitboard freePawns  = pos.pieces(Us, PAWN) & ~ ei.pinnedPieces[Us];
+    ei.attackedBy[Us][PAWN] = shift_bb<Right>(freePawns) | shift_bb<Left>(freePawns);
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
-    ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
-
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
@@ -700,8 +704,8 @@ namespace {
     init_eval_info<WHITE>(pos, ei);
     init_eval_info<BLACK>(pos, ei);
 
-    ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
-    ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
+    ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[WHITE][KING] | ei.attackedBy[WHITE][PAWN];
+    ei.attackedBy[BLACK][ALL_PIECES] = ei.attackedBy[BLACK][KING] | ei.attackedBy[BLACK][PAWN];
 
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
