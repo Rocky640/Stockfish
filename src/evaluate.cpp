@@ -498,11 +498,14 @@ namespace {
     enum { Minor, Major };
 
     Bitboard b, weak, defended;
+    Bitboard wellPawnDefended= (ei.attackedBy[Them][PAWN] & ~ei.pi->weakly_defended(Them));
+
+
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies defended by a pawn
     defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              &  ei.attackedBy[Them][PAWN];
+              &  wellPawnDefended;
 
     // Add a bonus according to the kind of attacking pieces
     if (defended)
@@ -517,8 +520,8 @@ namespace {
     }
 
     // Enemies not defended by a pawn and under our attack
-    weak =   pos.pieces(Them)
-          & ~ei.attackedBy[Them][PAWN]
+     weak =   pos.pieces(Them)
+          & ~wellPawnDefended
           &  ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
