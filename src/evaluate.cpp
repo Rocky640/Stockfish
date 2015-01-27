@@ -311,7 +311,7 @@ namespace {
         if (ei.attackedBy[Them][PAWN] & s)
             score -= ThreatenedByPawn[Pt];
 
-        if (Pt == BISHOP || Pt == KNIGHT)
+        else if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus for outpost square
             if (!(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
