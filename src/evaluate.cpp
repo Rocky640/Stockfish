@@ -27,6 +27,8 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
+#include "uci.h" //for spsa
+
 
 namespace {
 
@@ -147,7 +149,9 @@ namespace {
 
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
   // type is attacked by an enemy pawn.
-  const Score ThreatenedByPawn[] = {
+
+  //spsa variable, will tune bishop and Knight
+  Score ThreatenedByPawn[] = {
     S(0, 0), S(0, 0), S(87, 118), S(84, 122), S(114, 203), S(121, 217)
   };
 
@@ -310,8 +314,7 @@ namespace {
         // of threat evaluation must be done later when we have full attack info.
         if (ei.attackedBy[Them][PAWN] & s)
             score -= ThreatenedByPawn[Pt];
-
-        if (Pt == BISHOP || Pt == KNIGHT)
+        else if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus for outpost square
             if (!(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
@@ -900,6 +903,12 @@ namespace Eval {
         t = std::min(Peak, std::min(0.025 * i * i, t + MaxSlope));
         KingDanger[i] = apply_weight(make_score(int(t), 0), Weights[KingSafety]);
     }
+
+    //spsa variable
+    ThreatenedByPawn[KNIGHT] = make_score(Options["n1"],Options["n2"]);
+    ThreatenedByPawn[BISHOP] = make_score(Options["b1"],Options["b2"]);
+    ThreatenedByPawn[ROOK  ] = make_score(Options["r1"],Options["r2"]);
+
   }
 
 } // namespace Eval

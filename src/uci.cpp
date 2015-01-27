@@ -179,14 +179,14 @@ void UCI::loop(int argc, char* argv[]) {
                     << "\nuciok"  << sync_endl;
 
       else if (token == "isready")    sync_cout << "readyok" << sync_endl;
-      else if (token == "ucinewgame") TT.clear();
+      else if (token == "ucinewgame") {TT.clear();Eval::init();}
       else if (token == "go")         go(pos, is);
       else if (token == "position")   position(pos, is);
       else if (token == "setoption")  setoption(is);
 
       // Additional custom non-UCI commands, useful for debugging
       else if (token == "flip")       pos.flip();
-      else if (token == "bench")      benchmark(pos, is);
+      else if (token == "bench")      {Eval::init();benchmark(pos, is);}
       else if (token == "d")          sync_cout << pos << sync_endl;
       else if (token == "eval")       sync_cout << Eval::trace(pos) << sync_endl;
       else if (token == "perft")
