@@ -39,13 +39,19 @@ namespace {
     Pawns::Entry* pi;
 
     // attackedBy[color][piece type] is a bitboard representing all squares
-    //     DIRECTLY attacked by a given color and piece type (no x-ray in this version !!!)
-    //     It includes legal moves from that piece and "attacks" on same color pieces.
-    // attackedBy[color][ALL_PIECES] contains all squares attacked by the given color
+    //     DIRECTLY attacked by a given color and piece type 
+    //     It now includes only legal moves from that piece and also "attacks" on same color pieces.
+
+    // attackedBy[color][ALL_PIECES] contains all squares attacked by the given color + pinned pieces attacks
     // attackedBy[color][AT_LEAST_2] are squares where we have at least two attacks, more precisely
-    // an attack by one pawn and one non-pawn piece, or two attack by non-pawn pieces
-    //     It also includes attacks by queen or rook supported from behind (x-ray) by queen, rook or bishop
+    //     an attack by one pawn and one non-pawn piece, or two attack by non-pawn pieces which can actually move
+    //     it is used to compute more exactly the supported contactchecks
+    
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
+
+
+    Bitboard majors[COLOR_NB];
+//    Bitboard minors[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -53,6 +59,7 @@ namespace {
     // squares two ranks in front of the king. For instance, if black's king
     // is on g8, kingRing[BLACK] is a bitboard containing the squares f8, h8,
     // f7, g7, h7, f6, g6 and h6.
+    // NOTE: kingRing is not computed when not enough pieces on board, or when in check.
     Bitboard kingRing[COLOR_NB];
 
     // kingAttackersCount[color] is the number of pieces of the given color
@@ -220,9 +227,9 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-
-    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
     ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.majors[Us] = pos.pieces(Us, ROOK, QUEEN);
+    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -269,7 +276,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b, bWithXray;
+    Bitboard bReal, bFull;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -281,42 +288,50 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
-        // Find attacked squares (no x-ray)
-        b = pos.attacks_from<Pt>(s);
+        // Find attacked squares...
+        // bReal are squares where a legal move is possible. It includes also defences.
+        bReal =   pos.attacks_from<Pt>(s);
 
-        // Now, find attacked squares including x-rays (x-rays through BISHOPS are rare or uninteresting for current code)
-        bWithXray = Pt == BISHOP ?  attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-                  : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
-                  : Pt ==  QUEEN ? (attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, BISHOP, QUEEN)) |
-                                    attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN)))
-                  : b;
+        // bFull computes all possible x-rays though our Majors too. 
+        // These are squares which are supported "from behind" and interesting when evaluating king attacks.
+        // Note that a x-ray is not possible through a pinned piece.
+        bFull =   Pt == BISHOP ?   attacks_bb<BISHOP>(s, (pos.pieces() ^ pos.pieces(Us, QUEEN)) | ei.pinnedPieces[Us])
+                : Pt ==   ROOK ?   attacks_bb<  ROOK>(s, (pos.pieces() ^ ei.majors[Us])         | ei.pinnedPieces[Us])
+                : Pt ==  QUEEN ? ( attacks_bb<BISHOP>(s, (pos.pieces() ^ pos.pieces(Us, QUEEN)) | ei.pinnedPieces[Us])
+                                 | attacks_bb<  ROOK>(s, (pos.pieces() ^ ei.majors[Us])         | ei.pinnedPieces[Us]))
+                : Pt == KNIGHT ?  bReal 
+                : 0;
 
         if (ei.pinnedPieces[Us] & s)
-            b &= LineBB[pos.king_square(Us)][s];
+            bReal &= LineBB[pos.king_square(Us)][s];
 
-        //order is important here.
-        ei.attackedBy[Us][AT_LEAST_2] |= (bWithXray & ei.attackedBy[Us][ALL_PIECES]);
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+        ei.attackedBy[Us][Pt] |= bReal; //this way, the distant checks will be computed exactly
+        
+        //order is important here. Must use bFull in order not to miss anything
+        //since a pinned piece can support an attack, and x-rays too.
+        ei.attackedBy[Us][AT_LEAST_2] |= (bFull & ei.attackedBy[Us][ALL_PIECES]);
+        ei.attackedBy[Us][ALL_PIECES] |= bFull; 
 
-        if (Pt == BISHOP || Pt == ROOK) b = bWithXray;
-
-        if (b & ei.kingRing[Them])
+        //here it is a matter of choice... bReal, or bFull ?
+        //master code was using bReal for Queen, and bFull for other pieces.
+        //also was using bReal for pinned pieces.
+ 
+        if (bFull & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-
-            Bitboard bb = b & ei.attackedBy[Them][KING];
-            if (bb)
+            Bitboard bb = bReal & ei.attackedBy[Them][KING];
+            if (bb) 
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
-
+        
         if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][KNIGHT]
-                   | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]);
+            bReal &= ~(  ei.attackedBy[Them][KNIGHT]
+                      | ei.attackedBy[Them][BISHOP]
+                      | ei.attackedBy[Them][ROOK]);
 
-        int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
-                              : popcount<Full >(b & mobilityArea[Us]);
+        int mob = Pt != QUEEN ? popcount<Max15>(bReal & mobilityArea[Us])
+                              : popcount<Full >(bFull & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
@@ -402,7 +417,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, contactCheckCandidates, b, b1, b2, safe;
+    Bitboard undefended, b, b1, b2, safe, contactCheckCandidates;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -430,26 +445,33 @@ namespace {
                      - mg_value(score) * 63 / 512
                      - !pos.count<QUEEN>(Them) * 60;
 
-        //find undefended squares around our King with at least 2 enemy attacks
-        //and where they can land a piece
-        contactCheckCandidates = undefended 
-                     & ei.attackedBy[Them][AT_LEAST_2] 
-                     & ~pos.pieces(Them);
+        if (undefended) {
+            //find undefended squares around our King with at least 2 enemy attacks
+            //or a real attack supported by some xray or a pinned piece 
+            //and where they can land a piece
+                        
+            contactCheckCandidates = undefended 
+                         & ei.attackedBy[Them][AT_LEAST_2]
+                         & ~pos.pieces(Them);
 
-        if (contactCheckCandidates) {
+            if (contactCheckCandidates) {
+                //find contact squares where a Queen can land a safe contact check
+                //The KQ, Qxray+Q, pinned + Q cases are now fully supported
+                b = contactCheckCandidates & ei.attackedBy[Them][QUEEN];
+                if (b)           
+                     attackUnits += QueenContactCheck * popcount<Max15>(b);
 
-            //find the safe and supported contact check squares by a Queen
-            b = contactCheckCandidates & ei.attackedBy[Them][QUEEN];
-            if (b)
-                attackUnits += QueenContactCheck * popcount<Max15>(b);
+                //find contact squares where a Rook can land a safe contact check
+                //The last term insures that the contact square is orthogonal to the King (is a rook check !)
+                //The KR, Qxray+R, RR, pinned + R cases are now fully supported
+                b = contactCheckCandidates 
+                     & ei.attackedBy[Them][ROOK]
+                     & PseudoAttacks[ROOK][ksq];
+                if (b)
+                     //more than 2 is possible, but extremely rare
+                     attackUnits += RookContactCheck * popcount<Max15>(b);
 
-            //find the safe and supported contact check squares by a Rook
-            //The last term insures that the contact square is orthogonal to the King (is a rook check !)
-            b = contactCheckCandidates 
-                 & ei.attackedBy[Them][ROOK]
-                 & PseudoAttacks[ROOK][ksq];
-            if (b)            
-                 attackUnits += RookContactCheck * popcount<Max15>(b);
+            }
         }
 
         // Analyse the enemy's safe distance checks for sliders and knights
@@ -457,6 +479,9 @@ namespace {
 
         b1 = pos.attacks_from<ROOK  >(ksq) & safe;
         b2 = pos.attacks_from<BISHOP>(ksq) & safe;
+
+        // since ei.attackedBy is now only made from "Real moves", 
+        // the following are real safe checks.
 
         // Enemy queen safe checks
         b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
@@ -704,7 +729,8 @@ namespace {
     init_eval_info<WHITE>(pos, ei);
     init_eval_info<BLACK>(pos, ei);
 
-    // Those bitboads will be added to through the recursive calls to evaluate_pieces
+    // Initialize the attackedBy bitboards which will be incrementally built with 
+    // the recursive calls to evaluate_pieces
     ei.attackedBy[WHITE][AT_LEAST_2] = ei.attackedBy[WHITE][KING] & ei.attackedBy[WHITE][PAWN];
     ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[WHITE][KING] | ei.attackedBy[WHITE][PAWN];
 
