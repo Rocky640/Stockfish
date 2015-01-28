@@ -320,7 +320,7 @@ namespace {
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            Bitboard bb = bReal & ei.attackedBy[Them][KING];
+            Bitboard bb = bFull & ei.attackedBy[Them][KING];
             if (bb) 
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
