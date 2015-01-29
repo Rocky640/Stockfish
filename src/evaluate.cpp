@@ -299,8 +299,7 @@ namespace {
                 : Pt ==   ROOK ?   attacks_bb<  ROOK>(s, (pos.pieces() ^ ei.majors[Us])         | ei.pinnedPieces[Us])
                 : Pt ==  QUEEN ? ( attacks_bb<BISHOP>(s, (pos.pieces() ^ pos.pieces(Us, QUEEN)) | ei.pinnedPieces[Us])
                                  | attacks_bb<  ROOK>(s, (pos.pieces() ^ ei.majors[Us])         | ei.pinnedPieces[Us]))
-                : Pt == KNIGHT ?  bReal 
-                : 0;
+                : bReal;
 
         if (ei.pinnedPieces[Us] & s)
             bReal &= LineBB[pos.king_square(Us)][s];
@@ -330,8 +329,8 @@ namespace {
                       | ei.attackedBy[Them][BISHOP]
                       | ei.attackedBy[Them][ROOK]);
 
-        int mob = Pt != QUEEN ? popcount<Max15>(bReal & mobilityArea[Us])
-                              : popcount<Full >(bFull & mobilityArea[Us]);
+        int mob = Pt != QUEEN ? popcount<Max15>(bFull & mobilityArea[Us])
+                              : popcount<Full >(bReal & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
