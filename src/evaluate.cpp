@@ -51,7 +51,6 @@ namespace {
 
 
     Bitboard majors[COLOR_NB];
-//    Bitboard minors[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -276,7 +275,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard bReal, bFull;
+    Bitboard bMob, bReal, bFull;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -290,47 +289,57 @@ namespace {
     {
         // Find attacked squares...
         // bReal are squares where a legal move is possible. It includes also defences.
-        bReal =   pos.attacks_from<Pt>(s);
+        bReal = pos.attacks_from<Pt>(s);
 
         // bFull computes all possible x-rays though our Majors too. 
         // These are squares which are supported "from behind" and interesting when evaluating king attacks.
         // Note that a x-ray is not possible through a pinned piece.
+
         bFull =   Pt == BISHOP ?   attacks_bb<BISHOP>(s, (pos.pieces() ^ pos.pieces(Us, QUEEN)) | ei.pinnedPieces[Us])
                 : Pt ==   ROOK ?   attacks_bb<  ROOK>(s, (pos.pieces() ^ ei.majors[Us])         | ei.pinnedPieces[Us])
                 : Pt ==  QUEEN ? ( attacks_bb<BISHOP>(s, (pos.pieces() ^ pos.pieces(Us, QUEEN)) | ei.pinnedPieces[Us])
                                  | attacks_bb<  ROOK>(s, (pos.pieces() ^ ei.majors[Us])         | ei.pinnedPieces[Us]))
                 : bReal;
 
+        //bMob are those squares used to calculate the king attacks below and the mobility
         if (ei.pinnedPieces[Us] & s)
-            bReal &= LineBB[pos.king_square(Us)][s];
+            bMob = bReal &= LineBB[pos.king_square(Us)][s];
+        else 
+            bMob = (Pt == QUEEN) ? bReal : bFull;
 
-        ei.attackedBy[Us][Pt] |= bReal; //this way, the distant checks will be computed exactly
-        
-        //order is important here. Must use bFull in order not to miss anything
+        //here, we want to use the bReal, not the bFull
+        //the advantages are that : contact checks will be computed exactly,
+        //the safe distant check will never be x-ray moves
+        //and the threat calculations will refer to the exact piece, not a xray.
+        ei.attackedBy[Us][Pt] |= bReal; 
+
+        //order is important here. 
+        //Must use bFull in order not to miss anything
         //since a pinned piece can support an attack, and x-rays too.
         ei.attackedBy[Us][AT_LEAST_2] |= (bFull & ei.attackedBy[Us][ALL_PIECES]);
-        ei.attackedBy[Us][ALL_PIECES] |= bFull; 
+        ei.attackedBy[Us][ALL_PIECES] |= bFull;
 
         //here it is a matter of choice... bReal, or bFull ?
-        //master code was using bReal for Queen, and bFull for other pieces.
+        //master code was using the equivalent of bReal for Queen, and bFull for other pieces.
         //also was using bReal for pinned pieces.
- 
-        if (bFull & ei.kingRing[Them])
+        //in this attempt, we use bMob which was assigned carefully to be fully compliant with master code, 
+
+        if (bMob & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            Bitboard bb = bFull & ei.attackedBy[Them][KING];
+            Bitboard bb = bMob & ei.attackedBy[Them][KING];
             if (bb) 
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
         
         if (Pt == QUEEN)
-            bReal &= ~(  ei.attackedBy[Them][KNIGHT]
+            bMob &= ~(  ei.attackedBy[Them][KNIGHT]
                       | ei.attackedBy[Them][BISHOP]
                       | ei.attackedBy[Them][ROOK]);
 
-        int mob = Pt != QUEEN ? popcount<Max15>(bFull & mobilityArea[Us])
-                              : popcount<Full >(bReal & mobilityArea[Us]);
+        int mob = Pt != QUEEN ? popcount<Max15>(bMob & mobilityArea[Us])
+                              : popcount<Full >(bMob & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
