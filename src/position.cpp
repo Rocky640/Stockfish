@@ -495,18 +495,29 @@ Bitboard Position::check_blockersQ(Color queenColor, Square qsq) const {
     Bitboard b, pinners, result = 0;
 
     // Pinners are lower value sliders that attack QUEEN when a (relative) pinned piece is removed
-    pinners = (  (pieces(  ROOK) & PseudoAttacks[ROOK  ][qsq])
-                | (pieces(BISHOP) & PseudoAttacks[BISHOP][qsq])) & pieces(~queenColor);
+    pinners =  (pieces(  ROOK) & PseudoAttacks[ROOK  ][qsq]) & pieces(~queenColor);
 
+    //an orthogonal pin is usually not a problem except if the pinned piece is a BISHOP or a KNIGHT
     while (pinners)
     {
         b = between_bb(qsq, pop_lsb(&pinners)) & pieces();
 
         if (!more_than_one(b))
-            result |= b & pieces(queenColor);
+            result |= b & pieces(queenColor, BISHOP, KNIGHT);
     }
- 
-  return result;
+
+    
+    pinners = (pieces(BISHOP) & PseudoAttacks[BISHOP][qsq]) & pieces(~queenColor);
+    //an diagonal pin is usually not a problem except if the pinned piece is a ROOK or a KNIGHT
+    while (pinners)
+    {
+        b = between_bb(qsq, pop_lsb(&pinners)) & pieces();
+
+        if (!more_than_one(b))
+            result |= b & pieces(queenColor, ROOK, KNIGHT);
+    }
+
+    return result;
 }
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
