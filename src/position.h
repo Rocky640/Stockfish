@@ -105,6 +105,7 @@ public:
   Bitboard pieces(Color c, PieceType pt1, PieceType pt2) const;
   Piece piece_on(Square s) const;
   Square king_square(Color c) const;
+  Square queen_square(Color c) const;
   Square ep_square() const;
   bool empty(Square s) const;
   template<PieceType Pt> int count(Color c) const;
@@ -121,6 +122,8 @@ public:
   Bitboard discovered_check_candidates() const;
   Bitboard pinned_pieces(Color c) const;
 
+  //Queen relative pins...
+  Bitboard pinned_piecesQ(Color c) const;
   // Attacks to/from a given square
   Bitboard attackers_to(Square s) const;
   Bitboard attackers_to(Square s, Bitboard occupied) const;
@@ -186,6 +189,7 @@ private:
 
   // Other helpers
   Bitboard check_blockers(Color c, Color kingColor) const;
+  Bitboard check_blockersQ(Color queenColor, Square qsq) const;
   void put_piece(Square s, Color c, PieceType pt);
   void remove_piece(Square s, Color c, PieceType pt);
   void move_piece(Square from, Square to, Color c, PieceType pt);
@@ -263,6 +267,10 @@ inline Square Position::king_square(Color c) const {
   return pieceList[c][KING][0];
 }
 
+inline Square Position::queen_square(Color c) const {
+  return pieceList[c][QUEEN][0];
+}
+
 inline Square Position::ep_square() const {
   return st->epSquare;
 }
@@ -313,6 +321,10 @@ inline Bitboard Position::discovered_check_candidates() const {
 
 inline Bitboard Position::pinned_pieces(Color c) const {
   return check_blockers(c, c);
+}
+
+inline Bitboard Position::pinned_piecesQ(Color c) const {
+  return check_blockersQ(c, queen_square(c));
 }
 
 inline bool Position::pawn_passed(Color c, Square s) const {

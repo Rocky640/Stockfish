@@ -69,6 +69,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard pinnedPiecesQ[COLOR_NB];
   };
 
   namespace Tracing {
@@ -217,6 +218,9 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
 
+    //precalculates relative pin on first QUEEN 
+    ei.pinnedPiecesQ[Us] = pos.pinned_piecesQ(Us);
+
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
@@ -300,6 +304,11 @@ namespace {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+        else {
+            //reduce mobility in case of "relative" pin on first QUEEN
+            if (ei.pinnedPiecesQ[Us] & s)
+                b &= LineBB[pos.queen_square(Us)][s]; 
+        }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
