@@ -424,6 +424,7 @@ namespace {
                      + 10 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 19 * popcount<Max15>(undefended)
                      +  9 * (ei.pinnedPieces[Us] != 0)
+                     +  3 * (ei.pinnedPiecesQ[Us] != 0)
                      - mg_value(score) * 63 / 512
                      - !pos.count<QUEEN>(Them) * 60;
 
