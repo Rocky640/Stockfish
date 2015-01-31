@@ -527,7 +527,7 @@ namespace {
             & ~ei.attackedBy[Us][ALL_PIECES];
 
         if (b)
-            attackUnits += (2 * popcount<Max15>(b));
+            attackUnits += (4 * popcount<Max15>(b));
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
