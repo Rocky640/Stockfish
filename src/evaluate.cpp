@@ -27,6 +27,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
+#include <iostream>
 
 namespace {
 
@@ -162,6 +163,8 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score LatentOnQueen1     = S( 7, 20);
+  const Score LatentOnQueen2     = S(10, 25);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -218,7 +221,7 @@ namespace {
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
-    ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -285,6 +288,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= (b & ei.attackedBy[Us][ALL_PIECES]);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -402,9 +406,7 @@ namespace {
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                    & ~ ei.attackedBy[Us][AT_LEAST_2];
 
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
@@ -539,6 +541,35 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+    }
+
+    //Find latent threats on their first Queen to keep things simple
+    //by an eventual (supported) rook or bishop move, 
+    //or by a safe knight move
+    
+    //Do not compute if the queen is already attacked
+    
+    const Square s = pos.list<QUEEN>(Them)[0];
+    if (s != SQ_NONE && !(ei.attackedBy[Us][ALL_PIECES] & s))
+    {
+        // Squares from which we can attack their queen...
+        Bitboard bR   = pos.attacks_from<ROOK  >(s) & ei.attackedBy[Us][ROOK];
+        Bitboard bB   = pos.attacks_from<BISHOP>(s) & ei.attackedBy[Us][BISHOP];
+        Bitboard bN   = pos.attacks_from<KNIGHT>(s) & ei.attackedBy[Us][KNIGHT];
+        // It is a possible threat only if 
+        // attacked only by their Queen and the move can be supported by a friendly piece
+        Bitboard bthreats = ((bR | bB) 
+                              & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2])
+                            |
+        //or in case of the Knight, not attacked by them at all.
+                            (bN & ~ei.attackedBy[Them][ALL_PIECES]);
+
+        //important detail...the square must be available for landing...
+        bthreats &= ~pos.pieces(Us);
+        
+        //consider at most two threats.              
+        if (bthreats)
+            score += more_than_one(bthreats) ? LatentOnQueen2 : LatentOnQueen1;
     }
 
     if (Trace)
@@ -700,8 +731,10 @@ namespace {
     init_eval_info<WHITE>(pos, ei);
     init_eval_info<BLACK>(pos, ei);
 
-    ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
-    ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
+    ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[WHITE][KING] | ei.attackedBy[WHITE][PAWN];
+    ei.attackedBy[BLACK][ALL_PIECES] = ei.attackedBy[BLACK][KING] | ei.attackedBy[BLACK][PAWN];
+    ei.attackedBy[WHITE][AT_LEAST_2] = ei.attackedBy[WHITE][KING] & ei.attackedBy[WHITE][PAWN];
+    ei.attackedBy[BLACK][AT_LEAST_2] = ei.attackedBy[BLACK][KING] & ei.attackedBy[BLACK][PAWN];
 
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
@@ -709,6 +742,7 @@ namespace {
 
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
+    
     score += apply_weight(mobility[WHITE] - mobility[BLACK], Weights[Mobility]);
 
     // Evaluate kings after all other pieces because we need complete attack
@@ -903,3 +937,4 @@ namespace Eval {
   }
 
 } // namespace Eval
+
