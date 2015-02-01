@@ -485,8 +485,6 @@ namespace {
         // Compute squares from which a new rook style attack would be possible
         Bitboard occR = b & ~pos.pieces(Them, ROOK, QUEEN);
         bR = attacks_bb<ROOK>(ksq, occR);
-
-        //in fact, we just need two opposite diagonals (NE/SW or NW/SE), but this will do the job.
         if (shift_bb<DELTA_NE>(kbb))  
             bR |= attacks_bb<ROOK  >(ksq + DELTA_NE, occR);
         if (shift_bb<DELTA_SW>(kbb))  
@@ -500,8 +498,6 @@ namespace {
         // Compute squares from which a new bishop style attack would be possible
         Bitboard occB = b & ~pos.pieces(Them, BISHOP, QUEEN);
         bB = attacks_bb<BISHOP>(ksq, occB);
-
-        //in fact, we just need two opposite edges (EW or NS), but this will do it for now.
         if (shift_bb<DELTA_E>(kbb)) 
             bB |= attacks_bb<BISHOP  >(ksq + DELTA_E, occB);
         if (shift_bb<DELTA_W>(kbb)) 
@@ -513,21 +509,22 @@ namespace {
         bB &= (ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN]) & ~ occB;
 
         //the following returns the 5 x 5 ring and the 7 x 7 ring around our king
-        //on those squares, an enemy Knight could become an attacker
+        //on those squares, an enemy Knight could become an attacker to the 3 x 3 ring around our king
         //to be more precise, would need to cut the corners of the 7 x 7 ring !
         bN = (DistanceRingBB[ksq][1] | DistanceRingBB[ksq][2]);
         //can a Knight actually reach those juicy squares in one move ?
         bN &= ei.attackedBy[Them][KNIGHT] & ~pos.pieces(Them);
 
-        //b will contain all the squares where some piece can safely move 
-        //attacks already on the kingRing were already computed elsewhere
+        //b will contain all the squares where some enemy piece(s) can safely move.
+        //from these squares, a new attack would be possible 
+        //Moves to the kingRing were already computed elsewhere
 
         b = (bR | bB | bN) 
             & ~ei.kingRing[Us] 
             & ~ei.attackedBy[Us][ALL_PIECES];
 
         if (b)
-            attackUnits += (4 * popcount<Max15>(b));
+            attackUnits += popcount<Max15>(b);
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
