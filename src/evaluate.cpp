@@ -552,20 +552,18 @@ namespace {
     const Square s = pos.list<QUEEN>(Them)[0];
     if (s != SQ_NONE && !(ei.attackedBy[Us][ALL_PIECES] & s))
     {
-        // Squares from which we can attack their queen...
-        Bitboard bR   = pos.attacks_from<ROOK  >(s) & ei.attackedBy[Us][ROOK];
-        Bitboard bB   = pos.attacks_from<BISHOP>(s) & ei.attackedBy[Us][BISHOP];
-        Bitboard bN   = pos.attacks_from<KNIGHT>(s) & ei.attackedBy[Us][KNIGHT];
-        // It is a possible threat only if 
-        // attacked only by their Queen and the move can be supported by a friendly piece
-        Bitboard bthreats = ((bR | bB) 
-                              & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2])
-                            |
-        //or in case of the Knight, not attacked by them at all.
-                            (bN & ~ei.attackedBy[Them][ALL_PIECES]);
-
+        // Squares from which we can safely attack their queen...
+        // since the Queen can retaliate, Bishop must be supported once, and not attacked twice !
+        Bitboard bB   = pos.attacks_from<BISHOP>(s) 
+                        & ei.attackedBy[Us][BISHOP]
+                        & ~ei.attackedBy[Them][AT_LEAST_2] 
+                        & ei.attackedBy[Us][AT_LEAST_2];
+                        
+        Bitboard bN   = pos.attacks_from<KNIGHT>(s) 
+                        & ei.attackedBy[Us][KNIGHT];
+        
         //important detail...the square must be available for landing...
-        bthreats &= ~pos.pieces(Us);
+        Bitboard bthreats = (bB | bN) & ~pos.pieces(Us);
         
         //consider at most two threats.              
         if (bthreats)
