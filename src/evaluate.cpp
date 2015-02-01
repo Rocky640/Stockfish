@@ -567,9 +567,9 @@ namespace {
         //important detail...the square must be available for landing...
         bthreats &= ~pos.pieces(Us);
         
-        //consider at most one threat
+        //consider at most two threats.              
         if (bthreats)
-            score += LatentOnQueen1;
+            score += more_than_one(bthreats) ? LatentOnQueen2 : LatentOnQueen1;
     }
 
     if (Trace)
