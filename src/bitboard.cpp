@@ -45,6 +45,7 @@ Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 Bitboard DistanceRingBB[SQUARE_NB][8];
+Bitboard KnightRingBB[SQUARE_NB];
 Bitboard ForwardBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
@@ -175,6 +176,9 @@ void Bitboards::init() {
               SquareDistance[s1][s2] = std::max(distance<File>(s1, s2), distance<Rank>(s1, s2));
               DistanceRingBB[s1][SquareDistance[s1][s2] - 1] |= s2;
           }
+
+  for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
+        KnightRingBB[s1] = SquareBB[s1] | DistanceRingBB[s1][0] | DistanceRingBB[s1][1] | DistanceRingBB[s1][2];
 
   int steps[][9] = { {}, { 7, 9 }, { 17, 15, 10, 6, -6, -10, -15, -17 },
                      {}, {}, {}, { 9, 7, -7, -9, 8, 1, -1, -8 } };
