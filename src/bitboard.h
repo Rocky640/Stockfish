@@ -80,6 +80,7 @@ extern Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 extern Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 extern Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 extern Bitboard DistanceRingBB[SQUARE_NB][8];
+extern Bitboard KnightRingBB[SQUARE_NB];
 extern Bitboard ForwardBB[COLOR_NB][SQUARE_NB];
 extern Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 extern Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];

@@ -194,7 +194,7 @@ namespace {
   const int QueenCheck        = 50;
   const int RookCheck         = 36;
   const int BishopCheck       = 7;
-  const int KnightCheck       = 14;
+  const int KnightCheck       = 14 - 1; //subtract one for this test since computed twice.
 
   // KingDanger[attackUnits] contains the actual king danger weighted
   // scores, indexed by a calculated integer number.
@@ -388,7 +388,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, b, bB, bR, bN, safe;
+    Bitboard undefended, b, b1, b2, safe;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -451,80 +451,43 @@ namespace {
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
 
-        bR = pos.attacks_from<ROOK  >(ksq) & safe;
-        bB = pos.attacks_from<BISHOP>(ksq) & safe;
-        bN = pos.attacks_from<KNIGHT>(ksq) & safe;
+        b1 = pos.attacks_from<ROOK  >(ksq) & safe;
+        b2 = pos.attacks_from<BISHOP>(ksq) & safe;
 
         // Enemy queen safe checks
-        b = (bR | bB) & ei.attackedBy[Them][QUEEN];
+        b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
         if (b)
             attackUnits += QueenCheck * popcount<Max15>(b);
 
         // Enemy rooks safe checks
-        b = bR & ei.attackedBy[Them][ROOK];
+        b = b1 & ei.attackedBy[Them][ROOK];
         if (b)
             attackUnits += RookCheck * popcount<Max15>(b);
 
         // Enemy bishops safe checks
-        b = bB & ei.attackedBy[Them][BISHOP];
+        b = b2 & ei.attackedBy[Them][BISHOP];
         if (b)
             attackUnits += BishopCheck * popcount<Max15>(b);
 
-        // Enemy knights safe checks
-        b = bN & ei.attackedBy[Them][KNIGHT];
-        if (b)
-            attackUnits += KnightCheck * popcount<Max15>(b);
+        // Simplified test for latent Knight threats 2015-02-01. 
+        // Just try the Knight jumps.
+        
+        // Can enemy Knight, after a safe jump, "see" our 3 x 3 king area (less if King on side or border) ?
+        // For this, it must simply be able to jump in a precomputed 7 x 7 area centered on the King 
+        b = KnightRingBB[ksq]
+              & ei.attackedBy[Them][KNIGHT] & safe;
 
-        // Are other enemy pieces ready to join the attack ?
-        // Compute squares from where a piece can move to attack our King 
-
-        // Remove squares around our King in order not to miss some lines of attacks.
-        b = pos.pieces() & ~ei.kingRing[Us];
-        Bitboard kbb = SquareBB[ksq];
-
-        // Compute squares from which a new rook style attack would be possible
-        Bitboard occR = b & ~pos.pieces(Them, ROOK, QUEEN);
-        bR = attacks_bb<ROOK>(ksq, occR);
-        if (shift_bb<DELTA_NE>(kbb))  
-            bR |= attacks_bb<ROOK  >(ksq + DELTA_NE, occR);
-        if (shift_bb<DELTA_SW>(kbb))  
-            bR |= attacks_bb<ROOK  >(ksq + DELTA_SW, occR);
-        if (shift_bb<DELTA_NW>(kbb))   
-            bR |= attacks_bb<ROOK  >(ksq + DELTA_NW, occR);
-        if (shift_bb<DELTA_SE>(kbb))  
-            bR |= attacks_bb<ROOK  >(ksq + DELTA_SE, occR);
-        bR &= (ei.attackedBy[Them][ROOK] | ei.attackedBy[Them][QUEEN]) & ~occR;
-
-        // Compute squares from which a new bishop style attack would be possible
-        Bitboard occB = b & ~pos.pieces(Them, BISHOP, QUEEN);
-        bB = attacks_bb<BISHOP>(ksq, occB);
-        if (shift_bb<DELTA_E>(kbb)) 
-            bB |= attacks_bb<BISHOP  >(ksq + DELTA_E, occB);
-        if (shift_bb<DELTA_W>(kbb)) 
-            bB |= attacks_bb<BISHOP  >(ksq + DELTA_W, occB);
-        if (shift_bb<DELTA_N>(kbb)) 
-            bB |= attacks_bb<BISHOP  >(ksq + DELTA_N, occB);
-        if (shift_bb<DELTA_S>(kbb)) 
-            bB |= attacks_bb<BISHOP  >(ksq + DELTA_S, occB);
-        bB &= (ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN]) & ~ occB;
-
-        //the following returns the 5 x 5 ring and the 7 x 7 ring around our king
-        //on those squares, an enemy Knight could become an attacker to the 3 x 3 ring around our king
-        //to be more precise, would need to cut the corners of the 7 x 7 ring !
-        bN = (DistanceRingBB[ksq][1] | DistanceRingBB[ksq][2]);
-        //can a Knight actually reach those juicy squares in one move ?
-        bN &= ei.attackedBy[Them][KNIGHT] & ~pos.pieces(Them);
-
-        //b will contain all the squares where some enemy piece(s) can safely move.
-        //from these squares, a new attack would be possible 
-        //Moves to the kingRing were already computed elsewhere
-
-        b = (bR | bB | bN) 
-            & ~ei.kingRing[Us] 
-            & ~ei.attackedBy[Us][ALL_PIECES];
-
-        if (b)
+        if (b) {
+            //reward each possible jump, even if knight was already amongst the King attackers,
+            //because these are new latent attacks not recorded yet...
             attackUnits += popcount<Max15>(b);
+
+            //and some of those potential jumps can be a check
+            b &= pos.attacks_from<KNIGHT>(ksq);
+            if (b)
+                attackUnits += KnightCheck * popcount<Max15>(b);
+        }
+
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
