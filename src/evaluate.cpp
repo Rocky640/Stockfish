@@ -559,8 +559,10 @@ namespace {
                         & ~ei.attackedBy[Them][AT_LEAST_2] 
                         & ei.attackedBy[Us][AT_LEAST_2];
                         
-        Bitboard bN   = pos.attacks_from<KNIGHT>(s) 
-                        & ei.attackedBy[Us][KNIGHT];
+        Bitboard bN   = pos.attacks_from<KNIGHT>(s)
+                        & ei.attackedBy[Us][KNIGHT]
+                        & ~ei.attackedBy[Them][ALL_PIECES];
+
         
         //important detail...the square must be available for landing...
         Bitboard bthreats = (bB | bN) & ~pos.pieces(Us);
