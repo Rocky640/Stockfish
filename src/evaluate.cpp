@@ -27,7 +27,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
-#include <iostream>
+#include "uci.h"
 
 namespace {
 
@@ -163,8 +163,10 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  const Score LatentOnQueen1     = S( 7, 20);
-  const Score LatentOnQueen2     = S(10, 25);
+  Score LatentOnQueenN           = S(30, 30); //S( 7, 20);
+  Score LatentOnQueenB           = S(30, 30); //S(10, 25);
+  Score LatentOnQueen2           = S(30, 30); //S( 7, 20);
+  
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -554,22 +556,22 @@ namespace {
     {
         // Squares from which we can safely attack their queen...
         // since the Queen can retaliate, Bishop must be supported once, and not attacked twice !
-        Bitboard bB   = pos.attacks_from<BISHOP>(s) 
+        Bitboard bB   =  ~pos.pieces(Us)
+                        & pos.attacks_from<BISHOP>(s)
                         & ei.attackedBy[Us][BISHOP]
-                        & ~ei.attackedBy[Them][AT_LEAST_2] 
-                        & ei.attackedBy[Us][AT_LEAST_2];
-                        
-        Bitboard bN   = pos.attacks_from<KNIGHT>(s)
+                        & ei.attackedBy[Us][AT_LEAST_2]
+                        & ~ei.attackedBy[Them][AT_LEAST_2];
+
+        Bitboard bN   =  ~pos.pieces(Us)
+                        & pos.attacks_from<KNIGHT>(s)
                         & ei.attackedBy[Us][KNIGHT]
                         & ~ei.attackedBy[Them][ALL_PIECES];
 
-        
-        //important detail...the square must be available for landing...
-        Bitboard bthreats = (bB | bN) & ~pos.pieces(Us);
-        
-        //consider at most two threats.              
-        if (bthreats)
-            score += more_than_one(bthreats) ? LatentOnQueen2 : LatentOnQueen1;
+       if (bN)
+            score += (bB || more_than_one(bN)) ? LatentOnQueen2 : LatentOnQueenN;
+       else if (bB)
+            score +=        more_than_one(bB)  ? LatentOnQueen2 : LatentOnQueenB;
+
     }
 
     if (Trace)
@@ -934,7 +936,11 @@ namespace Eval {
         t = std::min(Peak, std::min(0.025 * i * i, t + MaxSlope));
         KingDanger[i] = apply_weight(make_score(int(t), 0), Weights[KingSafety]);
     }
-  }
+    LatentOnQueenN = make_score(Options["LQNa"],    Options["LQNb"]);
+    LatentOnQueenB = make_score(Options["LQBa"],    Options["LQBb"]);
+	LatentOnQueen2 = make_score(Options["LQ2a"],    Options["LQ2b"]);
+
+ }
 
 } // namespace Eval
 
