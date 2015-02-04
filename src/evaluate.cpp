@@ -27,7 +27,6 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
-#include "uci.h"
 
 namespace {
 
@@ -163,10 +162,10 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  Score LatentOnQueenN           = S(30, 30); //S( 7, 20);
-  Score LatentOnQueenB           = S(30, 30); //S(10, 25);
-  Score LatentOnQueen2           = S(30, 30); //S( 7, 20);
-  
+  //const Score LatentOnQueenN   = S(20, 16); //S( 7, 20);
+  //const Score LatentOnQueenB   = S(23, 17); //S( 7, 20);
+  //const Score LatentOnQueen2   = S(21, 16); //S(10, 25);
+  const Score LatentMinorOnQueen = S(21, 16);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -546,7 +545,7 @@ namespace {
     }
 
     //Find latent threats on their first Queen to keep things simple
-    //by an eventual (supported) rook or bishop move, 
+    //by an eventual (supported) bishop move, 
     //or by a safe knight move
     
     //Do not compute if the queen is already attacked
@@ -554,24 +553,20 @@ namespace {
     const Square s = pos.list<QUEEN>(Them)[0];
     if (s != SQ_NONE && !(ei.attackedBy[Us][ALL_PIECES] & s))
     {
-        // Squares from which we can safely attack their queen...
-        // since the Queen can retaliate, Bishop must be supported once, and not attacked twice !
-        Bitboard bB   =  ~pos.pieces(Us)
-                        & pos.attacks_from<BISHOP>(s)
-                        & ei.attackedBy[Us][BISHOP]
-                        & ei.attackedBy[Us][AT_LEAST_2]
-                        & ~ei.attackedBy[Them][AT_LEAST_2];
+        // Squares from which we can safely attack their queen with our minor pieces
+        
+        if (~pos.pieces(Us)
+                & pos.attacks_from<KNIGHT>(s)
+                & ei.attackedBy[Us][KNIGHT]
+                & ~ei.attackedBy[Them][ALL_PIECES])
+            score += LatentMinorOnQueen;
 
-        Bitboard bN   =  ~pos.pieces(Us)
-                        & pos.attacks_from<KNIGHT>(s)
-                        & ei.attackedBy[Us][KNIGHT]
-                        & ~ei.attackedBy[Them][ALL_PIECES];
-
-       if (bN)
-            score += (bB || more_than_one(bN)) ? LatentOnQueen2 : LatentOnQueenN;
-       else if (bB)
-            score +=        more_than_one(bB)  ? LatentOnQueen2 : LatentOnQueenB;
-
+        else if (~pos.pieces(Us)
+                & pos.attacks_from<BISHOP>(s)
+                & ei.attackedBy[Us][BISHOP]
+                & ei.attackedBy[Us][AT_LEAST_2]
+                & ~ei.attackedBy[Them][AT_LEAST_2])
+            score += LatentMinorOnQueen;
     }
 
     if (Trace)
@@ -744,7 +739,6 @@ namespace {
 
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
-    
     score += apply_weight(mobility[WHITE] - mobility[BLACK], Weights[Mobility]);
 
     // Evaluate kings after all other pieces because we need complete attack
@@ -936,11 +930,6 @@ namespace Eval {
         t = std::min(Peak, std::min(0.025 * i * i, t + MaxSlope));
         KingDanger[i] = apply_weight(make_score(int(t), 0), Weights[KingSafety]);
     }
-    LatentOnQueenN = make_score(Options["LQNa"],    Options["LQNb"]);
-    LatentOnQueenB = make_score(Options["LQBa"],    Options["LQBb"]);
-	LatentOnQueen2 = make_score(Options["LQ2a"],    Options["LQ2b"]);
-
- }
+  }
 
 } // namespace Eval
-
