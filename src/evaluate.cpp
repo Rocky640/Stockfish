@@ -162,10 +162,8 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  //const Score LatentOnQueenN   = S(20, 16); //S( 7, 20);
-  //const Score LatentOnQueenB   = S(23, 17); //S( 7, 20);
-  //const Score LatentOnQueen2   = S(21, 16); //S(10, 25);
-  const Score LatentMinorOnQueen = S(21, 16);
+  const Score LatentKnightOnQueen= S(17, 17);
+  const Score LatentBishopOnQueen= S(22, 22);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -549,24 +547,22 @@ namespace {
     //or by a safe knight move
     
     //Do not compute if the queen is already attacked
-    
     const Square s = pos.list<QUEEN>(Them)[0];
     if (s != SQ_NONE && !(ei.attackedBy[Us][ALL_PIECES] & s))
     {
         // Squares from which we can safely attack their queen with our minor pieces
         
         if (~pos.pieces(Us)
-                & pos.attacks_from<KNIGHT>(s)
-                & ei.attackedBy[Us][KNIGHT]
-                & ~ei.attackedBy[Them][ALL_PIECES])
-            score += LatentMinorOnQueen;
-
-        else if (~pos.pieces(Us)
                 & pos.attacks_from<BISHOP>(s)
                 & ei.attackedBy[Us][BISHOP]
                 & ei.attackedBy[Us][AT_LEAST_2]
                 & ~ei.attackedBy[Them][AT_LEAST_2])
-            score += LatentMinorOnQueen;
+            score += LatentBishopOnQueen;
+        else if (~pos.pieces(Us)
+                & pos.attacks_from<KNIGHT>(s)
+                & ei.attackedBy[Us][KNIGHT]
+                & ~ei.attackedBy[Them][ALL_PIECES])
+            score += LatentKnightOnQueen;
     }
 
     if (Trace)
