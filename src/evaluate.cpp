@@ -162,6 +162,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score LooseKnight        = S(20, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -540,6 +541,15 @@ namespace {
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
+
+    //The hanging case (attacked and undefended) was handled above
+    //Here we handle the Loose case (not attacked and undefended)
+    //The Knight is special because it is the only piece which cannot retaliate against
+    //against Q, R, B, K and pawn attacks !!!
+
+    if (pos.pieces(Them, KNIGHT)
+        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]))
+        score += LooseKnight;
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
