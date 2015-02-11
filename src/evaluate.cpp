@@ -151,6 +151,11 @@ namespace {
     S(0, 0), S(0, 0), S(87, 118), S(84, 122), S(114, 203), S(121, 217)
   };
 
+  //Loose[PieceType] is a penalty when piece is not protected and not attacked
+  const Score Loose[] = {
+      S(0, 0), S(1, 0), S(15, 10), S(5, 20), S(2, 2), S(1, 11), S(4, 6)
+  };
+  
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
@@ -162,7 +167,6 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  const Score LooseKnight        = S(20,  0);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -544,12 +548,11 @@ namespace {
 
     //The hanging case (attacked and undefended) was handled above
     //Here we handle the Loose case (not attacked and undefended)
-    //The Knight is special because it is the only piece which cannot retaliate against
-    //against Q, R, B, K and pawn attacks !!!
-
-    if (pos.pieces(Them, KNIGHT)
-        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]))
-        score += LooseKnight;
+    
+    b = pos.pieces(Them)
+        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]);
+    while (b)
+        score += Loose[type_of(pos.piece_on(pop_lsb(&b)))];
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
