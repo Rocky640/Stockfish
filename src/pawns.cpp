@@ -25,6 +25,7 @@
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
+#include "uci.h" //for spsa
 
 namespace {
 
@@ -61,22 +62,21 @@ namespace {
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
 
-  //Two pawns controlling the same square on FileDE or FileCF
-  const Bitboard FileDEBindMask[COLOR_NB] = {
-    (FileDBB | FileEBB) & (Rank4BB | Rank5BB | Rank6BB | Rank7BB),
-    (FileDBB | FileEBB) & (Rank5BB | Rank4BB | Rank3BB | Rank2BB)
-  };
-  const Bitboard FileCFBindMask[COLOR_NB] = {
-    (FileCBB | FileFBB) & (Rank4BB | Rank5BB | Rank6BB | Rank7BB),
-    (FileCBB | FileFBB) & (Rank5BB | Rank4BB | Rank3BB | Rank2BB)
-  };
-  const Score FileDEBind[RANK_NB] = {
-    S(0, 0), S(0, 0), S(0, 0), S(0, 0), 
-    S(10, 5), S(14, 1), S(15, 6), S(12, 7) };  
+  // Bind bonus: Two pawns controlling the same square
+  
+  //removed const for spsa tuning:
+  //original code had only scores for rank 5, 6 and 7 on file d and e
+  Score FileDEBind[RANK_NB] = {
+    S( 0, 0), S( 0, 0), S( 0, 0), S(0, 0), 
+    S(16, 0), S(16, 0), S(16, 0), S(0, 0)};  
 
-  const Score FileCFBind[RANK_NB] = {
+  Score FileCFBind[RANK_NB] = {
     S(0, 0), S(0, 0), S(0, 0), S(0, 0), 
-    S(6, 10), S(1, 8), S(7, 4), S(4, 13) };
+    S(0, 0), S(0, 0), S(0, 0), S(0, 0)};
+
+  Score FileBGBind[RANK_NB] = {
+    S(0, 0), S(0, 0), S(0, 0), S(0, 0), 
+    S(0, 0), S(0, 0), S(0, 0), S(0, 0)};
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -212,18 +212,23 @@ namespace {
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
-    //Two pawns controlling the same central square
+    // Binds: Two pawns controlling the same square
     ourPawns = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
-    //...pawns on file D or E
-    b = ourPawns & FileDEBindMask[Us];
-    while (b) 
-       score += FileDEBind[relative_rank(Us, pop_lsb(&b))];
+    if (ourPawns) {
+        b = ourPawns & (FileDBB | FileEBB);
+        while (b) 
+           score += FileDEBind[relative_rank(Us, pop_lsb(&b))];
 
-    //...pawns on file C or F
-    b = ourPawns & FileCFBindMask[Us];
-    while (b) 
-       score += FileCFBind[relative_rank(Us, pop_lsb(&b))];
-    
+        b = ourPawns & (FileCBB | FileFBB);  
+        while (b) 
+           score += FileCFBind[relative_rank(Us, pop_lsb(&b))];
+
+        b = ourPawns & (FileBBB | FileGBB);  
+        while (b) 
+           score += FileBGBind[relative_rank(Us, pop_lsb(&b))];
+    }
+
+   
     return score;
   }
 
@@ -246,6 +251,28 @@ void init()
               int bonus = Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0);
               Connected[opposed][phalanx][r] = make_score(bonus / 2, bonus >> opposed);
           }
+  //SPSA tuning
+  FileDEBind[RANK_3] = make_score(Options["de3a"], Options["de3b"]);
+  FileDEBind[RANK_4] = make_score(Options["de4a"], Options["de4b"]);
+  FileDEBind[RANK_5] = make_score(Options["de5a"], Options["de5b"]);
+  FileDEBind[RANK_6] = make_score(Options["de6a"], Options["de6b"]);
+  FileDEBind[RANK_7] = make_score(Options["de7a"], Options["de7b"]);
+  FileDEBind[RANK_8] = make_score(Options["de8a"], Options["de8b"]);
+
+  FileCFBind[RANK_3] = make_score(Options["cf3a"], Options["cf3b"]);
+  FileCFBind[RANK_4] = make_score(Options["cf4a"], Options["cf4b"]);
+  FileCFBind[RANK_5] = make_score(Options["cf5a"], Options["cf5b"]);
+  FileCFBind[RANK_6] = make_score(Options["cf6a"], Options["cf6b"]);
+  FileCFBind[RANK_7] = make_score(Options["cf7a"], Options["cf7b"]);
+  FileCFBind[RANK_8] = make_score(Options["cf8a"], Options["cf8b"]);
+
+  FileBGBind[RANK_3] = make_score(Options["bg3a"], Options["bg3b"]);
+  FileBGBind[RANK_4] = make_score(Options["bg4a"], Options["bg4b"]);
+  FileBGBind[RANK_5] = make_score(Options["bg5a"], Options["bg5b"]);
+  FileBGBind[RANK_6] = make_score(Options["bg6a"], Options["bg6b"]);
+  FileBGBind[RANK_7] = make_score(Options["bg7a"], Options["bg7b"]);
+  FileBGBind[RANK_8] = make_score(Options["bg8a"], Options["bg8b"]);
+
 }
 
 
