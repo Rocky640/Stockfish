@@ -72,11 +72,11 @@ namespace {
   };
   const Score FileDEBind[RANK_NB] = {
     S(0, 0), S(0, 0), S(0, 0), S(0, 0), 
-    S(12, 2), S(11, 5), S(12, 6), S(13, 8) };  
+    S(10, 5), S(14, 1), S(15, 6), S(12, 7) };  
 
   const Score FileCFBind[RANK_NB] = {
     S(0, 0), S(0, 0), S(0, 0), S(0, 0), 
-    S(9, 7), S(0, 7), S(14, 4), S(3, 10) };
+    S(6, 10), S(1, 8), S(7, 4), S(4, 13) };
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -213,12 +213,12 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     //Two pawns controlling the same central square
-    ourpawns = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
+    ourPawns = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
     //...pawns on file D or E
     b = ourPawns & FileDEBindMask[Us];
     while (b) 
        score += FileDEBind[relative_rank(Us, pop_lsb(&b))];
-	   
+
     //...pawns on file C or F
     b = ourPawns & FileCFBindMask[Us];
     while (b) 
