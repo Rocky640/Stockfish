@@ -60,11 +60,11 @@ namespace {
 
   // More bonus for levers from white c4 against black d5, etc.
   const Bitboard CenterLeverFromMask[COLOR_NB] = {
-     (SquareBB[SQ_C4]  | SquareBB[SQ_F4]),
-     (SquareBB[SQ_C5]  | SquareBB[SQ_F5])};
+     (1ULL << SQ_C4  | 1ULL << SQ_F4),
+     (1ULL << SQ_C5  | 1ULL << SQ_F5)};
   const Bitboard CenterLeverToMask  [COLOR_NB] = {
-     (SquareBB[SQ_D5]  | SquareBB[SQ_E5]),
-     (SquareBB[SQ_D4]  | SquareBB[SQ_E4])};
+     (1ULL << SQ_D5  | 1ULL << SQ_E5),
+     (1ULL << SQ_D4  | 1ULL << SQ_E4)};
   const Score CenterLever = S(10, 10);
 
   // Unsupported pawn penalty
@@ -119,9 +119,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, p, doubled, connected;
+    Bitboard b, p, doubled, connected, lever;
     Square s;
-    bool passed, isolated, opposed, phalanx, backward, unsupported, lever;
+    bool passed, isolated, opposed, phalanx, backward, unsupported;
     Score score = SCORE_ZERO;
     const Square* pl = pos.list<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -208,7 +208,8 @@ namespace {
         if (lever)
         {
             score += Lever[relative_rank(Us, s)];
-            if ((CenterLeverFromMask[Us] & s) && (CenterLeverToMask[Us] & lever))
+            if (   (CenterLeverFromMask[Us] & s) 
+                && (CenterLeverToMask  [Us] & lever))
                 score += CenterLever;
         }
     }
