@@ -58,6 +58,15 @@ namespace {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
+  // More bonus for levers from white c4 against black d5, etc.
+  const Bitboard CenterLeverFromMask[COLOR_NB] = {
+     (SquareBB[SQ_C4]  | SquareBB[SQ_F4]),
+     (SquareBB[SQ_C5]  | SquareBB[SQ_F5])};
+  const Bitboard CenterLeverToMask  [COLOR_NB] = {
+     (SquareBB[SQ_D5]  | SquareBB[SQ_E5]),
+     (SquareBB[SQ_D4]  | SquareBB[SQ_E4])};
+  const Score CenterLever = S(10, 10);
+
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
 
@@ -197,7 +206,11 @@ namespace {
             score += Connected[opposed][phalanx][relative_rank(Us, s)];
 
         if (lever)
+        {
             score += Lever[relative_rank(Us, s)];
+            if ((CenterLeverFromMask[Us] & s) && (CenterLeverToMask[Us] & lever))
+                score += CenterLever;
+        }
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
