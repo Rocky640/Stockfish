@@ -59,10 +59,22 @@ namespace {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
-  // Levers bonus when capture towards center
-  Score CenterLever[RANK_NB] = {
-     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
-     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0) }; 
+  //just analyzing file C and F for now.
+  const Bitboard AdjacentOuterFile[FILE_NB] = {
+    0, 0, 0, FileCBB, FileFBB, 0, 0, 0
+  };
+  //tuned by SPSA
+  //Lever penalty when capture towards edge by opposed and rank
+  //(will be substracted, so it is a bonus for the opponent)
+  //exemple: black c5 d5 against white d4
+  //d4 is opposed, and lever d4xc5 is towards edge. 
+  //Penalty for white is OuterLever[opposed][RANK_4]
+  //which is OuterLever[1][3]
+  Score OuterLever[2][RANK_NB] = {
+     { S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
+       S( 0, 0), S( 0, 0), S(0, 0), S(0, 0) },
+     { S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
+       S( 0, 0), S( 0, 0), S(0, 0), S(0, 0) } };
 
 
   // Unsupported pawn penalty
@@ -206,10 +218,8 @@ namespace {
 
         if (lever) {
             score += Lever[rr];
-
-            //bonus for capture towards the center.
-            if (lever & adjacent_center_file_bb(f))
-                score += CenterLever[rr]; //[phalanx & adjacent_center_file_bb(f)]
+            if (lever & AdjacentOuterFile[f])
+                score -= OuterLever[opposed][rr];
         }
     }
 
@@ -242,13 +252,22 @@ void init()
               int bonus = Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0);
               Connected[opposed][phalanx][r] = make_score(bonus / 2, bonus >> opposed);
           }
+  
   //SPSA tuning for levers towards center
-  CenterLever[RANK_2] = make_score(Options["r2a"], Options["r3b"]);
-  CenterLever[RANK_3] = make_score(Options["r3a"], Options["r4b"]);
-  CenterLever[RANK_4] = make_score(Options["r4a"], Options["r5b"]);
-  CenterLever[RANK_5] = make_score(Options["r5a"], Options["r6b"]);
-  CenterLever[RANK_6] = make_score(Options["r6a"], Options["r7b"]);
-  CenterLever[RANK_7] = make_score(Options["r7a"], Options["r8b"]);
+  //r02a d2 against c3
+  //r12a d2 against c3, d3
+  //beware, RANK_2 == 1
+
+  OuterLever[0][RANK_2] = make_score(Options["r02a"], Options["r02b"]);
+  OuterLever[0][RANK_3] = make_score(Options["r03a"], Options["r03b"]);
+  OuterLever[0][RANK_4] = make_score(Options["r04a"], Options["r04b"]);
+  OuterLever[0][RANK_5] = make_score(Options["r05a"], Options["r05b"]);
+  OuterLever[0][RANK_6] = make_score(Options["r06a"], Options["r06b"]);
+  OuterLever[1][RANK_2] = make_score(Options["r12a"], Options["r12b"]);
+  OuterLever[1][RANK_3] = make_score(Options["r13a"], Options["r13b"]);
+  OuterLever[1][RANK_4] = make_score(Options["r14a"], Options["r14b"]);
+  OuterLever[1][RANK_5] = make_score(Options["r15a"], Options["r15b"]);
+  OuterLever[1][RANK_6] = make_score(Options["r16a"], Options["r16b"]);
 
 }
 

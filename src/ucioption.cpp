@@ -75,18 +75,27 @@ void init(OptionsMap& o) {
   o["SyzygyProbeLimit"]      << Option(6, 0, 6);
   
   //SPSA tuning
-  o["r2a"]                  << Option( 0, 0, 50);
-  o["r2b"]                  << Option( 0, 0, 50);
-  o["r3a"]                  << Option( 0, 0, 50);
-  o["r3b"]                  << Option( 0, 0, 50);
-  o["r4a"]                  << Option( 0, 0, 50);
-  o["r4b"]                  << Option( 0, 0, 50);
-  o["r5a"]                  << Option( 0, 0, 50);
-  o["r5b"]                  << Option( 0, 0, 50);
-  o["r6a"]                  << Option( 0, 0, 50);
-  o["r6b"]                  << Option( 0, 0, 50);
-  o["r7a"]                  << Option( 0, 0, 50);
-  o["r7b"]                  << Option( 0, 0, 50);
+  o["r02a"]                  << Option( 0, 0, 50);
+  o["r02b"]                  << Option( 0, 0, 50);
+  o["r03a"]                  << Option( 0, 0, 50);
+  o["r03b"]                  << Option( 0, 0, 50);
+  o["r04a"]                  << Option( 0, 0, 50);
+  o["r04b"]                  << Option( 0, 0, 50);
+  o["r05a"]                  << Option( 0, 0, 50);
+  o["r05b"]                  << Option( 0, 0, 50);
+  o["r06a"]                  << Option( 0, 0, 50);
+  o["r06b"]                  << Option( 0, 0, 50);
+  
+  o["r12a"]                  << Option( 0, 0, 50);
+  o["r12b"]                  << Option( 0, 0, 50);
+  o["r13a"]                  << Option( 0, 0, 50);
+  o["r13b"]                  << Option( 0, 0, 50);
+  o["r14a"]                  << Option( 0, 0, 50);
+  o["r14b"]                  << Option( 0, 0, 50);
+  o["r15a"]                  << Option( 0, 0, 50);
+  o["r15b"]                  << Option( 0, 0, 50);
+  o["r16a"]                  << Option( 0, 0, 50);
+  o["r16b"]                  << Option( 0, 0, 50);
   
   
 }
