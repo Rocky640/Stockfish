@@ -25,6 +25,7 @@
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
+#include "uci.h" //for spsa
 
 namespace {
 
@@ -57,6 +58,12 @@ namespace {
   const Score Lever[RANK_NB] = {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
+
+  // Levers bonus when capture towards center
+  Score CenterLever[RANK_NB] = {
+     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
+     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0) }; 
+
 
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
@@ -110,9 +117,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, p, doubled, connected;
+    Bitboard b, p, doubled, connected, lever;
     Square s;
-    bool passed, isolated, opposed, phalanx, backward, unsupported, lever;
+    bool passed, isolated, opposed, phalanx, backward, unsupported;
     Score score = SCORE_ZERO;
     const Square* pl = pos.list<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -133,6 +140,7 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank rr = relative_rank(Us, s);
 
         // This file cannot be semi-open
         e->semiopenFiles[Us] &= ~(1 << f);
@@ -194,10 +202,15 @@ namespace {
             score -= Backward[opposed][f];
 
         if (connected)
-            score += Connected[opposed][phalanx][relative_rank(Us, s)];
+            score += Connected[opposed][phalanx][rr];
 
-        if (lever)
-            score += Lever[relative_rank(Us, s)];
+        if (lever) {
+            score += Lever[rr];
+
+            //bonus for capture towards the center.
+            if (lever & adjacent_center_file_bb(f))
+                score += CenterLever[rr]; //[phalanx & adjacent_center_file_bb(f)]
+        }
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
@@ -229,6 +242,14 @@ void init()
               int bonus = Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0);
               Connected[opposed][phalanx][r] = make_score(bonus / 2, bonus >> opposed);
           }
+  //SPSA tuning for levers towards center
+  CenterLever[RANK_2] = make_score(Options["r2a"], Options["r3b"]);
+  CenterLever[RANK_3] = make_score(Options["r3a"], Options["r4b"]);
+  CenterLever[RANK_4] = make_score(Options["r4a"], Options["r5b"]);
+  CenterLever[RANK_5] = make_score(Options["r5a"], Options["r6b"]);
+  CenterLever[RANK_6] = make_score(Options["r6a"], Options["r7b"]);
+  CenterLever[RANK_7] = make_score(Options["r7a"], Options["r8b"]);
+
 }
 
 

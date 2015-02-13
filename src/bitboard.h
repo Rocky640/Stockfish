@@ -75,6 +75,7 @@ extern Bitboard SquareBB[SQUARE_NB];
 extern Bitboard FileBB[FILE_NB];
 extern Bitboard RankBB[RANK_NB];
 extern Bitboard AdjacentFilesBB[FILE_NB];
+extern Bitboard NearCenterFileBB[FILE_NB];
 extern Bitboard InFrontBB[COLOR_NB][RANK_NB];
 extern Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 extern Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
@@ -152,6 +153,12 @@ inline Bitboard adjacent_files_bb(File f) {
   return AdjacentFilesBB[f];
 }
 
+/// adjacent_center_file_bb() returns a bitboard representing all the squares on the
+/// adjacent file closest to the center of the given one.
+
+inline Bitboard adjacent_center_file_bb(File f) {
+  return NearCenterFileBB[f];
+}
 
 /// between_bb() returns a bitboard representing all the squares between the two
 /// given ones. For instance, between_bb(SQ_C4, SQ_F7) returns a bitboard with
