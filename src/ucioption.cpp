@@ -73,47 +73,6 @@ void init(OptionsMap& o) {
   o["SyzygyProbeDepth"]      << Option(1, 1, 100);
   o["Syzygy50MoveRule"]      << Option(true);
   o["SyzygyProbeLimit"]      << Option(6, 0, 6);
-  
-  //SPSA tuning
-  o["de3a"]                  << Option( 0, 0, 50);
-  o["de3b"]                  << Option( 0, 0, 50);
-  o["de4a"]                  << Option( 0, 0, 50);
-  o["de4b"]                  << Option( 0, 0, 50);
-  o["de5a"]                  << Option(16, 0, 50);
-  o["de5b"]                  << Option( 0, 0, 50);
-  o["de6a"]                  << Option(16, 0, 50);
-  o["de6b"]                  << Option( 0, 0, 50);
-  o["de7a"]                  << Option(16, 0, 50);
-  o["de7b"]                  << Option( 0, 0, 50);
-  o["de8a"]                  << Option( 0, 0, 50);
-  o["de8b"]                  << Option( 0, 0, 50);
-  
-  o["cf3a"]                  << Option( 0, 0, 50);
-  o["cf3b"]                  << Option( 0, 0, 50);
-  o["cf4a"]                  << Option( 0, 0, 50);
-  o["cf4b"]                  << Option( 0, 0, 50);
-  o["cf5a"]                  << Option( 0, 0, 50);
-  o["cf5b"]                  << Option( 0, 0, 50);
-  o["cf6a"]                  << Option( 0, 0, 50);
-  o["cf6b"]                  << Option( 0, 0, 50);
-  o["cf7a"]                  << Option( 0, 0, 50);
-  o["cf7b"]                  << Option( 0, 0, 50);
-  o["cf8a"]                  << Option( 0, 0, 50);
-  o["cf8b"]                  << Option( 0, 0, 50);
-
-  o["bg3a"]                  << Option( 0, 0, 50);
-  o["bg3b"]                  << Option( 0, 0, 50);
-  o["bg4a"]                  << Option( 0, 0, 50);
-  o["bg4b"]                  << Option( 0, 0, 50);
-  o["bg5a"]                  << Option( 0, 0, 50);
-  o["bg5b"]                  << Option( 0, 0, 50);
-  o["bg6a"]                  << Option( 0, 0, 50);
-  o["bg6b"]                  << Option( 0, 0, 50);
-  o["bg7a"]                  << Option( 0, 0, 50);
-  o["bg7b"]                  << Option( 0, 0, 50);
-  o["bg8a"]                  << Option( 0, 0, 50);
-  o["bg8b"]                  << Option( 0, 0, 50);
-  
 }
 
 
