@@ -62,14 +62,15 @@ namespace {
   const Score UnsupportedPawnPenalty = S(20, 10);
 
   // Center bind bonus: Two pawns controlling the same central square
-
-  
-  const Bitboard CenterFiles = FileDBB | FileEBB;
+  const Bitboard CenterBindMask[COLOR_NB] = {
+    (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB | Rank8BB),
+    (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB | Rank1BB)
+  };
 
   //original code was S(16, 0) scores for controlled squares on rank 5, 6 and 7 on file d and e
   //the rank refers to the relative rank of the controlled square
   const Score CenterBind[RANK_NB] = {
-    S( 0, 0), S( 0, 0), S( 0, 0), S(8, 12), 
+    S( 0, 0), S( 0, 0), S( 0, 0), S( 0, 0), 
     S(12, 0), S(18, 7), S(16, 8), S(18, 8)};  
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
@@ -207,8 +208,8 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     // Center binds: Two pawns controlling the same central square
-    b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterFiles;
-    while (b)
+    b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
+    if (b)
         score += CenterBind[relative_rank(Us, pop_lsb(&b))];
 
     return score;
@@ -233,7 +234,6 @@ void init()
               int bonus = Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0);
               Connected[opposed][phalanx][r] = make_score(bonus / 2, bonus >> opposed);
           }
-
 }
 
 
