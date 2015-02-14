@@ -155,6 +155,7 @@ namespace {
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
+  const Score QueenOnRookBattery = S(20, 20);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
@@ -297,10 +298,18 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
-        if (Pt == QUEEN)
+        if (Pt == QUEEN) {
+
+            Bitboard bat = b & pos.pieces(Us, ROOK);
+            if (bat)
+                score += QueenOnRookBattery;
+ 
+
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+            
+        }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
@@ -344,6 +353,7 @@ namespace {
 
         if (Pt == ROOK)
         {
+
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
             {
