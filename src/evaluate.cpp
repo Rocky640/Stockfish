@@ -42,6 +42,7 @@ namespace {
     // attacked by a given color and piece type, attackedBy[color][ALL_PIECES]
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
+    Bitboard rookSupport[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -155,7 +156,7 @@ namespace {
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
-  const Score QueenOnRookBattery = S(20, 20);
+  const Score RookSupport        = S( 6, 16);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
@@ -221,6 +222,7 @@ namespace {
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.rookSupport[Us] = 0;
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -298,18 +300,10 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
-        if (Pt == QUEEN) {
-
-            Bitboard bat = b & pos.pieces(Us, ROOK);
-            if (bat)
-                score += QueenOnRookBattery;
- 
-
+        if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
-            
-        }
 
         int mob = Pt != QUEEN ? popcount<Max15>(b & mobilityArea[Us])
                               : popcount<Full >(b & mobilityArea[Us]);
@@ -353,6 +347,15 @@ namespace {
 
         if (Pt == ROOK)
         {
+            // Squares where Queen supports Rook through x-ray (since it is not computed elsewhere)
+            // For example, White Qh1, White Rh5. 
+            // We first check that Rh5 sees the Qh1 (so nothing between Qh1 and Rh5) ...
+            if (b & pos.pieces(Us, QUEEN))
+                  //...and use the ArrowBB to get the extension in the h1=>h5 direction
+                  //In the example, it will give us (h6 | h7 | h8)
+                  //Finally, ...& b insures we just support the existing rook mobility
+                  //Note: to keep things simple, just consider the first queen.
+                  ei.rookSupport[Us] |= ArrowBB[pos.list<QUEEN>(Us)[0]][s] & b;
 
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
@@ -378,6 +381,16 @@ namespace {
             }
         }
     }
+    //Here we had the choice to add to score, or to add to mobility
+    //we prefered to add to mobility as we do with other x-rays
+    //Also, mobility will be scaled.
+    
+    //<Max15> is 99.999% OK, since we compute all the rookSupport but only for the 1st queen.
+    //But if 3 rooks, than we can have Qa1, Rb1, Rc1 and Ra2 (6 + 5 + 6 = 17)
+    //So should use Full, in case one add a 3 same color rook position in the bench
+
+    if (Pt == QUEEN) 
+        mobility[Us] += popcount<Full>(ei.rookSupport[Us] & mobilityArea[Us]) * RookSupport;
 
     if (Trace)
         Tracing::write(Pt, Us, score);
@@ -453,7 +466,7 @@ namespace {
         {
             // ...and then remove squares not supported by another enemy piece
             b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN]);
+                  | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN] | ei.rookSupport[Them]);
 
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);

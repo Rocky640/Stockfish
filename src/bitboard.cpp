@@ -44,6 +44,7 @@ Bitboard InFrontBB[COLOR_NB][RANK_NB];
 Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 Bitboard LineBB[SQUARE_NB][SQUARE_NB];
+Bitboard ArrowBB[SQUARE_NB][SQUARE_NB];
 Bitboard DistanceRingBB[SQUARE_NB][8];
 Bitboard ForwardBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
@@ -210,7 +211,12 @@ void Bitboards::init() {
               continue;
 
           LineBB[s1][s2] = (attacks_bb(pc, s1, 0) & attacks_bb(pc, s2, 0)) | s1 | s2;
-          BetweenBB[s1][s2] = attacks_bb(pc, s1, SquareBB[s2]) & attacks_bb(pc, s2, SquareBB[s1]);
+
+          Bitboard b = attacks_bb(pc, s1, SquareBB[s2]);
+          BetweenBB[s1][s2] = attacks_bb(pc, s2, SquareBB[s1]) & b;
+          // b is xxxxx s1 xxxx s2 0 0 0 0 0
+          // ArrowBB is 0 0 0 0 0
+          ArrowBB[s1][s2]   = LineBB[s1][s2] & ~(b | s1 | s2);
       }
   }
 }
