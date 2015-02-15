@@ -25,6 +25,7 @@
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
+#include <iostream>
 
 namespace {
 
@@ -61,17 +62,16 @@ namespace {
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
 
-  // Center bind bonus: Two pawns controlling the same central square
+  // Center bind bonus: squares where bonnus is given when controlled by 2 pawns
+  // Adding also c6, b7, f6 and g7 as white targets, and symmetrical for black
+  // Must use 1ULL << s because SquareBB[s] is not yet initialized.
+   
   const Bitboard CenterBindMask[COLOR_NB] = {
-    (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB | Rank8BB),
-    (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB | Rank1BB)
+    ((FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB)) | 1ULL << SQ_C6 | 1ULL << SQ_F6 | 1ULL << SQ_B7 | 1ULL << SQ_G7,
+    ((FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)) | 1ULL << SQ_C3 | 1ULL << SQ_F3 | 1ULL << SQ_B2 | 1ULL << SQ_G2
   };
 
-  //original code was S(16, 0) scores for controlled squares on rank 5, 6 and 7 on file d and e
-  //the rank refers to the relative rank of the controlled square
-  const Score CenterBind[RANK_NB] = {
-    S( 0, 0), S( 0, 0), S( 0, 0), S( 0, 0), 
-    S(12, 0), S(18, 7), S(16, 8), S(18, 8)};  
+  const Score CenterBind = S(16, 0);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -209,8 +209,7 @@ namespace {
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
-    if (b)
-        score += CenterBind[relative_rank(Us, pop_lsb(&b))];
+    score += popcount<Max15>(b) * CenterBind;
 
     return score;
   }
