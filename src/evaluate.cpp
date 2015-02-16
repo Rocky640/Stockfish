@@ -182,6 +182,11 @@ namespace {
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB),
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB)
   };
+  
+  const Bitboard RankMask[] = {
+    Rank1BB | Rank2BB | Rank3BB | Rank4BB,
+    Rank5BB | Rank6BB | Rank7BB | Rank8BB
+  };
 
   // King danger constants and variables. The king danger scores are looked-up
   // in KingDanger[]. Various little "meta-bonuses" measuring the strength
@@ -390,7 +395,7 @@ namespace {
     //So should use Full, in case one add a 3 same color rook position in the bench
 
     if (Pt == QUEEN) 
-        mobility[Us] += popcount<Full>(ei.rookSupport[Us] & mobilityArea[Us]) * RookSupport;
+        mobility[Us] += popcount<Max15>(ei.rookSupport[Us] & RankMask[Them] & mobilityArea[Us]) * RookSupport;
 
     if (Trace)
         Tracing::write(Pt, Us, score);
