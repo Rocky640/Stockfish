@@ -220,7 +220,7 @@ void Bitboards::init() {
           BetweenBB[s1][s2] = attacks_bb(pc, s2, SquareBB[s1]) & b;
           // b is xxxxx s1 xxxx s2 0 0 0 0 0
           // ArrowBB is 0 0 0 0 0
-          ArrowBB[s1][s2]   = LineBB[s1][s2] & ~(b | s1 | s2) & RankBB[s1];
+          ArrowBB[s1][s2]   = LineBB[s1][s2] & ~(b | s1 | s2) & FileBB[s1];
       }
   }
 }

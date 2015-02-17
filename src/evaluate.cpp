@@ -395,6 +395,8 @@ namespace {
 
     if (Pt == QUEEN) 
         mobility[Us] += popcount<Max15>(ei.rookSupport[Us] & RankMask[Them] & mobilityArea[Us]) * RookSupport;
+        if (ei.rookSupport[Us] & ei.attackedBy[Them][KING])
+            ei.kingAdjacentZoneAttacksCount[Us] += 2;
 
     if (Trace)
         Tracing::write(Pt, Us, score);
@@ -470,7 +472,7 @@ namespace {
         {
             // ...and then remove squares not supported by another enemy piece
             b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN] | ei.rookSupport[Them]);
+                  | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][QUEEN]);
 
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
