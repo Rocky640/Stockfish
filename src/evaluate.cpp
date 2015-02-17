@@ -163,6 +163,7 @@ namespace {
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
+  const Score PawnDefenseThreat  = S(10, 10);
   const Score PawnSafePush       = S( 5 , 5);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -556,17 +557,19 @@ namespace {
         & ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    if (b)
+    if (b) {
         score += popcount<Full>(b) * PawnSafePush;
+    
+        // Add another bonus if pawn push attacks or defend a piece
+        b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
+             & pos.pieces()
+             & ~ei.attackedBy[Us][PAWN];
 
-    // Add another bonus if the pawn push attacks an enemy piece
-    b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
-       &  pos.pieces(Them)
-       & ~ei.attackedBy[Us][PAWN];
-
-    if (b)
-        score += popcount<Max15>(b) * PawnAttackThreat;
-
+        if (b) {
+            score += popcount<Max15>(b & pos.pieces(Them)) * PawnAttackThreat;
+            score += popcount<Max15>(b & pos.pieces(Us  )) * PawnDefenseThreat;
+        }
+    }
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
 
