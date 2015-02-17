@@ -156,7 +156,7 @@ namespace {
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
-  const Score RookSupport        = S( 6, 16);
+  const Score RookSupport        = S( 6, 10);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
@@ -390,9 +390,8 @@ namespace {
     //we prefered to add to mobility as we do with other x-rays
     //Also, mobility will be scaled.
     
-    //<Max15> is 99.999% OK, since we compute all the rookSupport but only for the 1st queen.
-    //But if 3 rooks, than we can have Qa1, Rb1, Rc1 and Ra2 (6 + 5 + 6 = 17)
-    //So should use Full, in case one add a 3 same color rook position in the bench
+    //<Max15> is OK, since we score only the 1st queen, and squares are counted only once
+    //along the horz and/or vert axis
 
     if (Pt == QUEEN) 
         mobility[Us] += popcount<Max15>(ei.rookSupport[Us] & RankMask[Them] & mobilityArea[Us]) * RookSupport;

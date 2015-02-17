@@ -207,8 +207,12 @@ void Bitboards::init() {
           Piece pc = (PseudoAttacks[BISHOP][s1] & s2) ? W_BISHOP :
                      (PseudoAttacks[ROOK][s1]   & s2) ? W_ROOK   : NO_PIECE;
 
-          if (pc == NO_PIECE)
+          if (pc == NO_PIECE) {
+              LineBB[s1][s2] = 0;
+              BetweenBB[s1][s2] = 0;
+              ArrowBB[s1][s2] = 0;
               continue;
+          }
 
           LineBB[s1][s2] = (attacks_bb(pc, s1, 0) & attacks_bb(pc, s2, 0)) | s1 | s2;
 
