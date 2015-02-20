@@ -67,8 +67,8 @@ namespace {
     (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)
   };
 
-  const Score CenterBind      = S(16, 0);
-  const Score WedgyCenterBind = S( 5, 0);
+  const Score CenterBind       = S(16, 0);
+  const Score PawnInCenterBind = S(10, 0);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -208,8 +208,8 @@ namespace {
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
     if (b) {
         score += popcount<Max15>(b) * CenterBind;
-        //if the controlled square is occupied by our pawn
-        score += popcount<Max15>(b & ourPawns) * WedgyCenterBind;
+        //another bonus if the controlled square is occupied by our pawn
+        score += popcount<Max15>(b & ourPawns) * PawnInCenterBind;
         
     }
 
