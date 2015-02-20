@@ -68,6 +68,11 @@ namespace {
   };
 
   const Score CenterBind = S(16, 0);
+  
+  //by square color
+  const Bitboard BishopCenterMask[COLOR_NB][2] = {
+  {   1ULL << SQ_E4 , 1ULL << SQ_D4} ,
+  {   1ULL << SQ_D5 , 1ULL << SQ_E5}  };
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -126,6 +131,9 @@ namespace {
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+    //some pawns are more harmful for the bishop
+    if (ourPawns & BishopCenterMask[Us][BLACK]) e->pawnsOnSquares[Us][BLACK] += 1;
+    if (ourPawns & BishopCenterMask[Us][WHITE]) e->pawnsOnSquares[Us][WHITE] += 1;
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
