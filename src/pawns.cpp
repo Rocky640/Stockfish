@@ -69,6 +69,14 @@ namespace {
 
   const Score CenterBind = S(16, 0);
 
+  // Wedge Bonus: Blocked pawn cutting opponent's lines
+  const Bitboard WedgeMask[COLOR_NB] = {
+    ((FileDBB | FileEBB) & (Rank5BB | Rank6BB)) | ((FileCBB | FileFBB) & Rank6BB) ,
+    ((FileDBB | FileEBB) & (Rank4BB | Rank3BB)) | ((FileCBB | FileFBB) & Rank3BB) 
+  };
+
+  const Score WedgeBonus = S(20, 0);
+
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
   { V( 99), V(20), V(26), V(54), V(85), V( 92), V(108) },
@@ -110,7 +118,7 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, p, doubled, connected;
+    Bitboard b, p, doubled, connected, wedge = 0;
     Square s;
     bool passed, isolated, opposed, phalanx, backward, unsupported, lever;
     Score score = SCORE_ZERO;
@@ -124,6 +132,7 @@ namespace {
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -198,6 +207,8 @@ namespace {
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+        else if (opposed && !unsupported)
+            wedge |= s;
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
@@ -205,7 +216,17 @@ namespace {
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
+    // there can be 2 centerbinds: c5 d4 e5 f4 => binds are d6 and e5
+    // or                          c4 d4 e4 f4 => binds are d5 and e5
+    // or                          c4 c5 e4 e5 => binds are d5 and d6
     score += popcount<Max15>(b) * CenterBind;
+ 
+    // Do not score CenterBind squares twice, since they can also be wedges (if opposed and not attacked)
+    b= wedge & WedgeMask[Us] & ~b;
+    // possibly multiple wedges, but quite rare: white c4 d5 f6 g5 against black c5 and f7. Wedges are d5 and f6.
+    // or white c4 d5 e6 against d6 e7 (wedges are d5 and e6)
+    if (b)
+        score += popcount<Max15>(b) * WedgeBonus;
 
     return score;
   }
