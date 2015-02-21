@@ -68,7 +68,7 @@ namespace {
   };
 
   const Score CenterBind       = S(16, 0);
-  const Score PawnInCenterBind = S(10, 0);
+  const Score PawnInCenterBind = S(15, 0);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
