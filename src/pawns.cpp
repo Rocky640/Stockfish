@@ -75,7 +75,7 @@ namespace {
     ((FileDBB | FileEBB) & (Rank4BB | Rank3BB)) | ((FileCBB | FileFBB) & Rank3BB) 
   };
 
-  const Score WedgeBonus = S(20, 0);
+  const Score WedgeBonus = S(20, 20);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -216,15 +216,12 @@ namespace {
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
-    // there can be 2 centerbinds: c5 d4 e5 f4 => binds are d6 and e5
-    // or                          c4 d4 e4 f4 => binds are d5 and e5
-    // or                          c4 c5 e4 e5 => binds are d5 and d6
+
     score += popcount<Max15>(b) * CenterBind;
  
     // Do not score CenterBind squares twice, since they can also be wedges (if opposed and not attacked)
-    b= wedge & WedgeMask[Us] & ~b;
-    // possibly multiple wedges, but quite rare: white c4 d5 f6 g5 against black c5 and f7. Wedges are d5 and f6.
-    // or white c4 d5 e6 against d6 e7 (wedges are d5 and e6)
+    b = wedge & WedgeMask[Us] & ~b;
+
     if (b)
         score += popcount<Max15>(b) * WedgeBonus;
 
