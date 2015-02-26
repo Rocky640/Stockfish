@@ -28,6 +28,9 @@
 #include "material.h"
 #include "pawns.h"
 
+//for spsa
+#include "uci.h"
+
 namespace {
 
   // Struct EvalInfo contains various information computed and collected
@@ -69,6 +72,8 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+
+    bool opposite_castle;
   };
 
   namespace Tracing {
@@ -202,6 +207,9 @@ namespace {
   // scores, indexed by a calculated integer number.
   Score KingDanger[512];
 
+  int OppCShelterFactor = 64;
+  int OppCAttackUnitsFactor = 64;
+  
   // apply_weight() weighs score 's' by weight 'w' trying to prevent overflow
   Score apply_weight(Score s, const Weight& w) {
     return make_score(mg_value(s) * w.mg / 256, eg_value(s) * w.eg / 256);
@@ -396,6 +404,8 @@ namespace {
 
     // King shelter and enemy pawns storm
     Score score = ei.pi->king_safety<Us>(pos, ksq);
+    if (ei.opposite_castle) 
+        score = make_score(mg_value(score) * OppCShelterFactor/64, eg_value(score));
 
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
@@ -475,6 +485,10 @@ namespace {
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
         if (b)
             attackUnits += KnightCheck * popcount<Max15>(b);
+        
+        // Adjust attackUnits if we are in opposite castle case
+        if (ei.opposite_castle)
+           attackUnits *= OppCAttackUnitsFactor/64;
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
@@ -737,8 +751,10 @@ namespace {
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
     score += apply_weight(mobility[WHITE] - mobility[BLACK], Weights[Mobility]);
 
+
     // Evaluate kings after all other pieces because we need complete attack
     // information when computing the king safety evaluation.
+    ei.opposite_castle = pos.opp_castle();
     score +=  evaluate_king<WHITE, Trace>(pos, ei)
             - evaluate_king<BLACK, Trace>(pos, ei);
 
@@ -926,6 +942,10 @@ namespace Eval {
         t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
         KingDanger[i] = apply_weight(make_score(t / 1000, 0), Weights[KingSafety]);
     }
+
+    //SPSA
+    OppCShelterFactor     = Options["SPSA_1"];
+    OppCAttackUnitsFactor = Options["SPSA_2"];
   }
 
 } // namespace Eval

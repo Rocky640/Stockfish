@@ -107,6 +107,7 @@ public:
   Square king_square(Color c) const;
   Square ep_square() const;
   bool empty(Square s) const;
+  bool opp_castle() const;
   template<PieceType Pt> int count(Color c) const;
   template<PieceType Pt> const Square* list(Color c) const;
 
@@ -270,6 +271,16 @@ inline Square Position::ep_square() const {
 inline int Position::can_castle(CastlingRight cr) const {
   return st->castlingRights & cr;
 }
+
+inline bool Position::opp_castle() const {
+
+//- There is at least a 3 column difference between the opponent kings  (example: Kc1 and Kf8)
+//- Both kings are on their respectibe first two ranks, but not in the center files
+
+    return    (distance<File>(king_square(WHITE), king_square(BLACK)) >=3)  
+           && (OppositeCastle[WHITE] & king_square(WHITE))
+           && (OppositeCastle[BLACK] & king_square(BLACK));
+  }
 
 inline int Position::can_castle(Color c) const {
   return st->castlingRights & ((WHITE_OO | WHITE_OOO) << (2 * c));
