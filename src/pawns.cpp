@@ -162,7 +162,7 @@ namespace {
             backward = false;
         else
         {
-            if (blocked) e->blockedPawns[Us] |= s;
+            //if (blocked) e->blockedPawns[Us] |= s;
 
             // We now know that there are no friendly pawns beside or behind this
             // pawn on adjacent files. We now check whether the pawn is
@@ -185,10 +185,11 @@ namespace {
             e->passedPawns[Us] |= s;
 
         // Score this pawn
-        if (isolated) {
+        if (isolated) 
             score -= Isolated[opposed][f];
-            if (blocked) e->blockedPawns[Us] |= s;
-        }
+        
+        if (blocked && !(lever | phalanx))
+            e->blockedPawns[Us] |= s;
 
         if (unsupported && !isolated)
             score -= UnsupportedPawnPenalty;
