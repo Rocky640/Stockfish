@@ -48,7 +48,9 @@ struct Entry {
   int pawns_on_same_color_squares(Color c, Square s) const {
     return pawnsOnSquares[c][!!(DarkSquares & s)];
   }
-
+  int blocked_pawns_on_same_color_squares(Color c, Square s) const {
+    return blockedPawns[c] & pawnsOnSquares[c][!!(DarkSquares & s)];
+  }
   template<Color Us>
   Score king_safety(const Position& pos, Square ksq)  {
     return  kingSquares[Us] == ksq && castlingRights[Us] == pos.can_castle(Us)
@@ -72,6 +74,7 @@ struct Entry {
   int semiopenFiles[COLOR_NB];
   int pawnSpan[COLOR_NB];
   int pawnsOnSquares[COLOR_NB][COLOR_NB]; // [color][light/dark squares]
+  int blockedPawns[COLOR_NB];
 };
 
 typedef HashTable<Entry, 16384> Table;

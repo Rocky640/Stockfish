@@ -112,7 +112,7 @@ namespace {
 
     Bitboard b, p, doubled, connected;
     Square s;
-    bool passed, isolated, opposed, phalanx, backward, unsupported, lever;
+    bool passed, isolated, opposed, phalanx, backward, unsupported, lever, blocked;
     Score score = SCORE_ZERO;
     const Square* pl = pos.list<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -120,7 +120,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = 0;
+    e->passedPawns[Us] = e->blockedPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -147,7 +147,9 @@ namespace {
         unsupported = !(ourPawns   & adjacent_files_bb(f) & p);
         isolated    = !(ourPawns   & adjacent_files_bb(f));
         doubled     =   ourPawns   & forward_bb(Us, s);
+        
         opposed     =   theirPawns & forward_bb(Us, s);
+        blocked     =   theirPawns & rank_bb(s + Up);
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
 
@@ -160,6 +162,8 @@ namespace {
             backward = false;
         else
         {
+            if (blocked) e->blockedPawns[Us] |= s;
+
             // We now know that there are no friendly pawns beside or behind this
             // pawn on adjacent files. We now check whether the pawn is
             // backward by looking in the forward direction on the adjacent
@@ -181,8 +185,10 @@ namespace {
             e->passedPawns[Us] |= s;
 
         // Score this pawn
-        if (isolated)
+        if (isolated) {
             score -= Isolated[opposed][f];
+            if (blocked) e->blockedPawns[Us] |= s;
+        }
 
         if (unsupported && !isolated)
             score -= UnsupportedPawnPenalty;
