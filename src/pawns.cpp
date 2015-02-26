@@ -149,7 +149,7 @@ namespace {
         doubled     =   ourPawns   & forward_bb(Us, s);
         
         opposed     =   theirPawns & forward_bb(Us, s);
-        blocked     =   theirPawns & rank_bb(s + Up);
+        blocked     =   theirPawns & (s + Up);
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
 
