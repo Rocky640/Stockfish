@@ -29,7 +29,7 @@
 #include "pawns.h"
 
 //for spsa
-#include "uci.h"
+//#include "uci.h"
 
 namespace {
 
@@ -207,8 +207,8 @@ namespace {
   // scores, indexed by a calculated integer number.
   Score KingDanger[512];
 
-  int OppCShelterFactor = 64;
-  int OppCAttackUnitsFactor = 64;
+  const int OppCShelterFactor = 79;
+  const int OppCAttackUnitsFactor = 91;
   
   // apply_weight() weighs score 's' by weight 'w' trying to prevent overflow
   Score apply_weight(Score s, const Weight& w) {
@@ -944,8 +944,8 @@ namespace Eval {
     }
 
     //SPSA
-    OppCShelterFactor     = Options["SPSA_1"];
-    OppCAttackUnitsFactor = Options["SPSA_2"];
+    //OppCShelterFactor     = Options["SPSA_1"];
+    //OppCAttackUnitsFactor = Options["SPSA_2"];
   }
 
 } // namespace Eval
