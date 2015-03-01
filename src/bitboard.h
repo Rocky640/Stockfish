@@ -59,6 +59,13 @@ const Bitboard Rank6BB = Rank1BB << (8 * 5);
 const Bitboard Rank7BB = Rank1BB << (8 * 6);
 const Bitboard Rank8BB = Rank1BB << (8 * 7);
 
+const Bitboard OppositeCastle[COLOR_NB] = {
+    (FileABB | FileBBB | FileCBB | FileFBB | FileGBB | FileHBB) & 
+    (Rank1BB | Rank2BB),
+    (FileABB | FileBBB | FileCBB | FileFBB | FileGBB | FileHBB) & 
+    (Rank7BB | Rank8BB),
+};
+
 extern int SquareDistance[SQUARE_NB][SQUARE_NB];
 
 extern Bitboard  RookMasks  [SQUARE_NB];

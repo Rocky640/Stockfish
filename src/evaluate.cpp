@@ -28,6 +28,7 @@
 #include "material.h"
 #include "pawns.h"
 
+
 namespace {
 
   // Struct EvalInfo contains various information computed and collected
@@ -69,6 +70,8 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+
+    bool opposite_castle;
   };
 
   namespace Tracing {
@@ -198,10 +201,13 @@ namespace {
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
 
-  // KingDanger[attackUnits] contains the actual king danger weighted
+  // KingDanger[attackUnits][opposite_castle] contains the actual king danger weighted
   // scores, indexed by a calculated integer number.
-  Score KingDanger[512];
+  Score KingDanger[512][2];
 
+  // ShelterFactor [opposite_castle] (will be divided by 16)
+  const int ShelterFactor[2] = {16, 17};
+  
   // apply_weight() weighs score 's' by weight 'w' trying to prevent overflow
   Score apply_weight(Score s, const Weight& w) {
     return make_score(mg_value(s) * w.mg / 256, eg_value(s) * w.eg / 256);
@@ -396,7 +402,9 @@ namespace {
 
     // King shelter and enemy pawns storm
     Score score = ei.pi->king_safety<Us>(pos, ksq);
-
+    // Adjustment of the middle game value according to opposite castle or not
+    score = make_score((mg_value(score) * ShelterFactor[ei.opposite_castle]) / 16, eg_value(score));
+    
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
@@ -478,7 +486,7 @@ namespace {
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
-        score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
+        score -= KingDanger[std::max(std::min(attackUnits, 399), 0)][ei.opposite_castle];
     }
 
     if (Trace)
@@ -739,6 +747,7 @@ namespace {
 
     // Evaluate kings after all other pieces because we need complete attack
     // information when computing the king safety evaluation.
+    ei.opposite_castle = pos.opp_castle();
     score +=  evaluate_king<WHITE, Trace>(pos, ei)
             - evaluate_king<BLACK, Trace>(pos, ei);
 
@@ -917,14 +926,18 @@ namespace Eval {
 
   void init() {
 
+    const int Peak =  1280000;
     const int MaxSlope = 8700;
-    const int Peak = 1280000;
-    int t = 0;
+    
+    int t0 = 0;
+    int t1 = 0;
 
     for (int i = 0; i < 400; ++i)
     {
-        t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
-        KingDanger[i] = apply_weight(make_score(t / 1000, 0), Weights[KingSafety]);
+        t0 = std::min(Peak, std::min(i * i * 27, t0 + MaxSlope));
+        t1 = std::min(Peak, std::min(i * i * 30, t1 + MaxSlope));
+        KingDanger[i][0] = apply_weight(make_score(t0 / 1000, 0), Weights[KingSafety]);
+        KingDanger[i][1] = apply_weight(make_score(t1 / 1000, 0), Weights[KingSafety]);
     }
   }
 
