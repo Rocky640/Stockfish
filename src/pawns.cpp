@@ -112,7 +112,7 @@ namespace {
 
     Bitboard b, neighbours, doubled, connected, supported, phalanx;
     Square s;
-    bool passed, isolated, opposed, backward, lever;
+    bool passed, isolated, opposed, backward, lever, blocked;
     Score score = SCORE_ZERO;
     const Square* pl = pos.list<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -141,6 +141,7 @@ namespace {
         neighbours  =   ourPawns   & adjacent_files_bb(f);
         doubled     =   ourPawns   & forward_bb(Us, s);
         opposed     =   theirPawns & forward_bb(Us, s);
+        blocked     =   theirPawns & (s + Up);
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
         phalanx     =   neighbours & rank_bb(s);
@@ -152,7 +153,7 @@ namespace {
         // If the pawn is passed, isolated, lever or connected it cannot be
         // backward. If there are friendly pawns behind on adjacent files
         // it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
+        if (   (passed | isolated | lever | blocked | connected )
             || (ourPawns & pawn_attack_span(Them, s)))
             backward = false;
         else
