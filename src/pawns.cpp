@@ -179,10 +179,9 @@ namespace {
 
         // Score this pawn
         if (isolated)
-            score -= Isolated[opposed][f];
-
-        if (!supported && !isolated)
-            score -= UnsupportedPawnPenalty;
+            score -= lever ? 3 * Isolated[opposed][f] / 4 : Isolated[opposed][f];
+        else if (!supported)
+            score -= lever ? 3 * UnsupportedPawnPenalty / 4 : UnsupportedPawnPenalty;
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
