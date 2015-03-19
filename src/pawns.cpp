@@ -149,10 +149,10 @@ namespace {
         isolated    =  !neighbours;
 
         // Test for backward pawn.
-        // If the pawn is passed, isolated, lever or connected it cannot be
+        // If the pawn is passed, isolated, or connected it cannot be
         // backward. If there are friendly pawns behind on adjacent files
         // it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
+        if (   (passed | isolated | connected)
             || (ourPawns & pawn_attack_span(Them, s)))
             backward = false;
         else
@@ -161,12 +161,12 @@ namespace {
             // pawn on adjacent files. We now check whether the pawn is
             // backward by looking in the forward direction on the adjacent
             // files, and picking the closest pawn there.
-            b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);
+            b = pawn_attack_span(Us, s) & (ourPawns | (theirPawns & ~pawnAttacksBB[s]));
             b = pawn_attack_span(Us, s) & rank_bb(backmost_sq(Us, b));
 
             // If we have an enemy pawn in the same or next rank, the pawn is
             // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            backward = (b | shift_bb<Up>(b)) & theirPawns & ~pawnAttacksBB[s];
         }
 
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
@@ -188,7 +188,7 @@ namespace {
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (backward)
-            score -= Backward[opposed][f];
+            score -= lever ? 3 * Backward[opposed][f] / 4 : Backward[opposed][f];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
