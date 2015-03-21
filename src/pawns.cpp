@@ -140,7 +140,7 @@ namespace {
         // Flag the pawn
         neighbours  =   ourPawns   & adjacent_files_bb(f);
         doubled     =   ourPawns   & forward_bb(Us, s);
-        opposed     =   theirPawns & forward_bb(Us, s);
+        opposed     =   (theirPawns | ourPawns) & forward_bb(Us, s);
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
         phalanx     =   neighbours & rank_bb(s);
