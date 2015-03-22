@@ -169,6 +169,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score KnightDefended     = S(20, 20);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
 
@@ -538,6 +539,13 @@ namespace {
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
+
+        //Pieces/Pawns defended by a Knight are not so well defended
+        //since if Knight must move away, defence will be lost in all cases,
+        //contrarily to sliders which can keep in most case the defense.
+        b = weak & ei.attackedBy[Them][KNIGHT];
+        if (b)
+            score += KnightDefended * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
