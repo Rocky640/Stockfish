@@ -502,7 +502,7 @@ namespace {
     enum { Defended, Weak };
     enum { Minor, Major };
 
-    Bitboard b, weak, defended;
+    Bitboard b, weak, defended, bn;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies defended by a pawn
@@ -540,12 +540,16 @@ namespace {
         if (b)
             score += Hanging * popcount<Max15>(b);
 
-        //Pieces/Pawns defended by a Knight are not so well defended
+        //Weak Pieces/Pawns defended by their Knight are not so well defended
         //since if Knight must move away, defence will be lost in all cases,
-        //contrarily to sliders which can keep in most case the defense.
-        b = weak & ei.attackedBy[Them][KNIGHT];
-        if (b)
-            score += KnightDefended * popcount<Max15>(b);
+        //contrarily to sliders which can keep in most case the defence.
+        bn = pos.pieces(Them, KNIGHT) & ei.attackedBy[Us][ALL_PIECES];
+        while (bn) 
+        {
+           b = weak & pos.attacks_from<KNIGHT>(pop_lsb(&bn));
+           if (b)
+              score += KnightDefended;
+        }
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
