@@ -246,6 +246,10 @@ Entry* probe(const Position& pos) {
 
   e->key = key;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
+
+  Bitboard b = (e->semiopenFiles[WHITE] | e->semiopenFiles[BLACK]) ^ 0xFF;
+  e->pawnGlobalSpan = b ? int(msb(b) - lsb(b)) : 0;
+
   return e;
 }
 

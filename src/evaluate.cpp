@@ -166,6 +166,7 @@ namespace {
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
   const Score MinorBehindPawn    = S(16,  0);
+  const Score PawnSpan           = S( 0, 12);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
@@ -324,6 +325,19 @@ namespace {
             // Penalty for pawns on same color square of bishop
             if (Pt == BISHOP)
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+
+            // In endings, a Knight is generally more effective when pawns are grouped
+            // on one side of the board, or simply within a global pawn span of at most 5 columns
+            if (   Pt == KNIGHT 
+                && (ei.pi->pawn_global_span() < 5) 
+                && (pos.count<PAWN>(Us) + pos.count<PAWN>(Them) > 3))
+                score += PawnSpan;
+
+            // .. and the Bishop, when the global pawn span is more than 5 columns 
+            // e.g. a pawn (either colour/side) on A and another one (either colour/side) on G or H
+            if (    Pt == BISHOP 
+                && (ei.pi->pawn_global_span() > 5))
+                score += PawnSpan;
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
