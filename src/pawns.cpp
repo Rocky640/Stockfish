@@ -197,19 +197,20 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
 
-        //Qualify the pawn attacks, weak, or neutral
+        //Qualify the pawn attacks on this file or the pawn attacks by this pawn,
+        //as weak or neutral
 
        // If a pawn capture is done towards file s, that file will contain some double
         weakeningAttacks |= file_bb(s);
 
         //Captures from isolated, backward and doubled cannot make these pawns much worse.
-        //The last expression qualifies the current pawn as the pwn in front of a double
+        //The last expression qualifies the current pawn as the pawn in front of a double
         if ((isolated | backward | doubled) || (ourPawns & forward_bb(Them, s)))
             neutralAttacks |= pawnAttacksBB[s];
         else {
-             //We now know that s is NOT isolated, so the column occupancy pattern around s is either 1s0 or 0s1 or 1s1.
-             //All captures in 111 patterns are already covered with the successive calls to weakAttacks |= file_bb(s);
-             //So let see the 1s0 and 0s1 cases.
+             //We now know that s is NOT isolated and not doubled, so the column occupancy pattern around s is either 1s0 or 0s1 or 1s1.
+             //All captures in 1s1 patterns are already covered with the successive calls to weakAttacks |= file_bb(s);
+             //So let see the 1s0 and 0s1 cases. We must look at files at the left and the right of these patterns.
 
             if (   !(right1right2_files_bb(f) & ourPawns)  //1s00  if s captures to the left, it will become a double. 
                                                            //      if s captures to the right, it will become isolated
@@ -229,7 +230,7 @@ namespace {
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
     
-    //Exclude neutral captures, include only real pawn attacks
+    //Exclude squares where a neutral capture is possible. Also, include only real pawn attacks
     e->weakeningAttacks[Us] = weakeningAttacks & ~neutralAttacks & e->pawnAttacks[Us];
 
     // Center binds: Two pawns controlling the same central square

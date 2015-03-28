@@ -526,7 +526,7 @@ namespace {
 
         defended &= ei.pi->weakening_attacks(Them) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]);
         if (defended)
-            score += more_than_one(b) ? StructureMany : StructureOne;
+            score += more_than_one(defended) ? StructureMany : StructureOne;
     }
 
     // Enemies not defended by a pawn and under our attack
