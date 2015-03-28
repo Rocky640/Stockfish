@@ -111,6 +111,7 @@ namespace {
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard weakeningAttacks = 0, neutralAttacks = 0;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -195,10 +196,41 @@ namespace {
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+
+        //Qualify the pawn attacks, weak, or neutral
+
+       // If a pawn capture is done towards file s, that file will contain some double
+        weakeningAttacks |= file_bb(s);
+
+        //Captures from isolated, backward and doubled cannot make these pawns much worse.
+        //The last expression qualifies the current pawn as the pwn in front of a double
+        if ((isolated | backward | doubled) || (ourPawns & forward_bb(Them, s)))
+            neutralAttacks |= pawnAttacksBB[s];
+        else {
+             //We now know that s is NOT isolated, so the column occupancy pattern around s is either 1s0 or 0s1 or 1s1.
+             //All captures in 111 patterns are already covered with the successive calls to weakAttacks |= file_bb(s);
+             //So let see the 1s0 and 0s1 cases.
+
+            if (   !(right1right2_files_bb(f) & ourPawns)  //1s00  if s captures to the left, it will become a double. 
+                                                           //      if s captures to the right, it will become isolated
+
+                || !(left1left2_files_bb(f)   & ourPawns)  //00s1  (similar as above)
+
+                || !(left1right2_files_bb(f)  & ourPawns)  //0s10  if s captures on the left, it will leave 1 as isolated
+                                                           //      if s captures to the right, it will become a double
+
+                || !(right1left2_files_bb(f)  & ourPawns)) //01s0  (similar as above)
+
+                weakeningAttacks |= pawnAttacksBB[s];
+             
+        }
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
+    
+    //Exclude neutral captures, include only real pawn attacks
+    e->weakeningAttacks[Us] = weakeningAttacks & ~neutralAttacks & e->pawnAttacks[Us];
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
