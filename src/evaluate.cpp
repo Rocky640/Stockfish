@@ -505,6 +505,7 @@ namespace {
 
     Bitboard b, weak, defended;
     Score score = SCORE_ZERO;
+    Square s;
 
     // Non-pawn enemies defended by a pawn
     defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
@@ -513,12 +514,16 @@ namespace {
     if (defended)
     {
         b = defended & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
-        while (b)
-            score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))] + (b & ei.pi->weakening_attacks(Them) ? StructureThreatMinor : SCORE_ZERO);
+        while (b) {
+            s = pop_lsb(&b);
+            score += Threat[Defended][Minor][type_of(pos.piece_on(s))] + (ei.pi->weakening_attacks(Them) & s ? StructureThreatMinor : SCORE_ZERO);
+        }
 
         b = defended & (ei.attackedBy[Us][ROOK]);
-        while (b)
-            score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))] + (b & ei.pi->weakening_attacks(Them) ? StructureThreatRook  : SCORE_ZERO);
+        while (b) {
+            s = pop_lsb(&b);
+            score += Threat[Defended][Major][type_of(pos.piece_on(s))] + (ei.pi->weakening_attacks(Them) & s ? StructureThreatRook  : SCORE_ZERO);
+        }
 
     }
 
