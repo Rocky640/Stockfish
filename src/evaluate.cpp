@@ -171,8 +171,8 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
-  const Score StructureOne       = S(12,  8);
-  const Score StructureMany      = S(19, 15);
+  const Score StructureThreatMinor  = S(10,  7);
+  const Score StructureThreatRook   = S(12,  4);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -514,19 +514,12 @@ namespace {
     {
         b = defended & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
-            score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
+            score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))] + (b & ei.pi->weakening_attacks(Them) ? StructureThreatMinor : SCORE_ZERO);
 
         b = defended & (ei.attackedBy[Us][ROOK]);
         while (b)
-            score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
-    
-        // Pieces defended by pawn, 
-        // but the pawn recapture would result in a structure weakening
-        // we consider here the creation of new isolated pawns, or new double pawns.
+            score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))] + (b & ei.pi->weakening_attacks(Them) ? StructureThreatRook  : SCORE_ZERO);
 
-        defended &= ei.pi->weakening_attacks(Them) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]);
-        if (defended)
-            score += more_than_one(defended) ? StructureMany : StructureOne;
     }
 
     // Enemies not defended by a pawn and under our attack
