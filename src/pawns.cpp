@@ -225,12 +225,16 @@ namespace {
                 weakeningAttacks |= pawnAttacksBB[s];
              
         }
+        if (lever & !supported)
+           //poor defense on the other end...
+           weakeningAttacks |= pawnAttacksBB[s];
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
     
     //Exclude squares where a neutral capture is possible. Also, include only real pawn attacks
+
     e->weakeningAttacks[Us] = weakeningAttacks & ~neutralAttacks & e->pawnAttacks[Us];
 
     // Center binds: Two pawns controlling the same central square
