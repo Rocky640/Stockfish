@@ -50,6 +50,17 @@ namespace {
   { S(40, 38), S(49, 41), S(53, 41), S(53, 41),
     S(53, 41), S(53, 41), S(49, 41), S(40, 38) } };
 
+ // Other Unsupported pawn penalty by opposed flag and file
+  const Score Unsuppor[2][FILE_NB] = {
+  { S(21,  8), S(23, 15), S(26, 15), S(26, 15),
+    S(26, 15), S(26, 15), S(23, 15), S(21,  8) },
+  { S( 8,  4), S(11,  9), S(15,  9), S(15,  9),
+    S(15,  9), S(15,  9), S(11,  9), S( 8,  4) } };
+
+
+  // Unsupported pawn penalty
+  //const Score UnsupportedPawnPenalty = S(20, 10);
+
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
@@ -57,9 +68,6 @@ namespace {
   const Score Lever[RANK_NB] = {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
-
-  // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
@@ -185,7 +193,7 @@ namespace {
             score -= Backward[opposed][f];
 
         else if (!supported)
-            score -= UnsupportedPawnPenalty;
+            score -= Unsuppor[opposed][f];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
