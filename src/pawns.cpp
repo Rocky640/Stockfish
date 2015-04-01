@@ -147,7 +147,7 @@ namespace {
         supported   =   neighbours & rank_bb(s - Up);
         connected   =   supported | phalanx;
         isolated    =  !neighbours;
-        blocked     =  (ourPawns | theirPawns) & shift_bb<Up>(s);
+        blocked     =  (ourPawns | theirPawns) & (s + Up);
 
         // Test for backward pawn.
         // If the pawn is passed, isolated, lever or connected it cannot be
