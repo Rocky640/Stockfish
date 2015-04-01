@@ -50,8 +50,8 @@ namespace {
   { S(40, 38), S(49, 41), S(53, 41), S(53, 41),
     S(53, 41), S(53, 41), S(49, 41), S(40, 38) } };
 
-  // Connected pawn bonus by opposed, phalanx, twice supported and rank
-  Score Connected[2][2][2][RANK_NB];
+  // Connected pawn bonus by (not opposed/opposed/blocked), phalanx, twice supported and rank
+  Score Connected[3][2][2][RANK_NB];
 
   // Levers bonus by rank
   const Score Lever[RANK_NB] = {
@@ -189,7 +189,7 @@ namespace {
             score -= UnsupportedPawnPenalty;
 
         if (connected)
-            score += Connected[blocked][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[blocked ? 2 : opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
@@ -220,12 +220,15 @@ void init()
 {
   static const int Seed[RANK_NB] = { 0, 6, 15, 10, 57, 75, 135, 258 };
 
-  for (int opposed = 0; opposed <= 1; ++opposed)
+  for (int opposed = 0; opposed <= 2; ++opposed)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
           for (int apex = 0; apex <= 1; ++apex)
               for (Rank r = RANK_2; r < RANK_8; ++r)
   {
-      int v = (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
+      int v = (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0));
+      if (opposed == 2) v /= 2;        // 1/2 the bonus when blocked
+      if (opposed == 1) v = 3 * v / 4; // but when opposed from a distance, allow th value between 1/2 and 1, which is 3/4
+
       v += (apex ? v / 2 : 0);
       Connected[opposed][phalanx][apex][r] = make_score(3 * v / 2, v);
   }
