@@ -75,6 +75,10 @@ extern Bitboard SquareBB[SQUARE_NB];
 extern Bitboard FileBB[FILE_NB];
 extern Bitboard RankBB[RANK_NB];
 extern Bitboard AdjacentFilesBB[FILE_NB];
+extern Bitboard Right1Right2FilesBB[FILE_NB];
+extern Bitboard Left1Left2FilesBB[FILE_NB];
+extern Bitboard Left1Right2FilesBB[FILE_NB];
+extern Bitboard Right1Left2FilesBB[FILE_NB];
 extern Bitboard InFrontBB[COLOR_NB][RANK_NB];
 extern Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 extern Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
@@ -152,7 +156,32 @@ inline Bitboard adjacent_files_bb(File f) {
   return AdjacentFilesBB[f];
 }
 
+/// right2_files_bb() returns a bitboard representing all the squares on the
+/// 2 files at the right of the given one.
+inline Bitboard right1right2_files_bb(File f) {
+  return Right1Right2FilesBB[f];
+}
 
+/// left1left2_files_bb() returns a bitboard representing all the squares on the
+/// 2 files at the left of the given one.
+
+inline Bitboard left1left2_files_bb(File f) {
+  return Left1Left2FilesBB[f];
+}
+
+/// left1right2_files_bb() returns a bitboard representing all the squares on the
+/// file at the left, and the second file at the right of the given one.
+
+inline Bitboard left1right2_files_bb(File f) {
+  return Left1Right2FilesBB[f];
+}
+
+/// right1left2_files_bb() returns a bitboard representing all the squares on the
+/// file at the right, and the second file at the left of the given one.
+
+inline Bitboard right1left2_files_bb(File f) {
+  return Right1Left2FilesBB[f];
+}
 /// between_bb() returns a bitboard representing all the squares between the two
 /// given ones. For instance, between_bb(SQ_C4, SQ_F7) returns a bitboard with
 /// the bits for square d5 and e6 set. If s1 and s2 are not on the same rank, file

@@ -173,6 +173,7 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
+  const Score StructureThreat    = S(12,  8);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -531,6 +532,10 @@ namespace {
         b = defended & (ei.attackedBy[Us][ROOK]);
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
+
+        b = defended & ei.pi->weakening_attacks(Them) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]);
+        if (b)
+            score += StructureThreat * popcount<Max15>(b);
     }
 
     // Enemies not defended by a pawn and under our attack

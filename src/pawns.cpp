@@ -107,10 +107,11 @@ namespace {
 
     const Color  Them  = (Us == WHITE ? BLACK    : WHITE);
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
-    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
-    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SE);
+    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SW);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard weakeningAttacks = 0, neutralAttacks = 0;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -195,10 +196,32 @@ namespace {
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+
+        //Qualify the pawn attacks on this file or the pawn attacks by this pawn,
+        //as weak or neutral 
+        //In this version, we detect only the moves which would create a new isolated pawn.
+
+        //Captures from isolated, backward and doubled cannot make these pawns much worse.
+        //The last expression qualifies the current pawn as the pawn in front of a double
+        if ((isolated | backward | doubled) || (ourPawns & forward_bb(Them, s)))
+            neutralAttacks |= pawnAttacksBB[s];
+        else {
+             //We now know that s is NOT isolated and not doubled, so the column occupancy pattern around s is either 1s0 or 0s1 or 1s1.
+             //Computing only the diagonal moves which would create an isolated pawn.
+
+            if (f < FILE_H && (!(right1right2_files_bb(f) & ourPawns) || !(right1left2_files_bb(f) & ourPawns)))
+                weakeningAttacks |= s + Right;
+                
+            if (f > FILE_A && (!(left1left2_files_bb(f) & ourPawns) || !(left1right2_files_bb(f) & ourPawns)))
+                weakeningAttacks |= s + Left;
+        }
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
+    
+    // Exclude squares where a neutral capture is possible
+    e->weakeningAttacks[Us] = weakeningAttacks & ~neutralAttacks;
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
