@@ -191,6 +191,8 @@ namespace {
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB)
   };
 
+  // CenterPawnMask[Color] is also used by the space evaluation,
+  // It is used to check the presence of an advanced central pawn
   
   const Bitboard CenterPawnMask[COLOR_NB] = {
     (FileDBB | FileEBB) & (Rank5BB),
@@ -704,7 +706,7 @@ namespace {
     int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     
     // Add bonus for (our) pawns on d5 or e5
-    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 1;
+    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 2;
 
     int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
                 + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
