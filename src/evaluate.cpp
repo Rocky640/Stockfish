@@ -703,8 +703,8 @@ namespace {
     // Count safe + (behind & safe) with a single popcount
     int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     
-    //add bonus for (our) pawns on d5, e5
-    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 2;
+    // Add bonus for (our) pawns on d5 or e5
+    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 1;
 
     int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
                 + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
