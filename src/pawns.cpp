@@ -207,11 +207,13 @@ namespace {
             neutralAttacks |= pawnAttacksBB[s];
         else {
              //We now know that s is NOT isolated and not doubled, so the column occupancy pattern around s is either 1s0 or 0s1 or 1s1.
-             //Computing only the diagonal moves which would create an isolated pawn.
+             //Computing only the diagonal moves which would create an isolated pawn, either "s" itself, or the "1" which would be left alone.
 
+             //First the 1s00 case or the 01s0 case
             if (f < FILE_H && (!(right1right2_files_bb(f) & ourPawns) || !(right1left2_files_bb(f) & ourPawns)))
                 weakeningAttacks |= s + Right;
-                
+
+            //Second, the 00s1 case or the 0s10 case    
             if (f > FILE_A && (!(left1left2_files_bb(f) & ourPawns) || !(left1right2_files_bb(f) & ourPawns)))
                 weakeningAttacks |= s + Left;
         }
