@@ -191,6 +191,11 @@ namespace {
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB)
   };
 
+  
+  const Bitboard CenterPawnMask[COLOR_NB] = {
+    (FileDBB | FileEBB) & (Rank5BB),
+    (FileDBB | FileEBB) & (Rank4BB)
+  };
   // King danger constants and variables. The king danger scores are looked-up
   // in KingDanger[]. Various little "meta-bonuses" measuring the strength
   // of the enemy attack are added up into an integer, which is used as an
@@ -697,8 +702,14 @@ namespace {
 
     // Count safe + (behind & safe) with a single popcount
     int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
+    
+    //add bonus for (our) pawns on d5, e5
+    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 2;
+
     int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
                 + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
+    
+    
 
     return make_score(bonus * weight * weight, 0);
   }
