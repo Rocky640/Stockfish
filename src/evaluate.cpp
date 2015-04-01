@@ -703,15 +703,13 @@ namespace {
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
 
     // Count safe + (behind & safe) with a single popcount
-    int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
+    float bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     
     // Add bonus for (our) pawns on d5 or e5
-    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 2;
+    if (CenterPawnMask[Us] & pos.pieces(Us, PAWN)) bonus += 0.5;
 
     int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
                 + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
-    
-    
 
     return make_score(bonus * weight * weight, 0);
   }
