@@ -72,6 +72,25 @@ void init(OptionsMap& o) {
   o["SyzygyProbeDepth"]      << Option(1, 1, 100);
   o["Syzygy50MoveRule"]      << Option(true);
   o["SyzygyProbeLimit"]      << Option(6, 0, 6);
+  
+  //SPSA
+  o["c0a"]      << Option(16, -50, 50);
+  o["c0b"]      << Option( 0, -50, 50);
+  o["c1a"]      << Option(16, -50, 50);
+  o["c1b"]      << Option( 0, -50, 50);
+  o["c2a"]      << Option( 0, -50, 50);
+  o["c2b"]      << Option( 0, -50, 50);
+  
+  o["b2a"]      << Option( 0, -50, 50);
+  o["b3a"]      << Option( 0, -50, 50);
+  o["b4a"]      << Option( 0, -50, 50);
+  o["b5a"]      << Option( 0, -50, 50);
+  o["b6a"]      << Option( 0, -50, 50);
+  
+ 
+  o["b5b"]      << Option( 0, -50, 50);
+  o["b6b"]      << Option( 0, -50, 50);
+
 }
 
 

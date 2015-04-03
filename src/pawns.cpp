@@ -26,6 +26,8 @@
 #include "position.h"
 #include "thread.h"
 
+#include "uci.h"
+
 namespace {
 
   #define V Value
@@ -67,7 +69,8 @@ namespace {
     (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)
   };
 
-  const Score CenterBind = S(16, 0);
+  Score CenterBind[3] = { S(16, 0), S(16, 0), S(0, 0) };
+  Score Blocked[RANK_NB] = { S(0,0),S(0,0),S(0,0),S(0,0),S(0,0),S(0,0),S(0,0),S(0,0)};
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -202,7 +205,16 @@ namespace {
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
-    score += popcount<Max15>(b) * CenterBind;
+    while (b) {
+       s = pop_lsb(&b);
+       if (ourPawns & s)
+           score += CenterBind[0];
+       else {
+           score += CenterBind[1];
+           if (theirPawns & forward_bb(Us, s))
+               score += CenterBind[2];
+       }
+    }
 
     return score;
   }
@@ -228,6 +240,14 @@ void init()
       v += (apex ? v / 2 : 0);
       Connected[opposed][phalanx][apex][r] = make_score(3 * v / 2, v);
   }
+  CenterBind[0] = make_score(Options["c0a"],Options["c0b"]);
+  CenterBind[1] = make_score(Options["c1a"],Options["c1b"]);
+  CenterBind[2] = make_score(Options["c2a"],Options["c2b"]);
+ 
+ 
+  Blocked[RANK_5] = make_score(Options["b5a"],Options["b5b"]);
+  Blocked[RANK_6] = make_score(Options["b6a"],Options["b6b"]);
+  
 }
 
 
