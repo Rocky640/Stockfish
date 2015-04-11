@@ -231,11 +231,11 @@ namespace {
     ei.attackedBy[Us][AT_LEAST_2] = 0;
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
-    if (more_than_one(b & pos.pieces(Them))) {
-       ei.splitDefenders[Them] = SquareBB[pos.king_square(Them)];
-       ei.splitDefendeds[Them] = b & pos.pieces(Them);
-    }
-    else
+    //if (more_than_one(b & pos.pieces(Them))) {
+    //   ei.splitDefenders[Them] = SquareBB[pos.king_square(Them)];
+    //   ei.splitDefendeds[Them] = b & pos.pieces(Them);
+    //}
+    //else
         ei.splitDefenders[Them] = ei.splitDefendeds[Them] = 0;
 
     // Init king safety tables only if we are going to use them
