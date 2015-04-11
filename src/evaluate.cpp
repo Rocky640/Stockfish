@@ -219,7 +219,8 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
@@ -287,6 +288,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= (b & ei.attackedBy[Us][ALL_PIECES]);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -531,6 +533,18 @@ namespace {
         b = defended & (ei.attackedBy[Us][ROOK]);
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
+
+        // Bonus if some opponent pawn is overloaded, that is, it must defend, alone 
+        //2 pieces which are attacked
+        //so in best case for opponent, one will be hanging.
+        defended &= ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][ALL_PIECES];
+        b = shift_bb<Left>(defended) & shift_bb<Right>(defended) & pos.pieces(Them, PAWN);
+        if (b) {
+        //    sync_cout << "d" <<  Bitboards::pretty(defended) << sync_endl;
+        //    sync_cout << "b" <<  Bitboards::pretty(b) << sync_endl;
+        //    sync_cout << "pos" << pos << sync_endl;
+            score += (Hanging * popcount<Max15>(b));
+        }
     }
 
     // Enemies not defended by a pawn and under our attack
@@ -736,8 +750,13 @@ namespace {
     init_eval_info<WHITE>(pos, ei);
     init_eval_info<BLACK>(pos, ei);
 
-    ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
-    ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
+    ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[WHITE][PAWN] | ei.attackedBy[WHITE][KING];
+    ei.attackedBy[BLACK][ALL_PIECES] = ei.attackedBy[BLACK][PAWN] | ei.attackedBy[BLACK][KING];
+
+    ei.attackedBy[WHITE][AT_LEAST_2] = ei.pi->dbl_pawn_attacks(WHITE);
+    ei.attackedBy[BLACK][AT_LEAST_2] = ei.pi->dbl_pawn_attacks(BLACK);
+    //ei.attackedBy[WHITE][AT_LEAST_2] = ei.attackedBy[WHITE][PAWN] & ei.attackedBy[WHITE][KING];
+    //ei.attackedBy[BLACK][AT_LEAST_2] = ei.attackedBy[BLACK][PAWN] & ei.attackedBy[BLACK][KING];
 
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
