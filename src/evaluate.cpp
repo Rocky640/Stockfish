@@ -414,6 +414,7 @@ namespace {
                      - mg_value(score) / 8
                      - !pos.count<QUEEN>(Them) * 60;
 
+if (false) {
         // Analyse the enemy's safe queen contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy queen...
         b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
@@ -426,6 +427,7 @@ namespace {
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
         }
+}
 
         // Analyse the enemy's safe rook contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy rooks...
