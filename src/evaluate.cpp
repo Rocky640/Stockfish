@@ -427,7 +427,7 @@ if (false) {
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
         }
-}
+
 
         // Analyse the enemy's safe rook contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy rooks...
@@ -445,6 +445,8 @@ if (false) {
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
         }
+
+}
 
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
