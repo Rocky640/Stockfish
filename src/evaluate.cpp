@@ -427,6 +427,7 @@ namespace {
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
         }
 
+
         // Analyse the enemy's safe rook contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy rooks...
         b = undefended & ei.attackedBy[Them][ROOK] & ~pos.pieces(Them);
@@ -443,22 +444,25 @@ namespace {
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
         }
-if (false) {
+
+
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
 
-        b1 = pos.attacks_from<ROOK  >(ksq) & safe;
+       // b1 = pos.attacks_from<ROOK  >(ksq) & safe;
         b2 = pos.attacks_from<BISHOP>(ksq) & safe;
-
+if (false) {
         // Enemy queen safe checks
         b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
         if (b)
             attackUnits += QueenCheck * popcount<Max15>(b);
 
+
         // Enemy rooks safe checks
         b = b1 & ei.attackedBy[Them][ROOK];
         if (b)
             attackUnits += RookCheck * popcount<Max15>(b);
+}
 
         // Enemy bishops safe checks
         b = b2 & ei.attackedBy[Them][BISHOP];
@@ -469,7 +473,7 @@ if (false) {
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
         if (b)
             attackUnits += KnightCheck * popcount<Max15>(b);
-}
+
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
