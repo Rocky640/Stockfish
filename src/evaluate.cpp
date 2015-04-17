@@ -443,7 +443,7 @@ namespace {
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
         }
-
+if (false) {
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
 
@@ -469,7 +469,7 @@ namespace {
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
         if (b)
             attackUnits += KnightCheck * popcount<Max15>(b);
-
+}
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
