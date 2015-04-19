@@ -287,18 +287,18 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
-       if (Pt == ROOK)
-            // Find squares attacked by both rooks.
+        if (Pt == ROOK)
+            // Find squares attacked jointly by both rooks, possibly via x-ray.
             // If one Rook is pinned, it can still support the other one for a contact check
             // We need this information to evaluate more precisely some contact checks later
             ei.attackedBy[Us][ROOK_SUPPORT] |=   ei.attackedBy[Us][ROOK] & b;
 
-        if (Pt == QUEEN)
-            // Find squares where Rook is supported by a Queen 
-            // (but only by x-ray, because the normal Queen-Rook cases are already computed)
+        if (Pt == QUEEN && (pos.pieces(Us, ROOK) & b))
+            // Find squares where Queen can support Rook 
+            // (but only via x-ray because the normal Queen-Rook cases are already computed)
             ei.attackedBy[Us][ROOK_SUPPORT] |=   ei.attackedBy[Us][ROOK] 
                                              & ~b 
-                                             & attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
+                                             & attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
