@@ -58,6 +58,8 @@ namespace {
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type, attackedBy[color][ALL_PIECES]
     // contains all squares attacked by the given color.
+    // attackedby[color][ROOK_SUPPORT] computes squares attacked by 2 Rooks,
+    // or by a Rook supported by a QUEEN via x-ray.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // kingRing[color] is the zone around the king which is considered
@@ -221,6 +223,7 @@ namespace {
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
+    ei.attackedBy[Us][ROOK_SUPPORT] = 0;
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -283,6 +286,19 @@ namespace {
         b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
+
+       if (Pt == ROOK)
+            // Find squares attacked by both rooks.
+            // If one Rook is pinned, it can still support the other one for a contact check
+            // We need this information to evaluate more precisely some contact checks later
+            ei.attackedBy[Us][ROOK_SUPPORT] |=   ei.attackedBy[Us][ROOK] & b;
+
+        if (Pt == QUEEN)
+            // Find squares where Rook is supported by a Queen 
+            // (but only by x-ray, because the normal Queen-Rook cases are already computed)
+            ei.attackedBy[Us][ROOK_SUPPORT] |=   ei.attackedBy[Us][ROOK] 
+                                             & ~b 
+                                             & attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
@@ -437,8 +453,15 @@ namespace {
         if (b)
         {
             // ...and then remove squares not supported by another enemy piece
+            // [QUEEN] is not computed here because already done above 
+            // example: if Rook can attack g7 supported by Queen, then Queen can attack g7 supported by Rook,
+            // and this was computed above with a large bonus already.
+
+            // **NEW **[ROOK_SUPPORT] computes supports by another Rook or by a Queen via x-ray
+            // Those specific attacks had no bonus yet
+
             b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP]);
+                  | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK_SUPPORT]);
 
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
