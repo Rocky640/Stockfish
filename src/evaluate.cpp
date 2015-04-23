@@ -66,7 +66,7 @@ namespace {
     // squares two ranks in front of the king. For instance, if black's king
     // is on g8, kingRing[BLACK] is a bitboard containing the squares f8, h8,
     // f7, g7, h7, f6, g6 and h6.
-    Bitboard kingRing[2][COLOR_NB];
+    Bitboard kingRing[COLOR_NB];
 
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
@@ -225,14 +225,13 @@ namespace {
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
-        ei.kingRing[0][Them] = b | shift_bb<Down>(b);
-        ei.kingRing[1][Them] = shift_bb<DELTA_E>(ei.kingRing[0][Them]) | shift_bb<DELTA_W>(ei.kingRing[0][Them]);
+        ei.kingRing[Them] = b | shift_bb<Down>(b);
         b &= ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
         ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
     }
     else
-        ei.kingRing[0][Them] = ei.kingRing[1][Them] = ei.kingAttackersCount[Us] = 0;
+        ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
   }
 
 
@@ -290,7 +289,7 @@ namespace {
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
-        if (b & ei.kingRing[Pt == ROOK][Them])
+        if ((Pt != ROOK) && (b & ei.kingRing[Them]))
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
