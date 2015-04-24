@@ -384,7 +384,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, b, b1, b2, safe;
+    Bitboard undefended, b, b1, b2, bQ, safe;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -451,17 +451,17 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq) & safe;
 
         // Enemy queen safe checks
-        b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
-        if (b)
-            attackUnits += QueenCheck * popcount<Max15>(b);
+        bQ = (b1 | b2) & ei.attackedBy[Them][QUEEN];
+        if (bQ)
+            attackUnits += QueenCheck * popcount<Max15>(bQ);
 
         // Enemy rooks safe checks
-        b = b1 & ei.attackedBy[Them][ROOK];
+        b = b1 & ei.attackedBy[Them][ROOK] & ~bQ;
         if (b)
             attackUnits += RookCheck * popcount<Max15>(b);
 
         // Enemy bishops safe checks
-        b = b2 & ei.attackedBy[Them][BISHOP];
+        b = b2 & ei.attackedBy[Them][BISHOP] & ~bQ;
         if (b)
             attackUnits += BishopCheck * popcount<Max15>(b);
 
