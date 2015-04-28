@@ -201,7 +201,7 @@ namespace {
         
         // Calculate opponent outpost squares by removing squares that we can eventually control with some pawn push.
         // Former definition was equivalent to the last case : excluding all the squares in the pawn attack span, that is,
-        // in adjacent columns in front of out pawn
+        // in adjacent columns in front of our pawn
 
         // Here we have a more precise definition, which consider the opposed case.
         // For example, if White e2 and Black e3, only d3 and f3 are excluded as "non-outpost"
@@ -226,8 +226,6 @@ namespace {
            e->outpostSquares[Them] &= ~(pawn_attack_span(Us, s) & in_front_bb(Them, rank_of(backmost_sq(Us, opposed) + Up)));
         else
            e->outpostSquares[Them] &= ~ pawn_attack_span(Us, s);
-
-        e->outpostSquares[Them] &= ~pawn_attack_span(Us, s);
 
     }
 
