@@ -67,6 +67,8 @@ namespace {
     (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)
   };
 
+  const Bitboard OutpostMask = {Rank3BB | Rank4BB | Rank5BB | Rank6BB};
+
   const Score CenterBind = S(16, 0);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
@@ -110,9 +112,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, phalanx, opposed;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, backward, lever, connected;
     Score score = SCORE_ZERO;
     const Square* pl = pos.list<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -123,6 +125,7 @@ namespace {
     e->passedPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
+    e->outpostSquares[Them] = ~0;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
@@ -169,7 +172,7 @@ namespace {
             backward = (b | shift_bb<Up>(b)) & theirPawns;
         }
 
-        assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
+        assert(!!opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
 
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate passed pawns. Only the frontmost passed
@@ -179,23 +182,56 @@ namespace {
 
         // Score this pawn
         if (isolated)
-            score -= Isolated[opposed][f];
+            score -= Isolated[!!opposed][f];
 
         else if (backward)
-            score -= Backward[opposed][f];
+            score -= Backward[!!opposed][f];
 
         else if (!supported)
             score -= UnsupportedPawnPenalty;
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[!!opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+        
+        // Calculate opponent outpost squares by removing squares that we can eventually control with some pawn push.
+        // Former definition was equivalent to the last case : excluding all the squares in the pawn attack span, that is,
+        // in adjacent columns in front of out pawn
+
+        // Here we have a more precise definition, which consider the opposed case.
+        // For example, if White e2 and Black e3, only d3 and f3 are excluded as "non-outpost"
+        // For example, if White e2 and Black e4, only d3,d4 and f3,f4 are excluded as "non-outpost". d5 is fine for Black.
+
+        // And we consider also the backward case, which correspond to "artificial outpost"
+        // For example, if White g2, h3 and Black h4, only h3 and f3 are excluded as "non-outpost". f4 is fine for Black.
+        // For example, if White g2, h4 and Black h5, only h3, h4 and f3, f4 are excluded as "non-outpost". f5 is fine for Black
+
+        // Finally, if backward AND opposed, we find the closest pawn which hinders the progress of the backward pawn
+        // It can be a pawn in front of the backward, or a pawn in the adjacent columns.
+ 
+        if (backward)
+        {
+            b = pawn_attack_span(Us, s) & theirPawns;
+            if (opposed && relative_rank(Us, backmost_sq(Us, opposed)) < relative_rank(Us, backmost_sq(Us, b)))
+                e->outpostSquares[Them] &= ~(pawn_attack_span(Us, s) & in_front_bb(Them, rank_of(backmost_sq(Us, opposed) + Up)));
+            else
+                e->outpostSquares[Them] &= ~(pawn_attack_span(Us, s) & in_front_bb(Them, rank_of(backmost_sq(Us, b))));
+        }
+        else if (opposed)
+           e->outpostSquares[Them] &= ~(pawn_attack_span(Us, s) & in_front_bb(Them, rank_of(backmost_sq(Us, opposed) + Up)));
+        else
+           e->outpostSquares[Them] &= ~ pawn_attack_span(Us, s);
+
+        e->outpostSquares[Them] &= ~pawn_attack_span(Us, s);
+
     }
+
+    e->outpostSquares[Them] &= OutpostMask;
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;

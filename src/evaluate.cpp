@@ -309,8 +309,8 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
-            // Bonus for outpost square
-            if (!(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
+            // Bonus for outpost squares
+            if (ei.pi->outpostSquares[Us] & s)
                 score += evaluate_outpost<Pt, Us>(pos, ei, s);
 
             // Bonus when behind a pawn
