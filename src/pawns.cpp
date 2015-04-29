@@ -110,7 +110,7 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, phalanx, hurdles;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -123,10 +123,15 @@ namespace {
     e->passedPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
-    e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
-    e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
-    e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+    e->pawnAttacks[Us]    = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+    e->pawnDblAttacks[Us] = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
 
+    // Hurdles on the opponent Bishop path (for dark/light square bishop)
+    // Opponent pawns are natural hurdles, but consider also our wedges as a structural hurdle
+    hurdles = theirPawns | (e->pawnDblAttacks[Us] & ourPawns);
+    e->bishopHurdles[Them][BLACK] = popcount<Max15>(hurdles &  DarkSquares);
+    e->bishopHurdles[Them][WHITE] = popcount<Max15>(hurdles & ~DarkSquares);
+    
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
     {
@@ -201,7 +206,7 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     // Center binds: Two pawns controlling the same central square
-    b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
+    b = e->pawnDblAttacks[Us] & CenterBindMask[Us];
     score += popcount<Max15>(b) * CenterBind;
 
     return score;
