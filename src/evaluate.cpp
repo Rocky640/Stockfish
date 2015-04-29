@@ -60,6 +60,8 @@ namespace {
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
+    Bitboard bishopLeverExtra[COLOR_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -303,7 +305,7 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
+        int mob = popcount<Pt == QUEEN ? Full : Max15>(Pt == BISHOP ? b & (mobilityArea[Us] | ei.bishopLeverExtra[Us]) : b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
@@ -742,6 +744,18 @@ namespace {
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
                                 ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK, PAWN, KING)) };
+    
+    // ... but if square protected by enemy pawn is occupied by an enemy pawn not protected twice, 
+    // and we have a lever, include in our mobility area for the BISHOPS.
+
+    // Example: White Bg2, Rd1 and pawn c4, Black c6 d5. 
+    // d5 was not included in above definition, now it is !
+    // Example: White Bb3, Rd1 and pawn c4, Black c6 d5. 
+    // d5 is now included, but that will not change anything when we will calculate the Bb3 mobility, 
+    // since Bb3 cannot "see" d5. 
+ 
+    ei.bishopLeverExtra[WHITE] = pos.pieces(BLACK, PAWN) & ei.attackedBy[WHITE][PAWN] & ~ei.pi->pawn_dbl_attacks(BLACK);
+    ei.bishopLeverExtra[BLACK] = pos.pieces(WHITE, PAWN) & ei.attackedBy[BLACK][PAWN] & ~ei.pi->pawn_dbl_attacks(WHITE);
 
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
