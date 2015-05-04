@@ -506,10 +506,17 @@ namespace {
 
     if (weak)
     {
-        b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
-                                    | ei.attackedBy[Us][ALL_PIECES]);
-
+        // Find threats by non hanging unpinned pawns
+        b =   pos.pieces(Us, PAWN) 
+            & ~ei.pinnedPieces[Us]
+            & ( ~ei.attackedBy[Them][ALL_PIECES] | ei.attackedBy[Us][ALL_PIECES]);
+        
         safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
+
+        // However, even if a pawn is pinned,
+        // the attacks along the king diagonals are always possible
+        // Example: White Kg1, f2 Black Qe3. Qe3 is "weak", and should be a "safe threat" too.
+        safeThreats |= weak & PseudoAttacks[BISHOP][pos.king_square(Us)];
 
         if (weak ^ safeThreats)
             score += ThreatenedByHangingPawn;
