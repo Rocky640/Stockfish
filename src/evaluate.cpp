@@ -59,6 +59,7 @@ namespace {
     // attacked by a given color and piece type, attackedBy[color][ALL_PIECES]
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
+	Bitboard attackedBy2[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -207,6 +208,7 @@ namespace {
   const int RookCheck         = 37;
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
+  const int NoDefenseCheck    = 25;
 
 
   // init_eval_info() initializes king bitboards for given color adding
@@ -219,6 +221,7 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
+	ei.attackedBy2[Us] = 0;
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
@@ -287,6 +290,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -383,6 +387,7 @@ namespace {
   Score evaluate_king(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Square Up  = (Us == WHITE ? DELTA_N  : DELTA_S);
 
     Bitboard undefended, b, b1, b2, safe;
     int attackUnits;
@@ -394,6 +399,7 @@ namespace {
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
+	   
         // Find the attacked squares around the king which have no defenders
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
@@ -449,22 +455,42 @@ namespace {
 
         b1 = pos.attacks_from<ROOK  >(ksq) & safe;
         b2 = pos.attacks_from<BISHOP>(ksq) & safe;
+        Bitboard bSafeChecks = 0;
 
         // Enemy queen safe checks
         b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
-        if (b)
+        if (b) {
             attackUnits += QueenCheck * popcount<Max15>(b);
+			bSafeChecks |= b;
+		}
 
         // Enemy rooks safe checks
         b = b1 & ei.attackedBy[Them][ROOK];
-        if (b)
+        if (b) {
             attackUnits += RookCheck * popcount<Max15>(b);
+			bSafeChecks |= b;
+		}
 
         // Enemy bishops safe checks
         b = b2 & ei.attackedBy[Them][BISHOP];
-        if (b)
+        if (b) {
             attackUnits += BishopCheck * popcount<Max15>(b);
+			bSafeChecks |= b;
+		}
+		
+		if (bSafeChecks) {
+			// Find our possible safe defending moves
+			Bitboard moves = (shift_bb<Up>(pos.pieces(Us, PAWN) & ~ei.pinnedPieces[Us]) & ~pos.pieces());
+			moves = ei.attackedBy2[Us] | (moves & ei.attackedBy[Us][ALL_PIECES]);
 
+            // Bonus if no safe interception is possible. King must move !
+			while (bSafeChecks)
+			{
+				if (BetweenBB[pos.king_square(Us)][pop_lsb(&bSafeChecks)] & moves)
+					attackUnits += NoDefenseCheck;
+			}
+		}
+		
         // Enemy knights safe checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
         if (b)
