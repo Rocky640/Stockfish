@@ -486,7 +486,7 @@ namespace {
             // Bonus if no safe interception is possible. King must move !
 			while (bSafeChecks)
 			{
-				if (BetweenBB[pos.king_square(Us)][pop_lsb(&bSafeChecks)] & moves)
+				if (!(BetweenBB[pos.king_square(Us)][pop_lsb(&bSafeChecks)] & moves))
 					attackUnits += NoDefenseCheck;
 			}
 		}
