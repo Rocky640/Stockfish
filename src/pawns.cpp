@@ -192,8 +192,14 @@ namespace {
         if (connected) 
 		{
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
-			if (!opposed && !!phalanx && !passed && !more_than_one(theirPawns & passed_pawn_mask(Us, s)))	
-				score += LocalDuoAgainstOne; //possibiity of creating a passer
+			if (!opposed && !!phalanx && !passed && !more_than_one(theirPawns & passed_pawn_mask(Us, s)))
+			{
+				int r = relative_rank(Us, s) - RANK_2;
+				int rr = r * (r - 1);
+				Value mbonus = Value(17 * relative_rank(Us, s)), ebonus = Value(7 * (rr + r + 1));
+				
+				score += make_score(mbonus , ebonus) / 4;
+			}
 		}
 
         if (doubled)
