@@ -60,6 +60,8 @@ namespace {
 
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
+  
+  const Score LocalDuoAgainstOne = S(20, 20);
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
@@ -187,8 +189,12 @@ namespace {
         else if (!supported)
             score -= UnsupportedPawnPenalty;
 
-        if (connected)
+        if (connected) 
+		{
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+			if (!opposed && !!phalanx && !passed && !more_than_one(theirPawns & passed_pawn_mask(Us, s)))	
+				score += LocalDuoAgainstOne; //possibiity of creating a passer
+		}
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
