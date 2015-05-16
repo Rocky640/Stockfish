@@ -407,9 +407,13 @@ namespace {
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
+
+        // * NEW * If king can castle on next move, this is considered a good defensive resource
+
         attackUnits =  std::min(74, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
                      +  8 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 25 * popcount<Max15>(undefended)
+					 - 10 * pos.legal_castle_count<Us>(ei.attackedBy[Them][ALL_PIECES])
                      + 11 * (ei.pinnedPieces[Us] != 0)
                      - mg_value(score) / 8
                      - !pos.count<QUEEN>(Them) * 60;

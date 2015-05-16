@@ -115,6 +115,8 @@ public:
   int can_castle(Color c) const;
   int can_castle(CastlingRight cr) const;
   bool castling_impeded(CastlingRight cr) const;
+  template<Color> int legal_castle_count(Bitboard attacked) const;
+  bool can_castle_legal(CastlingRight cr, Bitboard attacked) const;
   Square castling_rook_square(CastlingRight cr) const;
 
   // Checking
@@ -277,6 +279,18 @@ inline int Position::can_castle(Color c) const {
 
 inline bool Position::castling_impeded(CastlingRight cr) const {
   return byTypeBB[ALL_PIECES] & castlingPath[cr];
+}
+
+template<Color c> inline int Position::legal_castle_count(Bitboard attacks) const {
+  const CastlingRight cr1 = c == WHITE ? WHITE_OO : BLACK_OO;
+  const CastlingRight cr2 = c == WHITE ? WHITE_OOO : BLACK_OOO;
+
+  if (!can_castle(c)) return 0;
+  return can_castle_legal(cr1, attacks) + can_castle_legal(cr2, attacks);
+}
+
+inline bool Position::can_castle_legal(CastlingRight cr, Bitboard attacks) const {
+  return can_castle(cr) && ((attacks | byTypeBB[ALL_PIECES]) & castlingPath[cr]);
 }
 
 inline Square Position::castling_rook_square(CastlingRight cr) const {
