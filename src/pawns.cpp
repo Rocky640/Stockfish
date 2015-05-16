@@ -61,8 +61,6 @@ namespace {
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
   
-  const Score LocalDuoAgainstOne = S(20, 20);
-
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
     (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
@@ -191,15 +189,8 @@ namespace {
 
         if (connected) 
 		{
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
-			if (!opposed && !!phalanx && !passed && !more_than_one(theirPawns & passed_pawn_mask(Us, s)))
-			{
-				int r = relative_rank(Us, s) - RANK_2;
-				int rr = r * (r - 1);
-				Value mbonus = Value(17 * relative_rank(Us, s)), ebonus = Value(7 * (rr + r + 1));
-				
-				score += make_score(mbonus , ebonus) / 4;
-			}
+			opposed |= more_than_one(theirPawns & passed_pawn_mask(Us, s));
+            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];	
 		}
 
         if (doubled)
