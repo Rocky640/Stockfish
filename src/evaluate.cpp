@@ -392,7 +392,7 @@ namespace {
     Score score = ei.pi->king_safety<Us>(pos, ksq);
 
     // Main king safety evaluation
-    if (ei.kingAttackersCount[Them])
+    if (ei.kingAttackersCount[Them] > 1)
     {
         // Find the attacked squares around the king which have no defenders
         // apart from the king itself
