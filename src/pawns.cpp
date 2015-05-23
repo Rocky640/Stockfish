@@ -222,16 +222,17 @@ void init()
 {
   static const int Seed[RANK_NB] = { 0, 6, 15, 10, 57, 75, 135, 258 };
 
-  for (int opposed = 0; opposed <= 1; ++opposed)
+  for (int opp = 0; opp <= 2; ++opp)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
           for (int apex = 0; apex <= 1; ++apex)
               for (Rank r = RANK_2; r < RANK_8; ++r)
   {
       int v = (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0));
-	  if (opposed == 2) v /= 2;   //some pawn in front 
-	  if (opposed == 1) v *= 3/4; //no pawn in front, but 2 on the sides
+	  if (opp == 2) v =  v / 2;   //some pawn in front, use half v, same bonus as previous master
+	  if (opp == 1) v = (v * 3) / 4; //* NEW * no pawn in front, but 2 on the sides
+	  //if (opp == 0) //not opposed. Use full v,  same bonus as previous master
       v += (apex ? v / 2 : 0);
-      Connected[opposed][phalanx][apex][r] = make_score(3 * v / 2, v);
+      Connected[opp][phalanx][apex][r] = make_score(3 * v / 2, v);
   }
 }
 
