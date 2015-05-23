@@ -159,6 +159,9 @@ namespace {
   };
 
   const Score ThreatenedByHangingPawn = S(40, 60);
+  
+  // If no attacks on opponent non-pawn pieces or on pieces not defended by a pawn.
+  const Score NoPressure = S(20, 5);
 
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
@@ -557,6 +560,9 @@ namespace {
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
+	
+	if (! (weak | defended))
+        score -= NoPressure;
 
     // Add a small bonus for safe pawn pushes
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
