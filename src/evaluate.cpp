@@ -164,6 +164,7 @@ namespace {
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
+  const Score RookOnKing         = S( 7, 27);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
@@ -339,12 +340,14 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Bonus for aligning with enemy pawns on the same rank/file
+            // Bonus for aligning with enemy pawns or restricting the King on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
             {
                 Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (alignedPawns)
                     score += popcount<Max15>(alignedPawns) * RookOnPawn;
+                if (ei.attackedBy[Them][KING] & b)
+                    score += RookOnKing;
             }
 
             // Bonus when on an open or semi-open file
