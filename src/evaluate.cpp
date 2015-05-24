@@ -342,7 +342,7 @@ namespace {
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
             {
-                Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
+                Bitboard alignedPawns = pos.pieces(Them, PAWN) & b;
                 if (alignedPawns)
                     score += popcount<Max15>(alignedPawns) * RookOnPawn;
             }
