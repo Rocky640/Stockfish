@@ -305,7 +305,8 @@ namespace {
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt][mob];
+        // Amplify mobility bonus or penalty when piece is the opponent half of the board.
+        mobility[Us] += MobilityBonus[Pt][mob] * (relative_rank(Us, s) > RANK_4 ? 19 : 13)/16;
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
