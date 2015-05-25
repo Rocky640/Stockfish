@@ -344,7 +344,7 @@ namespace {
             {
                 Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (alignedPawns)
-                    score += std::min(popcount<Max15>(alignedPawns), 3) * RookOnPawn;
+                    score += std::min(popcount<Max15>(alignedPawns), 2) * RookOnPawn;
             }
 
             // Bonus when on an open or semi-open file
