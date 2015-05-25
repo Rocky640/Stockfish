@@ -163,7 +163,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
-  const Score OneWayRook         = S(10, 10);
+  const Score OneWayRook         = S( 5,  5);
   const Score RookOnPawn         = S( 7, 27);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
@@ -340,10 +340,10 @@ namespace {
 
         if (Pt == ROOK)
         {
-			if (mob>3 && 
-			    (!more_than_one(b & mobilityArea[Us] & rank_bb(s)) || 
-			     !more_than_one(b & mobilityArea[Us] & file_bb(s))))
-				score -= OneWayRook;
+            if (mob>3 && 
+                (!more_than_one(b & mobilityArea[Us] & rank_bb(s)) || 
+                !more_than_one(b & mobilityArea[Us] & file_bb(s))))
+                score -= OneWayRook;
 
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
