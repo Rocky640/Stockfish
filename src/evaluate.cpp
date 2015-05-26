@@ -303,7 +303,9 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
+        int mob = popcount<Pt == QUEEN ? Full : Max15>
+                            (b & mobilityArea[Us] 
+                               & (ei.attackedBy[Them][PAWN] & s ? ~pos.pieces(Us) : ~0));
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
