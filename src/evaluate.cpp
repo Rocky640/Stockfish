@@ -60,6 +60,10 @@ namespace {
     // contains all squares attacked by the given color.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
+    // attackedFrom[square] is a bitboard representing all squares
+    // attacked by a Minor or Major on a given square
+    Bitboard attackedFrom[SQUARE_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -151,9 +155,15 @@ namespace {
   { { S(0, 0), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Weak Minor
     { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Weak Major
   };
+  
+  // ThreatenedBySniper[defended/weak] for attacks by a sniper on defended or weak pieces
+  // A sniper is a Minor or Major which is not attacked, so it can freely shoot without being disturbed
+  const Score ThreatenedBySniper[2] = {
+    S(5, 5), S(10, 10)
+  };
 
-  // ThreatenedByPawn[PieceType] contains a penalty according to which piece
-  // type is attacked by an enemy pawn.
+  // ThreatenedByPawn[PieceType] contains a bonus according to which piece
+  // type is attacked by our pawn.
   const Score ThreatenedByPawn[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 0), S(107, 138), S(84, 122), S(114, 203), S(121, 217)
   };
@@ -287,7 +297,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= ei.attackedFrom[s] = b;
 
         if (b & ei.kingRing[Them])
         {
@@ -501,6 +511,12 @@ namespace {
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
+    // Find out our pieces which are not attacked, and the squares which they threaten
+    Bitboard snipers = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & ~ei.attackedBy[Them][ALL_PIECES];
+    Bitboard sniperAttacks = 0;
+    while (snipers)
+        sniperAttacks |= ei.attackedFrom[pop_lsb(&snipers)];
+
     // Non-pawn enemies attacked by a pawn
     weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
 
@@ -531,8 +547,12 @@ namespace {
         b = defended & (ei.attackedBy[Us][ROOK]);
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
-    }
 
+        b = defended & sniperAttacks;
+        if (b)
+            score += ThreatenedBySniper[Defended] * popcount<Max15>(b);
+    }
+    
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
           & ~ei.attackedBy[Them][PAWN]
@@ -552,6 +572,10 @@ namespace {
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
+
+        b = weak & sniperAttacks;
+        if (b)
+            score += ThreatenedBySniper[Weak] * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
