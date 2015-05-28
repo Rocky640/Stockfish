@@ -506,8 +506,15 @@ namespace {
 
     if (weak)
     {
-        b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
-                                    | ei.attackedBy[Us][ALL_PIECES]);
+        // Find out about solid pins (the pinner is not attacked)
+        b = ei.pinnedPieces[Us] & pos.pieces(Us, PAWN);
+        if (b) 
+            b = pos.solid_pinned_pieces(Us, ei.attackedBy[Us][ALL_PIECES]);
+
+        // Consider relatively safe pawns, and exclude pawns which are solidly pinned.
+        b = pos.pieces(Us, PAWN) 
+            & (~ei.attackedBy[Them][ALL_PIECES]	| ei.attackedBy[Us][ALL_PIECES])
+            & ~b;
 
         safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
 
