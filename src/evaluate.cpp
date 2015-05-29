@@ -68,15 +68,9 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     Bitboard kingRing[COLOR_NB];
 
-    // kingAttackersCount[color] is the number of pieces of the given color
-    // which attack a square in the kingRing of the enemy king.
-    int kingAttackersCount[COLOR_NB];
-
-    // kingAttackersWeight[color] is the sum of the "weight" of the pieces of the
-    // given color which attack a square in the kingRing of the enemy king. The
-    // weights of the individual piece types are given by the elements in the
-    // KingAttackWeights array.
-    int kingAttackersWeight[COLOR_NB];
+    // kingRingAttackers[color] is a bitboard representiong pieces
+    // which attacks a square in the kingRing of the enemy king.
+    Bitboard kingRingAttackers[COLOR_NB];
 
     // kingAdjacentZoneAttacksCount[color] is the number of attacks by the given
     // color to squares directly adjacent to the enemy king. Pieces which attack
@@ -152,8 +146,8 @@ namespace {
     { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Weak Major
   };
 
-  // ThreatenedByPawn[PieceType] contains a penalty according to which piece
-  // type is attacked by an enemy pawn.
+  // ThreatenedByPawn[PieceType] contains a bonus according to which piece
+  // type is attacked by our pawn.
   const Score ThreatenedByPawn[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 0), S(107, 138), S(84, 122), S(114, 203), S(121, 217)
   };
@@ -197,8 +191,11 @@ namespace {
   // index to KingDanger[].
   Score KingDanger[512];
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
-  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
+  // *** NEW: double the resolution ***
+  // KingAttackWeights[attacked][PieceType] contains king attack weights by piece type
+  const int KingAttackWeights[2][PIECE_TYPE_NB] = { 
+      {0, 3, 13, 12, 10, 4 },
+      {0, 2, 10,  9,  4, 1 } };
 
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 89;
@@ -226,12 +223,11 @@ namespace {
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
-        b &= ei.attackedBy[Us][PAWN];
-        ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
-        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
+        ei.kingRingAttackers[Us] = b & ei.attackedBy[Us][PAWN];
+        ei.kingAdjacentZoneAttacksCount[Us] = 0;
     }
     else
-        ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+        ei.kingRing[Them] = ei.kingRingAttackers[Us] = 0;
   }
 
 
@@ -291,8 +287,7 @@ namespace {
 
         if (b & ei.kingRing[Them])
         {
-            ei.kingAttackersCount[Us]++;
-            ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
+            ei.kingRingAttackers[Us] |= s;
             Bitboard bb = b & ei.attackedBy[Them][KING];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
@@ -385,14 +380,14 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
     Bitboard undefended, b, b1, b2, safe;
-    int attackUnits;
+    int attackUnits = 0;
     const Square ksq = pos.king_square(Us);
 
     // King shelter and enemy pawns storm
     Score score = ei.pi->king_safety<Us>(pos, ksq);
 
     // Main king safety evaluation
-    if (ei.kingAttackersCount[Them])
+    if (ei.kingRingAttackers[Them])
     {
         // Find the attacked squares around the king which have no defenders
         // apart from the king itself
@@ -402,12 +397,23 @@ namespace {
                         | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
                         | ei.attackedBy[Us][QUEEN]);
 
+        // Compute attackers count and sum of weights which depends on piece type and if the attacker is safe or not.
+        b = ei.kingRingAttackers[Them];
+        int c = 0, w = 0;
+        do
+        {
+            Square s = pop_lsb(&b);
+            c += 1;
+            w += KingAttackWeights[!!(ei.attackedBy[Us][ALL_PIECES] & s)][type_of(pos.piece_on(s))];
+        } while (b);
+
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
-        attackUnits =  std::min(74, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
+
+        attackUnits =  std::min(74, (c * w) / 2)
                      +  8 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 25 * popcount<Max15>(undefended)
                      + 11 * (ei.pinnedPieces[Us] != 0)
