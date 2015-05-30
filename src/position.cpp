@@ -471,14 +471,14 @@ Bitboard Position::check_blockers(Color c, Color kingColor) const {
   return result;
 }
 
-Bitboard Position::check_solidpins(Color c, Bitboard exclude) const {
-    // Find pinned pawns of color c, excluding pins from pinners which are attacked
+Bitboard Position::check_solidpins(Color c, Bitboard attacked) const {
+    // Find orthogonally and solidly pinned pieces of color c, 
+    // (so we exclude pinners which are attacked)
+
     Bitboard b, pinners, result = 0;
     Square ksq = king_square(c);
 
-    // Pinners are sliders that give check when a pinned piece is removed
-    pinners = ((pieces(ROOK, QUEEN) & PseudoAttacks[ROOK][ksq])
-        | (pieces(BISHOP, QUEEN) & PseudoAttacks[BISHOP][ksq])) & pieces(~c) & ~exclude;
+    pinners = pieces(ROOK, QUEEN) & PseudoAttacks[ROOK][ksq] & ~attacked;
 
     while (pinners)
     {

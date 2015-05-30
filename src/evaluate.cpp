@@ -506,7 +506,7 @@ namespace {
 
     if (weak)
     {
-        // Find out about solid pins (the pinner is not attacked)
+        // Find out about solid pins (orthogonal pinner which is not attacked)
         b = ei.pinnedPieces[Us] & pos.pieces(Us, PAWN);
         if (b) 
             b = pos.solid_pinned_pieces(Us, ei.attackedBy[Us][ALL_PIECES]);
