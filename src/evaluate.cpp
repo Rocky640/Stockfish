@@ -590,6 +590,7 @@ namespace {
   Score evaluate_passed_pawns(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard QueeningRank = (Us == WHITE ? RANK_8 : RANK_1);
 
     Bitboard b, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
@@ -620,8 +621,12 @@ namespace {
             if (relative_rank(Us, blockSq) != RANK_8)
                 ebonus -= distance(pos.king_square(Us), blockSq + pawn_push(Us)) * rr;
 
+            // If pawn is on rank_6 or 7, do not give any more bonus if rook is on 8th (on 7th is OK)
+            if (relative_rank(Us, s) > RANK_5 && (pos.pieces(Us, ROOK) & file_bb(s) & QueeningRank))
+                ebonus += 0;
+
             // If the pawn is free to advance, then increase the bonus
-            if (pos.empty(blockSq))
+            else if (pos.empty(blockSq))
             {
                 // If there is a rook or queen attacking/defending the pawn from behind,
                 // consider all the squaresToQueen. Otherwise consider only the squares
