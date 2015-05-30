@@ -322,7 +322,7 @@ namespace {
             // Penalty if blocking our own non-passed pawn
             if  ( (pos.pieces(Us, PAWN) & (s - pawn_push(Us))) 
                 && !pos.pawn_passed(Us, s - pawn_push(Us)))
-                score += MinorFrontPawn;
+                score -= MinorFrontPawn;
 
             // Penalty for pawns on same color square of bishop
             if (Pt == BISHOP)
