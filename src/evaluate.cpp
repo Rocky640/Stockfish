@@ -85,7 +85,7 @@ namespace {
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
-    Bitboard pinnedPieces[COLOR_NB];
+    Bitboard solidPinnedPieces[COLOR_NB];
   };
 
 
@@ -218,8 +218,8 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
-    ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.solidPinnedPieces[Us] = pos.solid_pinned_pieces(Us, ei.attackedBy[Us][PAWN]);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
@@ -284,7 +284,7 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
-        if (ei.pinnedPieces[Us] & s)
+        if (ei.solidPinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
@@ -410,7 +410,7 @@ namespace {
         attackUnits =  std::min(74, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
                      +  8 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 25 * popcount<Max15>(undefended)
-                     + 11 * (ei.pinnedPieces[Us] != 0)
+                     + 11 * (ei.solidPinnedPieces[Us] != 0)
                      - mg_value(score) / 8
                      - !pos.count<QUEEN>(Them) * 60;
 
