@@ -320,7 +320,8 @@ namespace {
                 score += MinorBehindPawn;
             
             // Penalty if blocking our own non-passed pawn
-            if  ( (pos.pieces(Us, PAWN) & (s - pawn_push(Us))) 
+            if (    relative_rank(Us, s) > RANK_2
+                && (pos.pieces(Us, PAWN) & (s - pawn_push(Us))) 
                 && !pos.pawn_passed(Us, s - pawn_push(Us)))
                 score -= MinorFrontPawn;
 
