@@ -471,6 +471,27 @@ Bitboard Position::check_blockers(Color c, Color kingColor) const {
   return result;
 }
 
+Bitboard Position::check_solidpins(Color c, Bitboard attacked) const {
+    // Find solidly pinned pieces of color c, 
+    // We exclude pinners which are attacked by a pawn
+
+    Bitboard b, pinners, result = 0;
+    Square ksq = king_square(c);
+
+    // Pinners are sliders that give check when a pinned piece is removed
+   pinners = (  (pieces(  ROOK, QUEEN) & PseudoAttacks[ROOK  ][ksq])
+             | (pieces(BISHOP, QUEEN) & PseudoAttacks[BISHOP][ksq])) & pieces(~c) & ~attacked;
+
+    while (pinners)
+    {
+        b = between_bb(ksq, pop_lsb(&pinners)) & pieces();
+
+        if (!more_than_one(b))
+            result |= b & pieces(c);
+    }
+    return result;
+}
+
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
 /// given square. Slider attacks use the occupied bitboard to indicate occupancy.
@@ -1193,3 +1214,4 @@ bool Position::pos_is_ok(int* failedStep) const {
 
   return true;
 }
+
