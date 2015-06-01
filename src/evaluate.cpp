@@ -191,6 +191,13 @@ namespace {
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB)
   };
 
+  // MinorBehindMask[Color] contains the area of the board which is considered
+  // for the Minor in the MinorBehindPawn evaluation.
+  const Bitboard MinorBehindMask[COLOR_NB] = {
+    (Rank2BB | Rank3BB | Rank4BB),
+    (Rank7BB | Rank6BB | Rank5BB)
+  };
+
   // King danger constants and variables. The king danger scores are looked-up
   // in KingDanger[]. Various little "meta-bonuses" measuring the strength
   // of the enemy attack are added up into an integer, which is used as an
@@ -314,8 +321,7 @@ namespace {
                 score += evaluate_outpost<Pt, Us>(pos, ei, s);
 
             // Bonus when behind a pawn
-            if (    relative_rank(Us, s) < RANK_5
-                && (pos.pieces(PAWN) & (s + pawn_push(Us))))
+            if ( (MinorBehindMask[Us] & s) && (pos.pieces(PAWN) & (s + pawn_push(Us))))
                 score += MinorBehindPawn;
 
             // Penalty for pawns on same color square of bishop
