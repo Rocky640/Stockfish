@@ -168,7 +168,7 @@ namespace {
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
   const Score MinorBehindPawn    = S(16,  0);
-  const Score MinorFrontPawn     = S( 5,  5);
+  const Score MinorFrontPawn     = S( 0, 10);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
