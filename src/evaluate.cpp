@@ -61,8 +61,9 @@ namespace {
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // xattackedBy[attacker color][piece type] is similar to the above, 
-    // but used by sliders only.
-    // It represent additional squares which would be attacked if an opponent piece would move
+    // but used for ROOKS and BISHOP only.
+    // It represents the squares defined above plus squares which would be attacked 
+    // if an opponent non-pawn piece would move
     Bitboard xattackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // kingRing[color] is the zone around the king which is considered
@@ -225,7 +226,7 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
-        ei.xattackedBy[Us][ALL_PIECES] = 0;
+    ei.xattackedBy[Us][ALL_PIECES] = 0;
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
@@ -286,22 +287,23 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = bx =
-            Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
-
-        // For sliders, find also screwer attacks
-        if (Pt != KNIGHT)
-            // Find squares which would be attacked if exactly one of their non-pawn piece would leave the way.
-            // So we remove from the board their attacked pieces (by Pt) and keep their pawns
-            bx = attacks_bb<Pt>(s, (pos.pieces() & ~(b & pos.pieces(Them))) | pos.pieces(PAWN));
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+        // Find also some screwer attacks
+        if (Pt == ROOK || Pt == BISHOP) {
+            // Find squares which would be attacked if exactly one of their non-pawn piece would leave the way.
+            bx = attacks_bb<Pt>(s, (pos.pieces() & ~(b & pos.pieces(Them))) | pos.pieces(PAWN));
+            if (ei.pinnedPieces[Us] & s)
+                bx &= LineBB[pos.king_square(Us)][s];
+            ei.xattackedBy[Us][ALL_PIECES] |= ei.xattackedBy[Us][Pt] |= bx;
+        }
+
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
-        ei.xattackedBy[Us][ALL_PIECES] |= ei.xattackedBy[Us][Pt] |= bx;
 
         if (b & ei.kingRing[Them])
         {
@@ -559,7 +561,7 @@ namespace {
         while (b)
             score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & (ei.xattackedBy[Us][ROOK] | ei.xattackedBy[Us][QUEEN]);
+        b = weak & (ei.xattackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN]);
         while (b)
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 

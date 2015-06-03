@@ -250,9 +250,6 @@ inline unsigned magic_index(Square s, Bitboard occupied) {
 
 template<PieceType Pt>
 inline Bitboard attacks_bb(Square s, Bitboard occupied) {
-  if (Pt == QUEEN)
-    return RookAttacks[s][magic_index<ROOK>(s, occupied)] | BishopAttacks[s][magic_index<BISHOP>(s, occupied)];
-  else
     return (Pt == ROOK ? RookAttacks : BishopAttacks)[s][magic_index<Pt>(s, occupied)];
 }
 
