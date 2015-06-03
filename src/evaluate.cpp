@@ -235,10 +235,12 @@ namespace {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
         b &= ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
-        ei.discoAttackers[Us] = ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
+        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+
+    ei.discoAttackers[Us] = 0;
   }
 
 
@@ -485,7 +487,7 @@ namespace {
             attackUnits += SafeCheck[BISHOP] * popcount<Max15>(b);
 
         // Disco checks
-        disco = ei.discoAttackers[Them] & safe;
+        disco = ei.discoAttackers[Them] & ~ei.attackedBy[Us][ALL_PIECES];
         while (disco)
             attackUnits += SafeCheck[type_of(pos.piece_on(pop_lsb(&disco)))];
 
