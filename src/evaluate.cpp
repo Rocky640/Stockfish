@@ -756,11 +756,11 @@ namespace {
     // Give a higher relative weight for the side to move
 
     if (pos.side_to_move() == WHITE)
-        score +=  (5 * evaluate_threats<WHITE, Trace>(pos, ei)
-              - 3 * evaluate_threats<BLACK, Trace>(pos, ei)) / 4;
+        score +=  (9 * evaluate_threats<WHITE, Trace>(pos, ei)
+              - 7 * evaluate_threats<BLACK, Trace>(pos, ei)) / 8;
     else
-        score +=  (3 * evaluate_threats<WHITE, Trace>(pos, ei)
-              - 5 * evaluate_threats<BLACK, Trace>(pos, ei)) / 4;
+        score +=  (7 * evaluate_threats<WHITE, Trace>(pos, ei)
+              - 9 * evaluate_threats<BLACK, Trace>(pos, ei)) / 8;
 
     // Evaluate passed pawns, we need full attack information including king
     
