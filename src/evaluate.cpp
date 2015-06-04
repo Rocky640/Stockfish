@@ -294,10 +294,11 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
-        // Find also some screwer attacks
+        // Find skewer attacks only through higher valued pieces
         if (Pt == ROOK || Pt == BISHOP) {
-            // Find squares which would be attacked if exactly one of their non-pawn piece would leave the way.
-            bx = attacks_bb<Pt>(s, (pos.pieces() & ~(b & pos.pieces(Them))) | pos.pieces(PAWN));
+            // Find squares which would be attacked if the pieces attacked by Pt leave the way.
+            bx = attacks_bb<Pt>(s, (pos.pieces() & 
+                                   ~(b & (Pt == ROOK ? pos.pieces(Them, QUEEN) : pos.pieces(Them, ROOK, QUEEN)))));
             if (ei.pinnedPieces[Us] & s)
                 bx &= LineBB[pos.king_square(Us)][s];
             ei.xattackedBy[Us][ALL_PIECES] |= ei.xattackedBy[Us][Pt] |= bx;
