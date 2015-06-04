@@ -296,8 +296,8 @@ namespace {
 
         // Find skewer attacks only through higher valued pieces
         if (Pt == ROOK || Pt == BISHOP) {
-            // Find squares which would be attacked if the pieces attacked by Pt leave the way.
-            bx = attacks_bb<Pt>(s, (pos.pieces() & 
+            // Find squares which would be attacked if the pieces attacked by Pt leave the way
+            bx = b | attacks_bb<Pt>(s, (pos.pieces() & 
                                    ~(b & (Pt == ROOK ? pos.pieces(Them, QUEEN) : pos.pieces(Them, ROOK, QUEEN)))));
             if (ei.pinnedPieces[Us] & s)
                 bx &= LineBB[pos.king_square(Us)][s];
