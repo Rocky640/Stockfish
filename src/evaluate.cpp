@@ -63,8 +63,11 @@ namespace {
     // xattackedBy[attacker color][piece type] is similar to the above, 
     // but used by sliders only.
     // It represent the above squares plus squares which would be attacked 
-    // if a friendly pieces would move
+    // if a friendly non-pawn piece would move
     Bitboard xattackedBy[COLOR_NB][PIECE_TYPE_NB];
+
+    // pieces which would attack the King if one of our piece would would away.
+    Bitboard discoAttackers[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -223,7 +226,6 @@ namespace {
     
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
-    ei.xattackedBy[Us][ALL_PIECES] = 0;
 
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
@@ -237,6 +239,8 @@ namespace {
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+
+    ei.discoAttackers[Us] = 0;
   }
 
 
@@ -272,7 +276,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b;
+    Bitboard b, bx;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -290,22 +294,27 @@ namespace {
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
-             b &= LineBB[pos.king_square(Us)][s];
+            bx = b &= LineBB[pos.king_square(Us)][s];
         else if (Pt != KNIGHT) {
             // Find squares which would be attacked if one of our non-pawn piece would leave the way.
-            ei.xattackedBy[Us][ALL_PIECES] |= ei.xattackedBy[Us][Pt] |= 
-                attacks_bb<Pt>(s, (pos.pieces() & ~b) | pos.pieces(PAWN, KING) | pos.pieces(Them));
+            bx = attacks_bb<Pt>(s, (pos.pieces() & ~b) | pos.pieces(PAWN, KING) | pos.pieces(Them));
+            ei.xattackedBy[Us][Pt] |= bx;
         }
+        else
+            bx = b;
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
-        if (b & ei.kingRing[Them])
+        if (bx & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             Bitboard bb = b & ei.attackedBy[Them][KING];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
+
+            if (bx & pos.king_square(Them))
+                ei.discoAttackers[Us] |= s;
         }
         
         if (Pt == QUEEN)
@@ -394,7 +403,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, b, b1, b2, safe;
+    Bitboard undefended, b, b1, b2, safe, disco;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -404,7 +413,7 @@ namespace {
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
-        // Find directly attacked squares around the king which have no defenders
+        // Find attacked squares around the king which have no defenders
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
@@ -431,7 +440,7 @@ namespace {
         {
             // ...and then remove squares not supported by another enemy piece
             b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK];
+                | ei.xattackedBy[Them][BISHOP] | ei.xattackedBy[Them][ROOK];
 
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
@@ -448,7 +457,7 @@ namespace {
         {
             // ...and then remove squares not supported by another enemy piece
             b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP]);
+                  | ei.xattackedBy[Them][BISHOP]);
 
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
@@ -474,6 +483,11 @@ namespace {
         b = b2 & ei.attackedBy[Them][BISHOP];
         if (b)
             attackUnits += SafeCheck[BISHOP] * popcount<Max15>(b);
+
+        // Disco checks
+        disco = ei.discoAttackers[Them] & ~ei.attackedBy[Us][ALL_PIECES];
+        while (disco)
+            attackUnits += SafeCheck[type_of(pos.piece_on(pop_lsb(&disco)))];
 
         // Enemy knights safe checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
@@ -534,11 +548,11 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (defended)
     {
-        b = defended & (ei.attackedBy[Us][KNIGHT] | ei.xattackedBy[Us][BISHOP]);
+        b = defended & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
             score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = defended & (ei.xattackedBy[Us][ROOK]);
+        b = defended & (ei.attackedBy[Us][ROOK]);
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
     }
@@ -546,20 +560,20 @@ namespace {
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
           & ~ei.attackedBy[Them][PAWN]
-          &  ei.xattackedBy[Us][ALL_PIECES];
+          &  ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
     if (weak)
     {
-        b = weak & (ei.attackedBy[Us][KNIGHT] | ei.xattackedBy[Us][BISHOP]);
+        b = weak & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
             score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & (ei.xattackedBy[Us][ROOK] | ei.xattackedBy[Us][QUEEN]);
+        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN]);
         while (b)
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & ~ei.xattackedBy[Them][ALL_PIECES];
+        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
 
@@ -757,9 +771,6 @@ namespace {
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
     score += (mobility[WHITE] - mobility[BLACK]) * Weights[Mobility];
 
-    ei.xattackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][ALL_PIECES];
-    ei.xattackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][ALL_PIECES];
-
     // Evaluate kings after all other pieces because we need complete attack
     // information when computing the king safety evaluation.
     score +=  evaluate_king<WHITE, Trace>(pos, ei)
@@ -938,3 +949,4 @@ namespace Eval {
   }
 
 } // namespace Eval
+
