@@ -43,9 +43,6 @@ namespace {
   { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
     S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(67, 42), S(49, 24) }; 
-
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
@@ -108,7 +105,7 @@ namespace {
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, lever, connected;
     Score score = SCORE_ZERO;
     const Square* pl = pos.list<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -144,27 +141,6 @@ namespace {
         connected   =   supported | phalanx;
         isolated    =  !neighbours;
 
-        // Test for backward pawn.
-        // If the pawn is passed, isolated, lever or connected it cannot be
-        // backward. If there are friendly pawns behind on adjacent files
-        // it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
-            || (ourPawns & pawn_attack_span(Them, s)))
-            backward = false;
-        else
-        {
-            // We now know there are no friendly pawns beside or behind this
-            // pawn on adjacent files. We now check whether the pawn is
-            // backward by looking in the forward direction on the adjacent
-            // files, and picking the closest pawn there.
-            b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);
-            b = pawn_attack_span(Us, s) & rank_bb(backmost_sq(Us, b));
-
-            // If we have an enemy pawn in the same or next rank, the pawn is
-            // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
-        }
-
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
 
         // Passed pawns will be properly scored in evaluation because we need
@@ -176,10 +152,6 @@ namespace {
         // Score this pawn
         if (isolated)
             score -= Isolated[opposed][f];
-
-        else if (backward)
-            score -= Backward[opposed];
-
         else if (!supported)
             score -= UnsupportedPawnPenalty;
 
