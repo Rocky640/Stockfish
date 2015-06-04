@@ -66,9 +66,6 @@ namespace {
     // if a friendly pieces would move
     Bitboard xattackedBy[COLOR_NB][PIECE_TYPE_NB];
 
-    // pieces which would attack the King if one of our piece would would away.
-    Bitboard discoAttackers[COLOR_NB];
-
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -240,8 +237,6 @@ namespace {
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
-
-    ei.discoAttackers[Us] = 0;
   }
 
 
@@ -277,7 +272,7 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b, bx=0;
+    Bitboard b;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -290,31 +285,27 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = bx =
-            Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
-            bx = b &= LineBB[pos.king_square(Us)][s];
+             b &= LineBB[pos.king_square(Us)][s];
         else if (Pt != KNIGHT) {
             // Find squares which would be attacked if one of our non-pawn piece would leave the way.
-            bx = attacks_bb<Pt>(s, (pos.pieces() & ~b) | pos.pieces(PAWN, KING) | pos.pieces(Them));
-            ei.xattackedBy[Us][ALL_PIECES] |= ei.xattackedBy[Us][Pt] |= bx;
+            ei.xattackedBy[Us][ALL_PIECES] |= ei.xattackedBy[Us][Pt] |= 
+                attacks_bb<Pt>(s, (pos.pieces() & ~b) | pos.pieces(PAWN, KING) | pos.pieces(Them));
         }
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
-        if (bx & ei.kingRing[Them])
+        if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             Bitboard bb = b & ei.attackedBy[Them][KING];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
-
-            if (bx & pos.king_square(Them))
-                ei.discoAttackers[Us] |= s;
         }
         
         if (Pt == QUEEN)
@@ -403,7 +394,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    Bitboard undefended, b, b1, b2, safe, disco;
+    Bitboard undefended, b, b1, b2, safe;
     int attackUnits;
     const Square ksq = pos.king_square(Us);
 
@@ -484,11 +475,6 @@ namespace {
         if (b)
             attackUnits += SafeCheck[BISHOP] * popcount<Max15>(b);
 
-        // Disco checks
-        disco = ei.discoAttackers[Them] & ~ei.attackedBy[Us][ALL_PIECES];
-        while (disco)
-            attackUnits += SafeCheck[type_of(pos.piece_on(pop_lsb(&disco)))];
-
         // Enemy knights safe checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
         if (b)
@@ -560,7 +546,7 @@ namespace {
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
           & ~ei.attackedBy[Them][PAWN]
-          &  ei.attackedBy[Us][ALL_PIECES];
+          &  ei.xattackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
     if (weak)
