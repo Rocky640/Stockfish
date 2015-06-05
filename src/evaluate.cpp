@@ -199,6 +199,10 @@ namespace {
 
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
+  
+  // KingOnUndefended[our piece on undefended square][overloaded] gives a specialized penalty
+  // for each attacked square defended only by our King
+  const int KingOnUndefended[2][2] = {{25, 19}, {21, 29}};
 
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 89;
@@ -208,10 +212,7 @@ namespace {
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
 
-  // KingOnUndefended[our piece/or not][overloaded] gives a specialized penalty
-  // for each attacked square defended only by our King
-  int KingOnUndefended[2][2] = {{25, 25}, {25, 25}};
-  TUNE ( SetRange(0, 100), KingOnUndefended);
+
 
   // init_eval_info() initializes king bitboards for given color adding
   // pawn attacks. To be done at the beginning of the evaluation.

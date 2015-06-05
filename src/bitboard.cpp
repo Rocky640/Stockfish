@@ -205,7 +205,7 @@ void Bitboards::init() {
       for (Piece pc = W_BISHOP; pc <= W_ROOK; ++pc)
           for (Square s2 = SQ_A1; s2 <= SQ_H8; ++s2)
           {
-              // If a King on s1 moves on s2, what squares are left unprotected.
+              // If a King on s1 moves on s2, what (old) squares are left unprotected.
               OverloadedKing[s1][s2] = DistanceRingBB[s1][0] & ~(DistanceRingBB[s2][0] | s2);
               if (!(PseudoAttacks[pc][s1] & s2))
                   continue;
