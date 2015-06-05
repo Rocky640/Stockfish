@@ -208,6 +208,10 @@ namespace {
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
 
+  // KingOnUndefended[our piece/or not][overloaded] gives a specialized penalty
+  // for each attacked square defended only by our King
+  int KingOnUndefended[2][2] = {{25, 25}, {25, 25}};
+  TUNE ( SetRange(0, 100), KingOnUndefended);
 
   // init_eval_info() initializes king bitboards for given color adding
   // pawn attacks. To be done at the beginning of the evaluation.
@@ -394,25 +398,32 @@ namespace {
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
+
+        // Initialize the 'attackUnits' variable, which is used later on as an
+        // index into the KingDanger[] array. The initial value is based on the
+        // number and types of the enemy's attacking pieces, and the quality of
+        // the pawn shelter (current 'score' value).
+        attackUnits =  std::min(74, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
+                     +  8 * ei.kingAdjacentZoneAttacksCount[Them]
+                     + 11 * (ei.pinnedPieces[Us] != 0)
+                     - mg_value(score) / 8
+                     - !pos.count<QUEEN>(Them) * 60;
+
         // Find the attacked squares around the king which have no defenders
         // apart from the king itself
-        undefended =  ei.attackedBy[Them][ALL_PIECES]
+        b = undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
                     & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
                         | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
                         | ei.attackedBy[Us][QUEEN]);
 
-        // Initialize the 'attackUnits' variable, which is used later on as an
-        // index into the KingDanger[] array. The initial value is based on the
-        // number and types of the enemy's attacking pieces, the number of
-        // attacked and undefended squares around our king and the quality of
-        // the pawn shelter (current 'score' value).
-        attackUnits =  std::min(74, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
-                     +  8 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 25 * popcount<Max15>(undefended)
-                     + 11 * (ei.pinnedPieces[Us] != 0)
-                     - mg_value(score) / 8
-                     - !pos.count<QUEEN>(Them) * 60;
+        // Penalty for each undefended square
+        while (b) {
+            Square s = pop_lsb(&b);
+            // Penalty according to king only protected square being a friendly piece or not
+            // Also, if King takes on s, are other undefended pieces/squares left out of protection ?
+            attackUnits += KingOnUndefended[!!(pos.pieces(Us) & s)][!!(OverloadedKing[ksq][s] & undefended)];
+        }
 
         // Analyse the enemy's safe queen contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy queen...
