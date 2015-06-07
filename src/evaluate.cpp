@@ -58,7 +58,15 @@ namespace {
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type, attackedBy[color][ALL_PIECES]
     // contains all squares attacked by the given color.
+    // attackedBy[color][AT_LEAST_2] are squares attacked by a Knight, Bishop, Rook or Queen AND some other piece/pawn
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
+
+    // non-pawn pieces which defend more than one non-pawn piece
+    Bitboard splitDefenders[COLOR_NB];
+
+    // squares defended by a splitDefender (and possibly defended by others too)
+    // not exactly necessary, but provides a small speed up in calculations
+    Bitboard splitDefendeds[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -86,6 +94,8 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+
+    Bitboard nonPawn[COLOR_NB];
   };
 
 
@@ -171,6 +181,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score Overloaded         = S(20, 20);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
 
@@ -219,7 +230,9 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.splitDefenders[Us] = ei.splitDefendeds[Us] = ei.attackedBy[Us][AT_LEAST_2] = 0;
+    ei.nonPawn[Us] = pos.pieces(Us) ^ pos.pieces(Us, KING, PAWN);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
@@ -287,7 +300,15 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.king_square(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= (b & ei.attackedBy[Us][ALL_PIECES]);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+
+        if (more_than_one(b & ei.nonPawn[Us]))
+        {
+           // Update stats for further overloading calculations
+           ei.splitDefenders[Us] |= SquareBB[s];
+           ei.splitDefendeds[Us] |= b & ei.nonPawn[Us];
+        }
 
         if (b & ei.kingRing[Them])
         {
@@ -302,7 +323,8 @@ namespace {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
-
+        
+       
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
@@ -502,7 +524,7 @@ namespace {
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
+        weak = ei.nonPawn[Them] & ei.attackedBy[Us][PAWN];
 
     if (weak)
     {
@@ -519,7 +541,7 @@ namespace {
     }
 
     // Non-pawn enemies defended by a pawn
-    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
+        defended = ei.nonPawn[Them] & ei.attackedBy[Them][PAWN];
 
     // Add a bonus according to the kind of attacking pieces
     if (defended)
@@ -557,6 +579,52 @@ namespace {
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
+
+    // Amongst the weak pieces find the non-pawns which are
+    // defended exactly once and possibly by the same piece (a split defender)
+    // Exclude the pieces attacked by a Pawn.
+    weak &= ei.attackedBy[Them][ALL_PIECES]
+         & ~ei.attackedBy[Them][AT_LEAST_2]
+         & ei.splitDefendeds[Them]
+         & (ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Us][PAWN])
+         & ~pos.pieces(Them, PAWN);
+
+    if (more_than_one(weak)) {
+        // Check if any group of them is defended by a single defender
+        b = ei.splitDefenders[Them];
+        while (b) {
+            Square s = pop_lsb(&b);
+            Bitboard b1 = pos.attacks_from(pos.piece_on(s), s) & weak;
+            if (!more_than_one(b1)) continue;
+
+            // It might be the same attacker...so it cannot split the defence !
+            if (((b1 & ei.attackedBy[Us][QUEEN]) == b1) ||
+                ((b1 & ei.attackedBy[Us][ROOK]) == b1) ||
+                ((b1 & ei.attackedBy[Us][BISHOP]) == b1) ||
+                ((b1 & ei.attackedBy[Us][KNIGHT]) == b1))
+                continue;
+
+            Square s1, s2;
+
+            // If the weaks and the attacker are aligned, this is not an overloading
+            s1 = pop_lsb(&b1); s2 = pop_lsb(&b1);
+            if ((type_of(pos.piece_on(s)) != KNIGHT) && aligned(s, s1, s2))
+                continue;
+
+            // If Queen can defend s2 from s1, this is not an overloading
+            b1 = BetweenBB[s1][s2];
+            if ((type_of(pos.piece_on(s)) == QUEEN) && (distance(s1, s2) == 1 || ((b1 != 0) && !(b1 & pos.pieces()))))
+                continue;
+
+            score += Overloaded;
+        } //while
+
+        // TO DO consider if the split defender is attacked by us but not defended !.
+        // if (ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES] & s)
+        // is worth a different test. Note: might need to handle case where same attacker 
+        // on the split defended and on the split defender
+
+    } //more_than_one
 
     // Add a small bonus for safe pawn pushes
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
@@ -736,8 +804,8 @@ namespace {
     init_eval_info<WHITE>(pos, ei);
     init_eval_info<BLACK>(pos, ei);
 
-    ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
-    ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
+    ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[WHITE][PAWN] | ei.attackedBy[WHITE][KING];
+    ei.attackedBy[BLACK][ALL_PIECES] = ei.attackedBy[BLACK][PAWN] | ei.attackedBy[BLACK][KING];
 
     // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
     Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
