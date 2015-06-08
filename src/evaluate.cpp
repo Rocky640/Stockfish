@@ -173,6 +173,7 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
+  const Score PawnClearWay       = S( 5,  5);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -498,7 +499,7 @@ namespace {
     enum { Defended, Weak };
     enum { Minor, Major };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, b2, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -559,7 +560,7 @@ namespace {
     }
 
     // Add a small bonus for safe pawn pushes
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
+    b2 = b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
@@ -576,6 +577,19 @@ namespace {
 
     if (b)
         score += popcount<Max15>(b) * PawnAttackThreat;
+
+    // A last bonus if a pawn push, safe or not, can increase the mobility of some pieces
+    // So consider our pawns squares currently attacked by our pieces.
+    // For KNIGHT or KING, make sure it could be a "safe" place to move
+    // For SLIDERS we do not need to be able to land there, just to have more mobility.
+    b2 &=   (ei.attackedBy[Us][KNIGHT] & ~ei.attackedBy[Them][PAWN])
+          | (ei.attackedBy[Us][KING]   & ~ei.attackedBy[Them][ALL_PIECES])
+          |  ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN];
+    // Find all such squares that can be cleared.
+    b2 = shift_bb<Up>(b2) & ~pos.pieces();
+    // No need to shift down, the count is the same
+    if (b2)
+        score += popcount<Max15>(b2) * PawnClearWay;
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
