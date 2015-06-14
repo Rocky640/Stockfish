@@ -150,12 +150,31 @@ namespace {
 
 } // namespace
 
+int Kx[][2] = {{ 830, 2250}, {500, 3000}};
 
+int Ax[4]  = {2400,  773,   1, 1800};
+int Bx[4]  = {2900, 1045, 490, 1800};
+TUNE(SetRange(0, 5000), Kx, Ax, Bx);
+  
 /// Search::init() is called during startup to initialize various lookup tables
 
 void Search::init() {
+  // Auxiliary variables, for tuning in integer, will be divided by 1000
+  
 
-  const double K[][2] = {{ 0.83, 2.25 }, { 0.50, 3.00 }};
+  // Conversion to double
+  double K[2][2] ;
+  double A[4];
+  double B[4];
+  
+  K[0][0] = (double)Kx[0][0]/ 1000.0;
+  K[0][1] = (double)Kx[0][1]/ 1000.0;
+  K[1][0] = (double)Kx[1][0]/ 1000.0;
+  K[1][1] = (double)Kx[1][1]/ 1000.0;
+  for (int i= 0; i<=3; ++i) {
+     A[i] = (double)Ax[i]/ 1000.0;
+     B[i] = (double)Bx[i]/ 1000.0;
+  }
 
   for (int pv = 0; pv <= 1; ++pv)
       for (int imp = 0; imp <= 1; ++imp)
@@ -174,8 +193,8 @@ void Search::init() {
 
   for (int d = 0; d < 16; ++d)
   {
-      FutilityMoveCounts[0][d] = int(2.4 + 0.773 * pow(d + 0.00, 1.8));
-      FutilityMoveCounts[1][d] = int(2.9 + 1.045 * pow(d + 0.49, 1.8));
+     FutilityMoveCounts[0][d] = int(A[0] + A[1] * pow(d + A[2], A[3]));
+     FutilityMoveCounts[1][d] = int(B[0] + B[1] * pow(d + B[2], B[3]));
   }
 }
 
