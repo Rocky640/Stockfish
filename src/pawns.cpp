@@ -32,20 +32,26 @@ namespace {
   #define S(mg, eg) make_score(mg, eg)
 
   // Doubled pawn penalty by file
-  const Score Doubled[FILE_NB] = {
+  Score Doubled[FILE_NB] = {
     S(13, 43), S(20, 48), S(23, 48), S(23, 48),
     S(23, 48), S(23, 48), S(20, 48), S(13, 43) };
+  TUNE(SetRange(0, 80), Doubled);
 
   // Isolated pawn penalty by opposed flag and file
-  const Score Isolated[2][FILE_NB] = {
+  Score Isolated[2][FILE_NB] = {
   { S(37, 45), S(54, 52), S(60, 52), S(60, 52),
     S(60, 52), S(60, 52), S(54, 52), S(37, 45) },
   { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
     S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
-
+  TUNE(SetRange(0, 80), Isolated);
+ 
   // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(67, 42), S(49, 24) };
-
+  Score Backward[2] = {S(67, 42), S(49, 24) };
+  
+  // Rank_5 mysterious case
+  Score BackwardX[2] = { S(20, 10), S(20, 10) };
+  TUNE(SetRange(0, 80), Backward, BackwardX);
+  
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
@@ -55,7 +61,8 @@ namespace {
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
   // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
+  Score UnsupportedPawnPenalty = S(20, 10);
+  TUNE(SetRange(0, 80), UnsupportedPawnPenalty);
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
@@ -150,7 +157,7 @@ namespace {
         // or if it is sufficiently advanced, it cannot be backward either.
         if (   (passed | isolated | lever | connected)
             || (ourPawns & pawn_attack_span(Them, s))
-            || (relative_rank(Us, s) >= RANK_5))
+            )
             backward = false;
         else
         {
@@ -179,7 +186,7 @@ namespace {
             score -= Isolated[opposed][f];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= (relative_rank(Us, s) == RANK_5 ? BackwardX : Backward)[opposed];
 
         else if (!supported)
             score -= UnsupportedPawnPenalty;
@@ -216,6 +223,18 @@ void init()
 {
   static const int Seed[RANK_NB] = { 0, 6, 15, 10, 57, 75, 135, 258 };
 
+  // Preserve center symmetry
+  Doubled[FILE_D] = Doubled[FILE_C];
+  Isolated[0][FILE_D] = Isolated[0][FILE_C];
+  Isolated[1][FILE_D] = Isolated[1][FILE_C];
+  
+  // Preserve file symmetry
+  for (int f = FILE_A; f <= FILE_D; ++f)
+  {
+      Doubled[FILE_H-f] = Doubled[f];
+      Isolated[0][FILE_H-f] = Isolated[0][f];
+      Isolated[1][FILE_H-f] = Isolated[1][f];
+  }
   for (int opposed = 0; opposed <= 1; ++opposed)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
           for (int apex = 0; apex <= 1; ++apex)
