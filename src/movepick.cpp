@@ -58,6 +58,16 @@ namespace {
       return *begin;
   }
 
+  int captureScore [7][8] = {
+      // Captured:  EP-Pawn Pawn   Knight  Bishop  Rook    Queen     Capturing
+                      {  0,   0,    0,     0,    0,    0},
+                      {  7,   6,   20,    19,   26,   34},  // Pawn
+                      {  0,   5,   12,    13,   25,   32},  // Knight
+                      {  0,   4,   18,    10,   27,   33},  // Bishop
+                      {  0,   3,   15,    17,   28,   35},  // Rook
+                      {  0,   2,   14,    16,   24,   31},  // Queen
+                      {  0,   1,   9,     11,   23,   30}}; // King
+
 } // namespace
 
 
@@ -148,9 +158,9 @@ void MovePicker::score<CAPTURES>() {
   // has been picked up in pick_move_from_list(). This way we save some SEE
   // calls in case we get a cutoff.
   for (auto& m : *this)
-      m.value =  PieceValue[MG][pos.piece_on(to_sq(m))]
-               - 200 * relative_rank(pos.side_to_move(), to_sq(m));
+     m.value = Value(captureScore[type_of(pos.moved_piece(m))][type_of(pos.piece_on(to_sq(m)))]);
 }
+
 
 template<>
 void MovePicker::score<QUIETS>() {
