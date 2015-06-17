@@ -64,13 +64,12 @@ namespace {
   int captureScore [7][8] = {
       // Captured:  EP-Pawn Pawn   Knight  Bishop  Rook    Queen     Capturing
                       {  0,   0,   0,   0,    0,    0},
-                      {  7,   6,  12,  16,   24,   29},  // Pawn
-                      {  0,   3,  13,  17,   22,   30},  // Knight
-                      {  0,   2,  10,  18,   21,   28},  // Bishop
-                      {  0,   4,   9,  15,   23,   26},  // Rook
-                      {  0,   1,   8,  14,   20,   27},  // Queen
-                      {  0,   5,  11,  19,   25,   31}}; // King
-
+                      {  7,   6,  17,  15,   23,   29},  // Pawn
+                      {  0,   3,  19,  20,   18,   30},  // Knight
+                      {  0,   2,  11,  22,   16,   28},  // Bishop
+                      {  0,   4,  10,  13,   21,   26},  // Rook
+                      {  0,   1,   8,  12,    9,   27},  // Queen
+                      {  0,   5,  14,  24,   25,   31}}; // King
 
 } // namespace
 
