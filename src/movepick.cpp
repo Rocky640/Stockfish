@@ -58,17 +58,19 @@ namespace {
       return *begin;
   }
 
-  //Using Mikael data as published on the forum, and sorting by cut%
+  //Using Mikael data as published on the forum, 
+  //and sorting by MVV and then by number of cuts (not by cut %)
 
   int captureScore [7][8] = {
       // Captured:  EP-Pawn Pawn   Knight  Bishop  Rook    Queen     Capturing
-                      {  0,   0,    0,    0,    0,    0},
-                      { 13,  12,   17,   15,   23,   29},  // Pawn
-                      {  0,   3,   19,   20,   18,   30},  // Knight
-                      {  0,   2,    8,   22,   16,   27},  // Bishop
-                      {  0,   4,    7,   10,   21,   25},  // Rook
-                      {  0,   1,    5,    9,    6,   26},  // Queen
-                      {  0,  11,   14,   24,   28,   31}}; // King
+                      {  0,   0,   0,   0,    0,    0},
+                      {  7,   6,  17,  14,   21,   27},  // Pawn
+                      {  0,   5,  19,  18,   23,   28},  // Knight
+                      {  0,   4,  15,  16,   24,   26},  // Bishop
+                      {  0,   2,   9,  13,   25,   29},  // Rook
+                      {  0,   3,  12,  11,   22,   31},  // Queen
+                      {  0,   1,   8,  10,   20,   30}}; // King
+
 
 } // namespace
 
