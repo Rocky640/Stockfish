@@ -174,6 +174,11 @@ namespace {
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB),
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB)
   };
+  
+  const Bitboard Half[COLOR_NB] = {
+    (Rank1BB | Rank2BB | Rank3BB | Rank4BB),
+    (Rank8BB | Rank7BB | Rank6BB | Rank5BB)
+  };
 
   // King danger constants and variables. The king danger scores are looked-up
   // in KingDanger[]. Various little "meta-bonuses" measuring the strength
@@ -259,7 +264,11 @@ namespace {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
-
+   
+        if (Pt == ROOK)
+            // Remove squares attacked by their minors in our half of the board
+            b &= ~((  ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]) & Half[Us]);
+        
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
