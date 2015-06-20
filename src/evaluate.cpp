@@ -266,8 +266,10 @@ namespace {
                    | ei.attackedBy[Them][ROOK]);
    
         if (Pt == ROOK)
-            // Remove squares attacked by their minors in our half of the board
-            b &= ~((  ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]) & Half[Us]);
+            // Exclude squares attacked by their minor,
+            // but keep squares where Rook might have defending duties
+            b &= ~( ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]) 
+                  |  pos.pieces(Us);
         
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
