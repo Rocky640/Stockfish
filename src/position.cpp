@@ -975,6 +975,20 @@ Key Position::key_after(Move m) const {
 }
 
 
+/// Position::simpleValue() returns a ranking, used by move picker.
+
+Value Position::simpleValue(Square s) const {
+
+    Piece captured = piece_on(s);
+    if (type_of(captured) == PAWN || type_of(captured) == QUEEN)
+        return PieceValue[MG][captured] 
+               - 200 * relative_rank(side_to_move(), s);
+
+    Bitboard b = attacks_from(captured, s) & pieces();
+    return PieceValue[MG][captured] + 25 * popcount<Max15>(b);
+}
+
+
 /// Position::see() is a static exchange evaluator: It tries to estimate the
 /// material gain or loss resulting from a move.
 
