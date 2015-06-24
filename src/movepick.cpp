@@ -135,7 +135,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, const HistoryStats& h, const
 template<>
 void MovePicker::score<CAPTURES>() {
   // Winning and equal captures in the main search are ordered by MVV.
-  // Suprisingly, this appears to perform slightly better than SEE based
+  // Surprisingly, this appears to perform slightly better than SEE based
   // move ordering. The reason is probably that in a position with a winning
   // capture, capturing a valuable (but sufficiently defended) piece
   // first usually doesn't hurt. The opponent will have to recapture, and
@@ -152,15 +152,39 @@ void MovePicker::score<CAPTURES>() {
                - 200 * relative_rank(pos.side_to_move(), to_sq(m));
 }
 
+//SPSA tuning for new variable wquiet
+//Will tune intermediate variable tquiet
+
+int wquiet[PIECE_NB] = 
+    //  P    N   B   R   Q   K
+    {0, 75, 75, 75, 75, 75, 75, 0, 
+     0, 75, 75, 75, 75, 75, 75, 0};
+
+int tquiet[PIECE_TYPE_NB] = 
+    //  P    N   B   R   Q   K
+    {0, 75, 75, 75, 75, 75, 75};
+
+TUNE (SetRange(0, 100), tquiet);
+
+
 template<>
 void MovePicker::score<QUIETS>() {
-
+  
+  wquiet[W_PAWN]   = wquiet [B_PAWN]   = tquiet[PAWN];
+  wquiet[W_KNIGHT] = wquiet [B_KNIGHT] = tquiet[KNIGHT];
+  wquiet[W_BISHOP] = wquiet [B_BISHOP] = tquiet[BISHOP];
+  wquiet[W_ROOK]   = wquiet [B_ROOK]   = tquiet[ROOK];
+  wquiet[W_QUEEN]  = wquiet [B_QUEEN]  = tquiet[QUEEN];
+  wquiet[W_KING]   = wquiet [B_KING]   = tquiet[KING];
+  
   Square prevSq = to_sq((ss-1)->currentMove);
   const HistoryStats& cmh = counterMovesHistory[pos.piece_on(prevSq)][prevSq];
 
-  for (auto& m : *this)
-      m.value =  history[pos.moved_piece(m)][to_sq(m)]
-               + cmh[pos.moved_piece(m)][to_sq(m)] * 3;
+  for (auto& m : *this) {
+      Piece p = pos.moved_piece(m);
+      m.value  = history[p][to_sq(m)] * (100 - wquiet[p])
+               + cmh[p][to_sq(m)] * wquiet[p];
+  }
 }
 
 template<>
