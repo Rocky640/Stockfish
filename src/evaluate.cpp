@@ -191,7 +191,7 @@ namespace {
   const int RookCheck         = 37;
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
-  const int CheckCapture      = 10;
+  const int CheckCapture      = 6;
 
 
   // init_eval_info() initializes king bitboards for given color adding
