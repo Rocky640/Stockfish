@@ -191,6 +191,7 @@ namespace {
   const int RookCheck         = 37;
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
+  const int CheckCapture      = 10;
 
 
   // init_eval_info() initializes king bitboards for given color adding
@@ -403,30 +404,34 @@ namespace {
         }
 
         // Analyse the enemy's safe distance checks for sliders and knights
-        safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
+        safe = ~ei.attackedBy[Us][ALL_PIECES];
 
-        b1 = pos.attacks_from<ROOK  >(ksq) & safe;
-        b2 = pos.attacks_from<BISHOP>(ksq) & safe;
+        b1 = pos.attacks_from<ROOK  >(ksq) & ~pos.pieces(Them);
+        b2 = pos.attacks_from<BISHOP>(ksq) & ~pos.pieces(Them);
 
-        // Enemy queen safe checks
+        // Enemy queen safe checks and capture checks
         b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
         if (b)
-            attackUnits += QueenCheck * popcount<Max15>(b);
+            attackUnits += QueenCheck   * popcount<Max15>(b & safe) 
+                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
 
-        // Enemy rooks safe checks
+        // Enemy rooks safe checks and capture checks
         b = b1 & ei.attackedBy[Them][ROOK];
         if (b)
-            attackUnits += RookCheck * popcount<Max15>(b);
+            attackUnits += RookCheck    * popcount<Max15>(b & safe) 
+                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
 
-        // Enemy bishops safe checks
+        // Enemy bishops safe checks and capture checks
         b = b2 & ei.attackedBy[Them][BISHOP];
         if (b)
-            attackUnits += BishopCheck * popcount<Max15>(b);
+            attackUnits += BishopCheck  * popcount<Max15>(b & safe)
+                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
 
-        // Enemy knights safe checks
-        b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe;
+        // Enemy knights safe checks and capture checks
+        b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & ~pos.pieces(Them);
         if (b)
-            attackUnits += KnightCheck * popcount<Max15>(b);
+            attackUnits += KnightCheck  * popcount<Max15>(b & safe)
+                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
