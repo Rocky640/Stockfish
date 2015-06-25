@@ -154,14 +154,22 @@ void MovePicker::score<CAPTURES>() {
 
 template<>
 void MovePicker::score<QUIETS>() {
-
+  
   Square prevSq = to_sq((ss-1)->currentMove);
   const HistoryStats& cmh = counterMovesHistory[pos.piece_on(prevSq)][prevSq];
 
-  for (auto& m : *this)
-      m.value =  history[pos.moved_piece(m)][to_sq(m)]
-               + cmh[pos.moved_piece(m)][to_sq(m)] * 3;
+  const int wquiet[PIECE_NB] = 
+    //  P    N   B   R   Q   K
+    {0, 68, 74, 71, 78, 72, 75, 0,  //WHITE
+     0, 68, 74, 71, 78, 72, 75, 0}; //BLACK
+         
+  for (auto& m : *this) {
+      Piece p = pos.moved_piece(m);
+      m.value  = history[p][to_sq(m)] * (100 - wquiet[p])
+               + cmh[p][to_sq(m)] * wquiet[p];
+  }
 }
+
 
 template<>
 void MovePicker::score<EVASIONS>() {
