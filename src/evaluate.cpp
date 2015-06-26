@@ -417,7 +417,7 @@ namespace {
         b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
         if (b) {
             attackUnits += QueenCheck * popcount<Max15>(b & safe);
-            checkSq |= b;
+            checkSq |= b & (safe | pos.pieces(Us,QUEEN, ROOK));
         }
 
         // Enemy rooks safe checks
@@ -550,11 +550,10 @@ namespace {
     if (b)
         score += popcount<Max15>(b) * PawnAttackThreat;
 
-    // Bonus for capture with check
-    b = ei.checkSquares & pos.pieces(Them);
+    // Bonus for safe or non-pawn piece captures with check
+    b = ei.checkSquares & pos.pieces(Them) & (~ei.attackedBy[Them][ALL_PIECES] | ~pos.pieces(Them, PAWN));
     if (b)
         score += popcount<Max15>(b) * CheckCapture;
-
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
