@@ -85,6 +85,8 @@ namespace {
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
+    Bitboard checkSquares;
+
     Bitboard pinnedPieces[COLOR_NB];
   };
 
@@ -157,6 +159,7 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
+  const Score CheckCapture       = S(10, 10);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -191,8 +194,6 @@ namespace {
   const int RookCheck         = 37;
   const int BishopCheck       = 6;
   const int KnightCheck       = 14;
-  const int CheckCapture      = 6;
-
 
   // init_eval_info() initializes king bitboards for given color adding
   // pawn attacks. To be done at the beginning of the evaluation.
@@ -339,7 +340,7 @@ namespace {
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
   template<Color Us, bool Trace>
-  Score evaluate_king(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_king(const Position& pos, EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
@@ -402,6 +403,9 @@ namespace {
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
         }
+        
+        // Gather all checking squares
+        Bitboard checkSq = 0;
 
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~ei.attackedBy[Us][ALL_PIECES];
@@ -409,29 +413,35 @@ namespace {
         b1 = pos.attacks_from<ROOK  >(ksq) & ~pos.pieces(Them);
         b2 = pos.attacks_from<BISHOP>(ksq) & ~pos.pieces(Them);
 
-        // Enemy queen safe checks and capture checks
+        // Enemy queen safe checks
         b = (b1 | b2) & ei.attackedBy[Them][QUEEN];
-        if (b)
-            attackUnits += QueenCheck   * popcount<Max15>(b & safe) 
-                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
+        if (b) {
+            attackUnits += QueenCheck * popcount<Max15>(b & safe);
+            checkSq |= b;
+        }
 
-        // Enemy rooks safe checks and capture checks
+        // Enemy rooks safe checks
         b = b1 & ei.attackedBy[Them][ROOK];
-        if (b)
-            attackUnits += RookCheck    * popcount<Max15>(b & safe) 
-                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
+        if (b) {
+            attackUnits += RookCheck * popcount<Max15>(b & safe);
+            checkSq |= b;
+        }
 
-        // Enemy bishops safe checks and capture checks
+        // Enemy bishops safe checks
         b = b2 & ei.attackedBy[Them][BISHOP];
-        if (b)
-            attackUnits += BishopCheck  * popcount<Max15>(b & safe)
-                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
+        if (b) {
+            attackUnits += BishopCheck * popcount<Max15>(b & safe);
+            checkSq |= b;
+        }
 
-        // Enemy knights safe checks and capture checks
+        // Enemy knights safe checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & ~pos.pieces(Them);
-        if (b)
-            attackUnits += KnightCheck  * popcount<Max15>(b & safe)
-                         + CheckCapture * popcount<Max15>(b & pos.pieces(Us));
+        if (b) {
+            attackUnits += KnightCheck * popcount<Max15>(b & safe);
+            checkSq |= b;
+        }
+
+        ei.checkSquares |= checkSq;
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from evaluation.
@@ -539,6 +549,12 @@ namespace {
 
     if (b)
         score += popcount<Max15>(b) * PawnAttackThreat;
+
+    // Bonus for capture with check
+    b= ei.checkSquares & pos.pieces(Them);
+    if (b)
+        score += popcount<Max15>(b) * CheckCapture;
+
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
@@ -694,6 +710,7 @@ namespace {
     // Probe the pawn hash table
     ei.pi = Pawns::probe(pos);
     score += ei.pi->pawns_score() * Weights[PawnStructure];
+    ei.checkSquares = 0;
 
     // Initialize attack and king safety bitboards
     init_eval_info<WHITE>(pos, ei);
