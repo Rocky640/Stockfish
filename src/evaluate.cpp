@@ -159,7 +159,7 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
-  const Score CheckCapture       = S(10, 10);
+  const Score CheckCapture       = S( 5,  5);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -551,7 +551,7 @@ namespace {
         score += popcount<Max15>(b) * PawnAttackThreat;
 
     // Bonus for capture with check
-    b= ei.checkSquares & pos.pieces(Them);
+    b = ei.checkSquares & pos.pieces(Them);
     if (b)
         score += popcount<Max15>(b) * CheckCapture;
 
