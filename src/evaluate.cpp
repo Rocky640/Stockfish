@@ -298,12 +298,12 @@ namespace {
         if (Pt == ROOK)
         {
             // Bonus for aligning with enemy pawns on the same rank/file
-            // but only if Rook has some horizontal mobility
-            if (relative_rank(Us, s) >= RANK_5 && (rank_bb(s) & b))
+            // If Rook does not have horizontal mobility, limit to 1 bonus
+            if (relative_rank(Us, s) >= RANK_5)
             {
                 Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (alignedPawns)
-                    score += popcount<Max15>(alignedPawns) * RookOnPawn;
+                    score +=  ((rank_bb(s) & b) ? popcount<Max15>(alignedPawns) : 1) * RookOnPawn;
             }
 
             // Bonus when on an open or semi-open file
