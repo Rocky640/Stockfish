@@ -148,7 +148,7 @@ namespace {
         // If the pawn is passed, isolated, lever or connected it cannot be
         // backward. If there are friendly pawns behind on adjacent files
         // or if it is sufficiently advanced, it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
+        if (   (passed | isolated | lever | connected | !!doubled)
             || (ourPawns & pawn_attack_span(Them, s))
             || (relative_rank(Us, s) >= RANK_5))
             backward = false;
