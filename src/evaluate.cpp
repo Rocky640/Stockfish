@@ -516,7 +516,7 @@ namespace {
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
 
-    // Add a small bonus for safe pawn pushes
+    // Add a small bonus for safe pawn pushes, and some more if unopposed.
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
@@ -525,7 +525,8 @@ namespace {
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     if (b)
-        score += popcount<Full>(b) * PawnSafePush;
+        score += (popcount<Full>(b) + popcount<Full>(b & ei.pi->unopposed_path(Us)))
+                 * PawnSafePush;
 
     // Add another bonus if the pawn push attacks an enemy piece
     b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
