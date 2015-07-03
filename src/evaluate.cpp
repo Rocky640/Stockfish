@@ -28,6 +28,7 @@
 #include "material.h"
 #include "pawns.h"
 
+
 namespace {
 
   namespace Tracing {
@@ -146,6 +147,7 @@ namespace {
     S(0, 0), S(0, 0), S(107, 138), S(84, 122), S(114, 203), S(121, 217)
   };
 
+
   const Score ThreatenedByHangingPawn = S(40, 60);
 
   // Assorted bonuses and penalties used by evaluation
@@ -154,13 +156,15 @@ namespace {
   const Score RookOnPawn         = S( 7, 27);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
-  const Score BishopPawns        = S( 8, 12);
   const Score MinorBehindPawn    = S(16,  0);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
+  
+  const Score BishopPawn         = S( 7, 11);
+  Score BishopPawns[16];
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -282,7 +286,7 @@ namespace {
 
             // Penalty for pawns on same color square of bishop
             if (Pt == BISHOP)
-                score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+                score -= BishopPawns[ei.pi->pawns_on_same_color_squares(Us, s)];
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
@@ -884,6 +888,11 @@ namespace Eval {
         t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
         KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
     }
+
+    BishopPawns[0] = SCORE_ZERO;
+    
+    for (int i = 1; i <= 8; ++i)
+        BishopPawns[i] = (make_score(i , i)  + BishopPawn) * i;
   }
 
 } // namespace Eval
