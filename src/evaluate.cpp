@@ -701,9 +701,16 @@ namespace {
     ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
-    // Do not include in mobility squares protected by enemy pawns or occupied by our pawns or king
-    Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE, PAWN, KING)),
-                                ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK, PAWN, KING)) };
+
+    Bitboard pmobw = shift_bb<DELTA_S>(~pos.pieces()) & ~(rank_bb(RANK_2) | rank_bb(RANK_3));
+    Bitboard pmobb = shift_bb<DELTA_N>(~pos.pieces()) & ~(rank_bb(RANK_7) | rank_bb(RANK_6));
+
+    pmobw |= shift_bb<DELTA_SW>(pos.pieces(BLACK)) | shift_bb<DELTA_SE>(pos.pieces(BLACK));
+    pmobb |= shift_bb<DELTA_NW>(pos.pieces(WHITE)) | shift_bb<DELTA_NE>(pos.pieces(WHITE));
+
+    // Do not include in mobility squares protected by enemy pawns or occupied by our blocked pawns or king
+    Bitboard mobilityArea[] = { ~(ei.attackedBy[BLACK][PAWN] | (pos.pieces(WHITE, PAWN) & ~pmobw) | pos.pieces(WHITE, KING)) ,  
+                                ~(ei.attackedBy[WHITE][PAWN] | (pos.pieces(BLACK, PAWN) & ~pmobb) | pos.pieces(BLACK, KING)) }; 
 
     // Evaluate pieces and mobility
     score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
