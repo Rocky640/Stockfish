@@ -33,18 +33,20 @@ namespace {
 
   // Doubled pawn penalty by file
   const Score Doubled[FILE_NB] = {
-    S(13, 43), S(20, 48), S(23, 48), S(23, 48),
-    S(23, 48), S(23, 48), S(20, 48), S(13, 43) };
+    S( 7, 37), S(22, 45), S(30, 45), S(30, 45),
+    S(30, 45), S(30, 45), S(22, 45), S( 7, 37) };
 
   // Isolated pawn penalty by opposed flag and file
   const Score Isolated[2][FILE_NB] = {
-  { S(37, 45), S(54, 52), S(60, 52), S(60, 52),
-    S(60, 52), S(60, 52), S(54, 52), S(37, 45) },
-  { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
-    S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
+  { S(37, 52), S(58, 52), S(61, 49), S(61, 49),
+    S(61, 49), S(61, 49), S(58, 52), S(37, 52) },
+  { S(29, 30), S(38, 33), S(38, 36), S(38, 36),
+    S(38, 36), S(38, 36), S(38, 33), S(29, 30) } };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(67, 42), S(49, 24) };
+  // Backward pawn penalty by opposed and rank_5 flag
+  const Score Backward[2][2] = { 
+  { S(68, 42), S(24, 2) },   //not opposed
+  { S(43, 21), S(18, 9) } }; //opposed
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
@@ -55,7 +57,7 @@ namespace {
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
   // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
+  const Score UnsupportedPawnPenalty = S(19, 16);
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
@@ -128,7 +130,8 @@ namespace {
     {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
-        File f = file_of(s);
+        File f  = file_of(s);
+        Rank rr = relative_rank(Us, s);
 
         // This file cannot be semi-open
         e->semiopenFiles[Us] &= ~(1 << f);
@@ -147,10 +150,9 @@ namespace {
         // Test for backward pawn.
         // If the pawn is passed, isolated, lever or connected it cannot be
         // backward. If there are friendly pawns behind on adjacent files
-        // or if it is sufficiently advanced, it cannot be backward either.
+        // it cannot be backward either.
         if (   (passed | isolated | lever | connected)
-            || (ourPawns & pawn_attack_span(Them, s))
-            || (relative_rank(Us, s) >= RANK_5))
+            || (ourPawns & pawn_attack_span(Them, s)))
             backward = false;
         else
         {
@@ -179,19 +181,19 @@ namespace {
             score -= Isolated[opposed][f];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= Backward[opposed][rr == RANK_5];
 
         else if (!supported)
             score -= UnsupportedPawnPenalty;
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][more_than_one(supported)][rr];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[rr];
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
