@@ -86,6 +86,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard blockedPawns[COLOR_NB];
   };
 
 
@@ -149,6 +150,7 @@ namespace {
   const Score ThreatenedByHangingPawn = S(40, 60);
 
   // Assorted bonuses and penalties used by evaluation
+  const Score BlockedDefense     = S( 5,  5);
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
@@ -208,6 +210,7 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.blockedPawns[Us] = shift_bb<Down>(pos.pieces(Them)) & pos.pieces(Us, PAWN);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
@@ -265,8 +268,9 @@ namespace {
                    | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
-
         mobility[Us] += MobilityBonus[Pt][mob];
+
+        score -= BlockedDefense * popcount<Max15>(b & ei.blockedPawns[Us]);
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
