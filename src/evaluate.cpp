@@ -270,7 +270,8 @@ namespace {
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt][mob];
 
-        score -= BlockedDefense * popcount<Max15>(b & ei.blockedPawns[Us]);
+        if (relative_rank(Us, s) <= RANK_4)
+            score -= BlockedDefense * popcount<Max15>(b & ei.blockedPawns[Us]);
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
