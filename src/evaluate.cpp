@@ -210,7 +210,7 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
-    ei.blockedPawns[Us] = shift_bb<Down>(pos.pieces(Them)) & pos.pieces(Us, PAWN);
+    ei.blockedPawns[Us] = shift_bb<Down>(pos.pieces()) & pos.pieces(Us, PAWN) & SpaceMask[Us];
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.king_square(Them));
 
     // Init king safety tables only if we are going to use them
