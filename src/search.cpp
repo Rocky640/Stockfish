@@ -1409,7 +1409,7 @@ moves_loop: // When in check and at SpNode search starts from here
     HistoryStats& cmh = CounterMovesHistory[pos.piece_on(prevSq)][prevSq];
 
     History.update(pos.moved_piece(move), to_sq(move), bonus);
-    History.update(pos.moved_piece(move), from_sq(move), -bonus/2);
+    History.update(pos.moved_piece(move), from_sq(move), -bonus/4);
 
     if (is_ok((ss-1)->currentMove))
     {
