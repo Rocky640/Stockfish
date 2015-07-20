@@ -531,6 +531,12 @@ ScaleFactor Endgame<KRPKR>::operator()(const Position& pos) const {
           && distance(wksq, bksq) > 2)
           return ScaleFactor(24 - 2 * distance(wksq, bksq));
   }
+  
+  // If the defending King is behind the pawn, and the White King is close enough
+  // it's probably a win.
+  if (rank_of(bksq) < r && (distance(wksq, wpsq) <= distance(bksq, wpsq)))
+      return ScaleFactor(SCALE_FACTOR_MAX - 2 * distance(wksq, queeningSq));
+
   return SCALE_FACTOR_NONE;
 }
 
