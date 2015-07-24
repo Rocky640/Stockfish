@@ -306,7 +306,9 @@ namespace {
             {
                 Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (alignedPawns)
-                    score += popcount<Max15>(alignedPawns) * RookOnPawn;
+                    score += (popcount<Max15>(alignedPawns & ~ei.attackedBy[Them][PAWN])
+                             + (alignedPawns & ei.attackedBy[Them][PAWN] ? 1 : 0))
+                             * RookOnPawn;
             }
 
             // Bonus when on an open or semi-open file
