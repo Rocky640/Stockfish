@@ -179,6 +179,9 @@ namespace {
     (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB)
   };
 
+  // The 4 squares in the center of the board.
+  // const Bitboard CenterMask = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+
   // King danger constants and variables. The king danger scores are looked-up
   // in KingDanger[]. Various little "meta-bonuses" measuring the strength
   // of the enemy attack are added up into an integer, which is used as an
@@ -281,8 +284,12 @@ namespace {
                 score += MinorBehindPawn;
 
             // Penalty for pawns on same color square of bishop
-            if (Pt == BISHOP)
+            if (Pt == BISHOP) 
+            {
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+                if (b & ei.attackedBy[Us][PAWN] & pos.pieces(Them, PAWN))
+                    score += BishopPawns;
+            }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
