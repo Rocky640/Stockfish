@@ -702,8 +702,8 @@ namespace {
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
     // Find pawns on rank 4 and above which can move forward
-    Bitboard pmobw = shift_bb<DELTA_S>(~pos.pieces()) & ~(Rank2BB | Rank3BB);
-    Bitboard pmobb = shift_bb<DELTA_N>(~pos.pieces()) & ~(Rank7BB | Rank6BB);
+    Bitboard pmobw = shift_bb<DELTA_S>(~pos.pieces()) & ~Rank2BB;
+    Bitboard pmobb = shift_bb<DELTA_N>(~pos.pieces()) & ~Rank7BB;
 
     // Find pawns which can capture
     //pmobw |= shift_bb<DELTA_SW>(pos.pieces(BLACK)) | shift_bb<DELTA_SE>(pos.pieces(BLACK));
