@@ -437,6 +437,12 @@ namespace {
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
     }
 
+    // King supporting advanced pawn bonus
+    
+    b = pos.pieces(Us, PAWN) & ei.attackedBy[Us][KING];
+    if (b & relative_rank(Us, ksq) >= RANK_4)
+        score += more_than_one(b) ? KingOnMany : KingOnOne;
+
     if (Trace)
         Tracing::write(KING, Us, score);
 
