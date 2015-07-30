@@ -151,6 +151,8 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
+  const Score KingProtectOne     = S( 0, 20);
+  const Score KingProtectMany    = S( 0, 50);
   const Score RookOnPawn         = S( 7, 27);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
@@ -440,8 +442,8 @@ namespace {
     // King supporting advanced pawn bonus
     
     b = pos.pieces(Us, PAWN) & ei.attackedBy[Us][KING];
-    if (!!b & (relative_rank(Us, ksq) >= RANK_4))
-        score += more_than_one(b) ? KingOnMany : KingOnOne;
+    if (!!b & (relative_rank(Us, ksq) >= RANK_5))
+        score += more_than_one(b) ? KingProtectMany : KingProtectOne;
 
     if (Trace)
         Tracing::write(KING, Us, score);
