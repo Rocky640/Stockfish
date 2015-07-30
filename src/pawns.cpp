@@ -58,12 +58,12 @@ namespace {
   const Score UnsupportedPawnPenalty = S(20, 10);
 
   // Center bind bonus: Two pawns controlling the same central square
-  const Bitboard CenterBindMask[COLOR_NB] = {
-    (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
-    (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)
-  };
+  //const Bitboard CenterBindMask[COLOR_NB] = {
+    //(FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
+    //(FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)
+  //};
 
-  const Score CenterBind = S(16, 0);
+  //const Score CenterBind = S(16, 0);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -120,6 +120,7 @@ namespace {
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+    e->dblpAttacks[Us] = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -198,8 +199,8 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     // Center binds: Two pawns controlling the same central square
-    b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
-    score += popcount<Max15>(b) * CenterBind;
+    //b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
+    //score += popcount<Max15>(b) * CenterBind;
 
     return score;
   }
