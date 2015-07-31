@@ -701,17 +701,18 @@ namespace {
     ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
-    // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
-    Bitboard blockedPawns[] = {
-      pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-      pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
+    // Pawns on rank 2 or 3, or pawns with a piece in front which is not pawn-attacked. 
+    // Will be excluded from the mobility area
+    Bitboard blockingPawns[] = {
+      pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces(WHITE) | (pos.pieces(BLACK) & ~ei.attackedBy[WHITE][PAWN])) | Rank2BB | Rank3BB),
+      pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces(BLACK) | (pos.pieces(WHITE) & ~ei.attackedBy[BLACK][PAWN])) | Rank7BB | Rank6BB)
     };
 
     // Do not include in mobility squares protected by enemy pawns, or occupied
     // by our blocked pawns or king.
     Bitboard mobilityArea[] = {
-      ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.king_square(WHITE)),
-      ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.king_square(BLACK))
+      ~(ei.attackedBy[BLACK][PAWN] | blockingPawns[WHITE] | pos.king_square(WHITE)),
+      ~(ei.attackedBy[WHITE][PAWN] | blockingPawns[BLACK] | pos.king_square(BLACK))
     };
 
     // Evaluate pieces and mobility
