@@ -701,10 +701,13 @@ namespace {
     ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][KING];
     ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][KING];
 
-    // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
+    // Pawns blocked by opponent pieces or our own pawns or King
+    // and also pawns on ranks 2 and 3. All these will be excluded from the mobility area
     Bitboard blockedPawns[] = {
-      pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-      pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
+      pos.pieces(WHITE, PAWN) 
+         & (shift_bb<DELTA_S>(pos.pieces(BLACK) | pos.pieces(WHITE, PAWN, KING)) | Rank2BB | Rank3BB),
+      pos.pieces(BLACK, PAWN) 
+         & (shift_bb<DELTA_N>(pos.pieces(WHITE) | pos.pieces(BLACK, PAWN, KING)) | Rank7BB | Rank6BB)
     };
 
     // Do not include in mobility squares protected by enemy pawns, or occupied
