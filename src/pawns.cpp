@@ -57,6 +57,12 @@ namespace {
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
 
+  // Half
+  const Bitboard HalfMask[COLOR_NB] = {
+    Rank2BB | Rank3BB | Rank4BB,
+    Rank7BB | Rank6BB | Rank5BB
+  };
+  
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
     (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
@@ -193,6 +199,7 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+    e->advPassedPawns[Us] = e->passedPawns[Us] & HalfMask[Them];
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
