@@ -520,6 +520,17 @@ namespace {
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
 
+    // Endgame bonus to help drive our King on opponent unsupported pawns
+    // Consider pawns not under attack by our King, since these are handled just above.
+    b = pos.pieces(Them, PAWN) & ~ei.attackedBy[Them][PAWN] & ~ei.attackedBy[Us][KING];
+    if (b)
+    {
+        int minKingPawnDistance = 1;
+        Square ksq = pos.king_square(Us);
+        while (!(DistanceRingBB[ksq][minKingPawnDistance++] & b));
+        score -= make_score(0, 3 * minKingPawnDistance--);
+    }
+
     // Add a small bonus for safe pawn pushes
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
