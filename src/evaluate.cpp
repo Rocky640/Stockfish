@@ -272,7 +272,7 @@ namespace {
         {
             // If this piece has too few options
             // remove its square from the mobility area of other pieces of higher rank
-            if (popcount<Max15>(b & emergencyArea[Us]) < 2) 
+            if (relative_rank(Us, s) < RANK_3 && !more_than_one(b & emergencyArea[Us])) 
                 mobilityArea[Us] &= ~SquareBB[s];
         }
 
