@@ -226,7 +226,7 @@ namespace {
   // evaluate_pieces() assigns bonuses and penalties to the pieces of a given color
 
   template<PieceType Pt, Color Us, bool Trace>
-  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
+  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea, Bitboard* emergencyArea) {
 
     Bitboard b;
     Square s;
@@ -265,8 +265,16 @@ namespace {
                    | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
-
         mobility[Us] += MobilityBonus[Pt][mob];
+
+        
+        if (Pt != QUEEN)
+        {
+            // If this piece has too few options
+            // remove its square from the mobility area of other pieces of higher rank
+            if (popcount<Max15>(b & emergencyArea[Us]) < 2) 
+                mobilityArea[Us] &= ~SquareBB[s];
+        }
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
@@ -330,13 +338,13 @@ namespace {
         Tracing::write(Pt, Us, score);
 
     // Recursively call evaluate_pieces() of next piece type until KING excluded
-    return score - evaluate_pieces<NextPt, Them, Trace>(pos, ei, mobility, mobilityArea);
+    return score - evaluate_pieces<NextPt, Them, Trace>(pos, ei, mobility, mobilityArea, emergencyArea);
   }
 
   template<>
-  Score evaluate_pieces<KING, WHITE, false>(const Position&, EvalInfo&, Score*, Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces<KING, WHITE, false>(const Position&, EvalInfo&, Score*, Bitboard*, Bitboard*) { return SCORE_ZERO; }
   template<>
-  Score evaluate_pieces<KING, WHITE,  true>(const Position&, EvalInfo&, Score*, Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces<KING, WHITE,  true>(const Position&, EvalInfo&, Score*, Bitboard*, Bitboard*) { return SCORE_ZERO; }
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
@@ -714,8 +722,16 @@ namespace {
       ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.king_square(BLACK))
     };
 
+    // Squares where a piece can actually move.
+    // It must no be controlled by an enemy pawn, nor occupied by our piece,
+    // but can be an enemy non-pawn
+    Bitboard emergencyArea[] = {
+      ~(ei.attackedBy[BLACK][PAWN] | pos.pieces(WHITE)) | (pos.pieces(BLACK)^pos.pieces(BLACK, PAWN)),
+	  ~(ei.attackedBy[WHITE][PAWN] | pos.pieces(BLACK)) | (pos.pieces(WHITE)^pos.pieces(WHITE, PAWN))
+    };
+
     // Evaluate pieces and mobility
-    score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea);
+    score += evaluate_pieces<KNIGHT, WHITE, Trace>(pos, ei, mobility, mobilityArea, emergencyArea);
     score += (mobility[WHITE] - mobility[BLACK]) * Weights[Mobility];
 
     // Evaluate kings after all other pieces because we need complete attack
