@@ -28,6 +28,8 @@
 #include "material.h"
 #include "pawns.h"
 
+//#include <iostream>
+
 namespace {
 
   namespace Tracing {
@@ -107,7 +109,9 @@ namespace {
   // MobilityBonus[PieceType][attacked] contains bonuses for middle and end
   // game, indexed by piece type and number of attacked squares not occupied by
   // friendly pieces.
-  const Score MobilityBonus[][32] = {
+  Score MobilityBonus[8][32];
+  /*
+  Score OldMobilityBonus[][32] = {
     {}, {},
     { S(-68,-49), S(-46,-33), S(-3,-12), S( 5, -4), S( 9, 11), S(15, 16), // Knights
       S( 23, 27), S( 33, 28), S(37, 29) },
@@ -123,6 +127,8 @@ namespace {
       S( 67, 80), S( 76, 82), S(77, 88), S(82, 94), S(86, 95), S(90, 96),
       S( 94, 99), S( 96,100), S(99,111), S(99,112) }
   };
+  */
+
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for knights and bishops
   // outposts, bigger if outpost piece is supported by a pawn.
@@ -893,6 +899,25 @@ namespace Eval {
         t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
         KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
     }
+
+    double QuadMob[][4] = {
+      {}, {},
+      {48.487, 38.843, 68.414, 53.807}, // Knights
+      {50.811, 42.396, 46.715, 43.643}, // Bishops
+      {33.827, 70.588, 51.716, 67.690}, // Rooks
+      {43.581, 45.656, 57.024, 54.234}, // Queens
+    };
+
+    int MaxMob[] = { 0, 0, 8, 14, 15, 28 };
+
+    for (int Pt = KNIGHT; Pt < KING; Pt++)
+        for (int i = 0; i < MaxMob[Pt]; i++) 
+        {
+            MobilityBonus[Pt][i] = make_score((int) (QuadMob[Pt][0] * log(i+1) - QuadMob[Pt][2]),
+                                              (int) (QuadMob[Pt][1] * log(i+1) - QuadMob[Pt][3]));
+           // sync_cout << i << ":" << "S(" << mg_value(OldMobilityBonus[Pt][i]) << "," << eg_value(OldMobilityBonus[Pt][i]) << ") "
+           //                       << "S(" << mg_value(MobilityBonus[Pt][i]) << "," << eg_value(MobilityBonus[Pt][i]) << ") " << sync_endl;
+        }
   }
 
 } // namespace Eval
