@@ -553,6 +553,10 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
+    // favour the attacker with more non-pawns.
+    bool moreNonPawns =    pos.count<ALL_PIECES>(Us)   - pos.count<PAWN>(Us) 
+                         > pos.count<ALL_PIECES>(Them) - pos.count<PAWN>(Them);
+
     Bitboard b, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
@@ -568,7 +572,7 @@ namespace {
         int rr = r * (r - 1);
 
         // Base bonus based on rank
-        Value mbonus = Value(17 * rr), ebonus = Value(7 * (rr + r + 1));
+        Value mbonus = Value(17 * rr), ebonus = Value((moreNonPawns ? 9 : 7) * (rr + r + 1));
 
         if (rr)
         {
