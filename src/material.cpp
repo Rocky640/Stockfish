@@ -59,6 +59,7 @@ namespace {
   // the function maps because they correspond to more than one material hash key.
   Endgame<KXK>    EvaluateKXK[] = { Endgame<KXK>(WHITE),    Endgame<KXK>(BLACK) };
 
+  Endgame<KBPsKN>  ScaleKBPsKN[] = { Endgame<KBPsKN>(WHITE),  Endgame<KBPsKN>(BLACK) };
   Endgame<KBPsK>  ScaleKBPsK[]  = { Endgame<KBPsK>(WHITE),  Endgame<KBPsK>(BLACK) };
   Endgame<KQKRPs> ScaleKQKRPs[] = { Endgame<KQKRPs>(WHITE), Endgame<KQKRPs>(BLACK) };
   Endgame<KPsK>   ScaleKPsK[]   = { Endgame<KPsK>(WHITE),   Endgame<KPsK>(BLACK) };
@@ -76,6 +77,14 @@ namespace {
           && pos.count<PAWN  >(us) >= 1;
   }
 
+  bool is_KBPsKN(const Position& pos, Color us) {
+    return   pos.non_pawn_material(us) == BishopValueMg
+          && pos.count<BISHOP>(us) == 1
+          && pos.count<KNIGHT>(~us) == 1
+          && pos.count<PAWN  >(us) >= 1
+          && !pos.count<PAWN >(~us);
+  }
+  
   bool is_KQKRPs(const Position& pos, Color us) {
     return  !pos.count<PAWN>(us)
           && pos.non_pawn_material(us) == QueenValueMg
@@ -161,7 +170,10 @@ Entry* probe(const Position& pos) {
   // case we don't return after setting the function.
   for (Color c = WHITE; c <= BLACK; ++c)
   {
-    if (is_KBPsKs(pos, c))
+    if (is_KBPsKN(pos, c))
+        e->scalingFunction[c] = &ScaleKBPsKN[c];
+
+    else if (is_KBPsKs(pos, c))
         e->scalingFunction[c] = &ScaleKBPsK[c];
 
     else if (is_KQKRPs(pos, c))

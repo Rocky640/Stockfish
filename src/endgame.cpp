@@ -120,7 +120,7 @@ Endgames::Endgames() {
   add<KRPKR>("KRPKR");
   add<KRPKB>("KRPKB");
   add<KBPKB>("KBPKB");
-  add<KBPKN>("KBPKN");
+  //add<KBPKN>("KBPKN");
   add<KBPPKB>("KBPPKB");
   add<KRPPKRP>("KRPPKRP");
 }
@@ -531,6 +531,14 @@ ScaleFactor Endgame<KRPKR>::operator()(const Position& pos) const {
           && distance(wksq, bksq) > 2)
           return ScaleFactor(24 - 2 * distance(wksq, bksq));
   }
+
+	// *NEW * 
+    // If the defending king is caught on a rank behind the
+	// pawn's path, it's probably a win
+	if (rank_of(bksq) < rank_of(wpsq)
+		&& distance(wksq, wpsq) < 3)
+		return ScaleFactor(SCALE_FACTOR_MAX - 2 * distance(wksq, queeningSq));
+
   return SCALE_FACTOR_NONE;
 }
 
@@ -759,23 +767,46 @@ ScaleFactor Endgame<KBPPKB>::operator()(const Position& pos) const {
 }
 
 
-/// KBP vs KN. There is a single rule: If the defending king is somewhere along
-/// the path of the pawn, and the square of the king is not of the same color as
-/// the stronger side's bishop, it's a draw.
+/// KBPs vs KN.
 template<>
-ScaleFactor Endgame<KBPKN>::operator()(const Position& pos) const {
+ScaleFactor Endgame<KBPsKN>::operator()(const Position& pos) const {
 
   assert(verify_material(pos, strongSide, BishopValueMg, 1));
   assert(verify_material(pos, weakSide, KnightValueMg, 0));
 
   Square pawnSq = pos.list<PAWN>(strongSide)[0];
-  Square strongBishopSq = pos.list<BISHOP>(strongSide)[0];
-  Square weakKingSq = pos.king_square(weakSide);
+  if (pos.count<PAWN>(strongSide) > 1) {
+      Bitboard pawns = pos.pieces(strongSide, PAWN);
+      // if many pawns on different files, let evaluate take care of this.
+      if (pawns & ~file_bb(pawnSq)) return SCALE_FACTOR_NONE;
 
+      // if many pawns on the same file, only consider the front most
+      pawnSq = frontmost_sq(strongSide, pawns);
+  }
+  
+  Square strongBishopSq = pos.list<BISHOP>(strongSide)[0];
+  Square stronKingSq = pos.king_square(strongSide);
+  Square weakKingSq = pos.king_square(weakSide);
+  Square weakKnightSq = pos.list<KNIGHT>(weakSide)[0];
+
+  // If the defending king is somewhere along
+  // the path of the pawn, and the square of the king is not of the same color as
+  // the stronger side's bishop, it's a draw.
   if (   file_of(weakKingSq) == file_of(pawnSq)
       && relative_rank(strongSide, pawnSq) < relative_rank(strongSide, weakKingSq)
       && (   opposite_colors(weakKingSq, strongBishopSq)
           || relative_rank(strongSide, weakKingSq) <= RANK_6))
+      return SCALE_FACTOR_DRAW;
+  
+   // *NEW *
+   // If the defending knight is safe from Bishop attacks, and control a square 
+   // in front of the pawn, and opponent King is cut off from the Knight, it is a draw
+   // Typical position: 8/8/8/2b5/8/1k1K4/2p1N3/8 b - - 0 1
+
+  if (   opposite_colors(weakKnightSq, strongBishopSq)
+      && (forward_bb(strongSide, pawnSq) & pos.attacks_from<KNIGHT>(weakKnightSq))
+      && (rank_of(weakKnightSq) == rank_of(pawnSq))
+      && (distance(weakKnightSq, weakKingSq) + 1 < distance(weakKnightSq, stronKingSq)))
       return SCALE_FACTOR_DRAW;
 
   return SCALE_FACTOR_NONE;
