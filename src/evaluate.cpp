@@ -292,8 +292,9 @@ namespace {
                 && (pos.pieces(PAWN) & (s + pawn_push(Us))))
                 score += MinorBehindPawn;
 
-            // Bonus for a safe, pawn protected destination
-            b &= ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Them][PAWN] & ~pos.pieces();
+            // Bonus when on a safe, pawn protected square, or have an option to jump to such square
+            b |= s;
+            b &= ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Them][PAWN] & (~pos.pieces() | s);
             if (b) 
                 score += SafeOption;
 
