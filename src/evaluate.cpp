@@ -172,6 +172,7 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
   const Score PawnSafePush       = S( 5,  5);
+  const Score SafeOption         = S( 5,  5);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -290,6 +291,11 @@ namespace {
             if (    relative_rank(Us, s) < RANK_5
                 && (pos.pieces(PAWN) & (s + pawn_push(Us))))
                 score += MinorBehindPawn;
+
+            // Bonus for a safe, pawn protected destination
+            b &= ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Them][PAWN] & ~pos.pieces();
+            if (b) 
+                score += SafeOption;
 
             // Penalty for pawns on same color square of bishop
             if (Pt == BISHOP)
