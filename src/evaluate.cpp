@@ -293,7 +293,7 @@ namespace {
                 score += MinorBehindPawn;
 
             // Bonus when option to jump to a safe, pawn protected square
-            b &= ei.attackedBy[Us][PAWN] & ~pos.pieces();
+            b &= ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Them][PAWN] & ~pos.pieces();
             if (b) 
                 score += SafeOption;
 
