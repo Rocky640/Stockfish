@@ -136,8 +136,8 @@ namespace {
   const Score Threat[][2][PIECE_TYPE_NB] = {
   { { S(0, 0), S( 0, 0), S(19, 37), S(24, 37), S(44, 97), S(35,106) },   // Defended Minor
     { S(0, 0), S( 0, 0), S( 9, 14), S( 9, 14), S( 7, 14), S(24, 48) } }, // Defended Major
-  { { S(0, 0), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Weak Minor
-    { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Weak Major
+  { { S(0,10), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Weak Minor
+    { S(0, 6), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Weak Major
   };
 
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
@@ -457,6 +457,9 @@ namespace {
   Score evaluate_threats(const Position& pos, const EvalInfo& ei) {
 
     const Color Them        = (Us == WHITE ? BLACK    : WHITE);
+    const Bitboard AdvancedRanks = 
+               (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB
+                            : Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB);
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Left       = (Us == WHITE ? DELTA_NW : DELTA_SE);
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
@@ -524,6 +527,24 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+    }
+
+    // Advanced empty squares not defended at all and under our attack
+    weak =  ~pos.pieces()
+          & ~ei.attackedBy[Them][ALL_PIECES]
+          &  ei.attackedBy[Us][ALL_PIECES]
+          &  AdvancedRanks;
+
+    // Add a bonus according to the kind of attacking pieces
+    if (weak)
+    {
+        b = weak & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        if (b) 
+            score += Threat[Weak][Minor][NO_PIECE] * popcount<Full>(b);
+
+        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN]);
+        if (b) 
+            score += Threat[Weak][Major][NO_PIECE] * popcount<Full>(b);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
