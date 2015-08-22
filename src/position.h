@@ -176,7 +176,8 @@ public:
   // Position consistency check, for debugging
   bool pos_is_ok(int* failedStep = nullptr) const;
   void flip();
-
+  int pieceCount[COLOR_NB][PIECE_TYPE_NB];
+  
 private:
   // Initialization helpers (used while setting up a position)
   void clear();
@@ -195,7 +196,7 @@ private:
   Piece board[SQUARE_NB];
   Bitboard byTypeBB[PIECE_TYPE_NB];
   Bitboard byColorBB[COLOR_NB];
-  int pieceCount[COLOR_NB][PIECE_TYPE_NB];
+  
   Square pieceList[COLOR_NB][PIECE_TYPE_NB][16];
   int index[SQUARE_NB];
   int castlingRightsMask[SQUARE_NB];

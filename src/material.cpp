@@ -30,29 +30,29 @@ namespace {
 
   // Polynomial material imbalance parameters
 
-  //                      pair  pawn knight bishop rook queen
-  const int Linear[6] = { 1852, -162, -1122, -183,  249, -154 };
+  //                          pawn knight bishop rook queen
+  const int Linear[6] = { 0, -162, -1122, -183,  249, -154 };
 
   const int QuadraticOurs[][PIECE_TYPE_NB] = {
     //            OUR PIECES
-    // pair pawn knight bishop rook queen
+    //       pawn knight bishop rook queen
     {   0                               }, // Bishop pair
-    {  39,    2                         }, // Pawn
-    {  35,  271,  -4                    }, // Knight      OUR PIECES
+    {   0,    2                         }, // Pawn
+    {   0,  271,  -4                    }, // Knight      OUR PIECES
     {   0,  105,   4,    0              }, // Bishop
-    { -27,   -2,  46,   100,  -141      }, // Rook
-    {-177,   25, 129,   142,  -137,   0 }  // Queen
+    {   0,   -2,  46,   100,  -141      }, // Rook
+    {   0,   25, 129,   142,  -137,   0 }  // Queen
   };
 
   const int QuadraticTheirs[][PIECE_TYPE_NB] = {
     //           THEIR PIECES
     // pair pawn knight bishop rook queen
     {   0                               }, // Bishop pair
-    {  37,    0                         }, // Pawn
-    {  10,   62,   0                    }, // Knight      OUR PIECES
-    {  57,   64,  39,     0             }, // Bishop
-    {  50,   40,  23,   -22,    0       }, // Rook
-    {  98,  105, -39,   141,  274,    0 }  // Queen
+    {   0,    0                         }, // Pawn
+    {   0,   62,   0                    }, // Knight      OUR PIECES
+    {   0,   64,  39,     0             }, // Bishop
+    {   0,   40,  23,   -22,    0       }, // Rook
+    {   0,  105, -39,   141,  274,    0 }  // Queen
   };
 
   // Endgame evaluation and scaling functions are accessed directly and not through
@@ -94,14 +94,14 @@ namespace {
     int bonus = 0;
 
     // Second-degree polynomial material imbalance by Tord Romstad
-    for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
+    for (int pt1 = PAWN; pt1 <= QUEEN; ++pt1)
     {
         if (!pieceCount[Us][pt1])
             continue;
 
         int v = Linear[pt1];
 
-        for (int pt2 = NO_PIECE_TYPE; pt2 <= pt1; ++pt2)
+        for (int pt2 = PAWN; pt2 <= pt1; ++pt2)
             v +=  QuadraticOurs[pt1][pt2] * pieceCount[Us][pt2]
                 + QuadraticTheirs[pt1][pt2] * pieceCount[Them][pt2];
 
@@ -211,16 +211,8 @@ Entry* probe(const Position& pos) {
   if (pos.count<PAWN>(BLACK) == 1 && npm_b - npm_w <= BishopValueMg)
       e->factor[BLACK] = (uint8_t) SCALE_FACTOR_ONEPAWN;
 
-  // Evaluate the material imbalance. We use PIECE_TYPE_NONE as a place holder
-  // for the bishop pair "extended piece", which allows us to be more flexible
-  // in defining bishop pair bonuses.
-  const int PieceCount[COLOR_NB][PIECE_TYPE_NB] = {
-  { pos.count<BISHOP>(WHITE) > 1, pos.count<PAWN>(WHITE), pos.count<KNIGHT>(WHITE),
-    pos.count<BISHOP>(WHITE)    , pos.count<ROOK>(WHITE), pos.count<QUEEN >(WHITE) },
-  { pos.count<BISHOP>(BLACK) > 1, pos.count<PAWN>(BLACK), pos.count<KNIGHT>(BLACK),
-    pos.count<BISHOP>(BLACK)    , pos.count<ROOK>(BLACK), pos.count<QUEEN >(BLACK) } };
-
-  e->value = int16_t((imbalance<WHITE>(PieceCount) - imbalance<BLACK>(PieceCount)) / 16);
+  // Evaluate the material imbalance.
+  e->value = int16_t((imbalance<WHITE>(pos.pieceCount) - imbalance<BLACK>(pos.pieceCount)) / 16);
   return e;
 }
 
