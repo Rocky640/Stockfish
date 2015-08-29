@@ -467,7 +467,7 @@ namespace {
     enum { Defended, Weak };
     enum { Minor, Major };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, b2, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -531,16 +531,33 @@ namespace {
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
+    // Free squares where a supported pawn push is possible
     b &=  ~pos.pieces()
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+       & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
-       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-       & ~ei.attackedBy[Us][PAWN];
+    if (b) 
+    {
+        // Compute attacks on squares not controlled by their pawn
+        b2 = b & ~ei.attackedBy[Them][PAWN];
+        b2 =  (shift_bb<Left>(b2) | shift_bb<Right>(b2))
+           & pos.pieces(Them)
+           & ~ei.attackedBy[Us][PAWN];
 
-    if (b)
-        score += popcount<Max15>(b & ~ei.attackedBy[Them][PAWN]) * PawnAttackThreat
-              +  popcount<Max15>(b &  ei.attackedBy[Them][PAWN]) * PawnAttackThreat2;
+        if (b2)
+            score += popcount<Max15>(b2) * PawnAttackThreat;
+        
+        // Up to this, everything is identical to master.
+        // New: compute attacks on squares defended by their pawn but supported by our pawn too.
+        b2  = b & ei.attackedBy[Them][PAWN] & ei.attackedBy[Us][PAWN];
+
+        // Check if we can attack a non-pawn from that square.
+        b2 =  (shift_bb<Left>(b2) | shift_bb<Right>(b))
+            & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
+            & ~ei.attackedBy[Us][PAWN];
+
+        if (b2)
+            score += popcount<Max15>(b2) * PawnAttackThreat2;
+    }
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
