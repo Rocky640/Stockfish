@@ -551,7 +551,7 @@ namespace {
         b2  = b & ei.attackedBy[Them][PAWN] & ei.attackedBy[Us][PAWN];
 
         // Check if we can attack a non-pawn from that square.
-        b2 =  (shift_bb<Left>(b2) | shift_bb<Right>(b))
+        b2 =  (shift_bb<Left>(b2) | shift_bb<Right>(b2))
             & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
             & ~ei.attackedBy[Us][PAWN];
 
