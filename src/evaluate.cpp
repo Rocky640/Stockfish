@@ -531,11 +531,11 @@ namespace {
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
+        & (ei.attackedBy[Us][PAWN] | ~ei.attackedBy[Them][PAWN])
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
-       &  pos.pieces(Them)
+       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
        & ~ei.attackedBy[Us][PAWN];
 
     if (b)
