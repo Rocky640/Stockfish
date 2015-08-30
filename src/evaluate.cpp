@@ -27,6 +27,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
+#include "uci.h"
 
 namespace {
 
@@ -133,7 +134,7 @@ namespace {
 
   // Threat[defended/weak][minor/major attacking][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
-  const Score Threat[][2][PIECE_TYPE_NB] = {
+  Score Threat[][2][PIECE_TYPE_NB] = {
   { { S(0, 0), S( 0, 0), S(19, 37), S(24, 37), S(44, 97), S(35,106) },   // Defended Minor
     { S(0, 0), S( 0, 0), S( 9, 14), S( 9, 14), S( 7, 14), S(24, 48) } }, // Defended Major
   { { S(0, 0), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Weak Minor
@@ -145,6 +146,8 @@ namespace {
   const Score ThreatenedByPawn[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 0), S(107, 138), S(84, 122), S(114, 203), S(121, 217)
   };
+
+  Score ThreatBlockedPawn = S(0, 0);
 
   // Passed[mg/eg][rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
@@ -312,7 +315,7 @@ namespace {
             {
                 Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (alignedPawns)
-                    score += popcount<Max15>(alignedPawns) * RookOnPawn;
+                    score += RookOnPawn * popcount<Max15>(alignedPawns);
             }
 
             // Bonus when on an open or semi-open file
@@ -517,6 +520,13 @@ namespace {
         while (b)
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
+        // More bonus for each unsupported blocked pawn which is attacked by a piece
+        b = weak & pos.pieces(Them, PAWN) 
+                 & shift_bb<Up>(pos.pieces()) 
+                 & ~ei.attackedBy[Us][PAWN];
+        if (b)
+            score += ThreatBlockedPawn * popcount<Max15>(b);
+
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
@@ -539,7 +549,7 @@ namespace {
        & ~ei.attackedBy[Us][PAWN];
 
     if (b)
-        score += popcount<Max15>(b) * PawnAttackThreat;
+        score += PawnAttackThreat * popcount<Max15>(b);
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
@@ -894,6 +904,11 @@ namespace Eval {
         t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
         KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
     }
+    enum { Defended, Weak };
+    enum { Minor, Major };
+    ThreatBlockedPawn = make_score(Options["w1"],Options["w2"]);
+    Threat[Weak][Minor][PAWN] -= make_score(Options["w3"],Options["w4"]);
+    Threat[Weak][Major][PAWN] -= make_score(Options["w3"],Options["w4"]);
   }
 
 } // namespace Eval

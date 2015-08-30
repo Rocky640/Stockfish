@@ -199,7 +199,7 @@ namespace {
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
-    score += popcount<Max15>(b) * CenterBind;
+    score += CenterBind * popcount<Max15>(b);
 
     return score;
   }
