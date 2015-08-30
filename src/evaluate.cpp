@@ -214,6 +214,7 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     ei.attackedBy[Us][ALL_PIECES] = ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Us][P_VSUPPORT] = 0;
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
 
     // Init king safety tables only if we are going to use them
@@ -255,6 +256,9 @@ namespace {
             b &= LineBB[pos.square<KING>(Us)][s];
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+
+        if (Pt == ROOK || Pt == QUEEN)
+            ei.attackedBy[Us][P_VSUPPORT] |= forward_bb(Us, s) & pos.pieces(Us, PAWN) & b;
 
         if (b & ei.kingRing[Them])
         {
@@ -330,6 +334,7 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
+
     }
 
     if (Trace)
@@ -467,6 +472,7 @@ namespace {
     enum { Minor, Major };
 
     Bitboard b, weak, defended, safeThreats;
+    Bitboard safeSq = ~ei.attackedBy[Them][ALL_PIECES] | ei.attackedBy[Us][ALL_PIECES];
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -474,8 +480,7 @@ namespace {
 
     if (weak)
     {
-        b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
-                                    | ei.attackedBy[Us][ALL_PIECES]);
+        b = pos.pieces(Us, PAWN) & safeSq;
 
         safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
 
@@ -526,13 +531,14 @@ namespace {
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
 
+
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
         & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+        & (safeSq | shift_bb<Up>(ei.attackedBy[Us][P_VSUPPORT]));
 
     b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
        &  pos.pieces(Them)
