@@ -234,14 +234,15 @@ namespace {
   template<PieceType Pt, Color Us, bool Trace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, Bitboard* mobilityArea) {
 
-    Bitboard b;
+    Bitboard b, rmob;
     Square s;
     Score score = SCORE_ZERO;
 
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square* pl = pos.squares<Pt>(Us);
-
+    const Square Up = (Us == WHITE ? DELTA_N : DELTA_S);
+ 
     ei.attackedBy[Us][Pt] = 0;
 
     while ((s = *pl++) != SQ_NONE)
@@ -253,6 +254,18 @@ namespace {
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
+
+        // Squares controlled by Minors will not be considered in the rook mobility count
+        // when the Rook operates alone on those squares, 
+        // ("alone" according to the incomplete info in the ALL_PIECES, which is what we want)
+        // or is not supporting/attacking some pieces or a friendly pawn push.
+
+        if (Pt == ROOK)
+            rmob = b &  
+                  (   ei.attackedBy[Us][ALL_PIECES]
+                   |  pos.pieces()
+                   |  shift_bb<Up>(pos.pieces(Us, PAWN))
+                   | ~(ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]));
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
@@ -270,7 +283,7 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
+        int mob = popcount<Pt == QUEEN ? Full : Max15>((Pt == ROOK ? rmob : b) & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
