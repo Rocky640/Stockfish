@@ -241,6 +241,8 @@ namespace {
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square* pl = pos.squares<Pt>(Us);
+    const Bitboard Half = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB
+                                       : Rank8BB | Rank7BB | Rank6BB | Rank5BB);
 
     ei.attackedBy[Us][Pt] = 0;
 
@@ -265,9 +267,14 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
+        if (Pt == ROOK)
+            // Remove empty squares controlled by opponent Minors on our side of the board.
+            b &= ~(ei.attackedBy[Them][MINOR] & Half) | pos.pieces();
+
         if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][MINOR]
-                   | ei.attackedBy[Them][ROOK]);
+            // Remove all squares controlled by opponent Minors or Rook
+            b &= ~(ei.attackedBy[Them][MINOR] | ei.attackedBy[Them][ROOK]);
+        
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
