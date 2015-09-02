@@ -266,8 +266,7 @@ namespace {
         }
 
         if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][KNIGHT]
-                   | ei.attackedBy[Them][BISHOP]
+            b &= ~(  ei.attackedBy[Them][MINOR]
                    | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
@@ -312,7 +311,7 @@ namespace {
             {
                 Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
                 if (alignedPawns)
-                    score += popcount<Max15>(alignedPawns) * RookOnPawn;
+                    score += RookOnPawn * popcount<Max15>(alignedPawns);
             }
 
             // Bonus when on an open or semi-open file
@@ -331,6 +330,9 @@ namespace {
             }
         }
     }
+
+    if (Pt == BISHOP) 
+        ei.attackedBy[Us][MINOR] = ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP];
 
     if (Trace)
         Tracing::write(Pt, Us, score);
@@ -366,9 +368,8 @@ namespace {
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][MINOR]
+                        | ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN]);
 
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
@@ -388,8 +389,8 @@ namespace {
         if (b)
         {
             // ...and then remove squares not supported by another enemy piece
-            b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK];
+            b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][MINOR]
+                | ei.attackedBy[Them][ROOK];
 
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
@@ -405,8 +406,7 @@ namespace {
         if (b)
         {
             // ...and then remove squares not supported by another enemy piece
-            b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP]);
+            b &= ei.attackedBy[Them][PAWN] | ei.attackedBy[Them][MINOR];
 
             if (b)
                 attackUnits += RookContactCheck * popcount<Max15>(b);
@@ -492,11 +492,11 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (defended)
     {
-        b = defended & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        b = defended & ei.attackedBy[Us][MINOR];
         while (b)
             score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = defended & (ei.attackedBy[Us][ROOK]);
+        b = defended & ei.attackedBy[Us][ROOK];
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
     }
@@ -509,7 +509,7 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (weak)
     {
-        b = weak & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        b = weak & ei.attackedBy[Us][MINOR];
         while (b)
             score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
@@ -539,7 +539,7 @@ namespace {
        & ~ei.attackedBy[Us][PAWN];
 
     if (b)
-        score += popcount<Max15>(b) * PawnAttackThreat;
+        score += PawnAttackThreat * popcount<Max15>(b);
 
     if (Trace)
         Tracing::write(Tracing::THREAT, Us, score);
