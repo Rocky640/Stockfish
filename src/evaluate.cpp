@@ -168,8 +168,8 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
 
-  const Score SidebySideBishops         = S(25, 30);
-  const Score AdjacentDiagonalBishops   = S(10, 15);
+  const Score SidebySideBishops         = S(15, 20);
+  const Score AdjacentDiagonalBishops   = S( 5, 10);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -529,13 +529,14 @@ namespace {
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
 
+    // Bonus if bishop pair on adjacent diagonals
     if (pos.count<BISHOP>(Us) == 2)
     {
         Square b0 = pos.squares<BISHOP>(Us)[0];
         Square b1 = pos.squares<BISHOP>(Us)[1];
         
-        if (ei.attackedBy[Us][BISHOP] & (PseudoAttacks[KING][b0] | PseudoAttacks[KING][b1]))
-            score += (PseudoAttacks[KING][b0] & b1) ? SidebySideBishops : AdjacentDiagonalBishops;
+        if (DistanceRingBB[b0][0] & PseudoAttacks[BISHOP][b1])
+            score += (DistanceRingBB[b0][0] & b1) ? SidebySideBishops : AdjacentDiagonalBishops;
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
