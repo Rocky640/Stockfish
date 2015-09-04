@@ -168,6 +168,9 @@ namespace {
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
 
+  const Score SidebySideBishops         = S(25, 30);
+  const Score AdjacentDiagonalBishops   = S(10, 15);
+
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
   // happen in Chess960 games.
@@ -289,7 +292,7 @@ namespace {
             // Penalty for pawns on same color square of bishop
             if (Pt == BISHOP)
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
-
+ 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
             // when that pawn is also blocked.
@@ -524,6 +527,15 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+    }
+
+    if (pos.count<BISHOP>(Us) == 2)
+    {
+        Square b0 = pos.squares<BISHOP>(Us)[0];
+        Square b1 = pos.squares<BISHOP>(Us)[1];
+        
+        if (ei.attackedBy[Us][BISHOP] & (PseudoAttacks[KING][b0] | PseudoAttacks[KING][b1]))
+            score += (PseudoAttacks[KING][b0] & b1) ? SidebySideBishops : AdjacentDiagonalBishops;
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
