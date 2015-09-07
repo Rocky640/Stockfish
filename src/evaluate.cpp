@@ -617,8 +617,15 @@ namespace {
                 mbonus += rr * 3 + r * 2 + 3, ebonus += rr + r * 2;
         } // rr != 0
 
-        if (pos.count<PAWN>(Us) < pos.count<PAWN>(Them))
-            ebonus += ebonus / 8;
+        // If we outnumber and outpower the non-pawn pieces, we might be able to force way for the pawn
+        // Example: 2 Rooks against Queen.
+        bool strongSupport =
+            (pos.count<ALL_PIECES>(Us) - pos.count<PAWN>(Us) 
+                > pos.count<ALL_PIECES>(Them) - pos.count<PAWN>(Them)) 
+        &&  (pos.non_pawn_material(Us) > pos.non_pawn_material(Them));
+
+        if (strongSupport)
+            ebonus += ebonus / 4;
 
         score += make_score(mbonus, ebonus);
     }
