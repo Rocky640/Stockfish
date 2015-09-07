@@ -618,7 +618,7 @@ namespace {
         } // rr != 0
 
         if (pos.count<PAWN>(Us) < pos.count<PAWN>(Them))
-            ebonus += ebonus / 4;
+            ebonus += 3 * ebonus / 8;
 
         score += make_score(mbonus, ebonus);
     }
