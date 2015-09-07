@@ -57,6 +57,10 @@ namespace {
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
 
+  // Unopposed pawns with more than one side oppositions
+  // e.g White d4 against c7 and e6
+  const Score SideOpposition = S(10, 10);
+
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
     (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
@@ -189,9 +193,12 @@ namespace {
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
+        else if (!opposed && !passed && more_than_one(theirPawns & passed_pawn_mask(Us, s)))
+            score -= SideOpposition;
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
