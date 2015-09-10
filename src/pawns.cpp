@@ -59,7 +59,7 @@ namespace {
 
   // Unopposed pawns with more than one side oppositions
   // e.g White d4 against c7 and e6
-  const Score SideOpposition = S(10, 10);
+  const Score SideOpposition = S(5, 5);
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
