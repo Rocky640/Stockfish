@@ -728,10 +728,10 @@ Value Eval::evaluate(const Position& pos) {
   };
 
   // Do not include in mobility squares protected by enemy pawns, or occupied
-  // by our blocked pawns or king.
+  // by our blocked pawns, king, or pinned pieces.
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE) | ei.pinnedPieces[WHITE]),
+    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK) | ei.pinnedPieces[BLACK])
   };
 
   // Evaluate pieces and mobility
