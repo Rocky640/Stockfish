@@ -293,7 +293,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   castlingRights[Us] = pos.can_castle(Us);
   int minKingPawnDistance = 0;
 
-  Bitboard pawns = pos.pieces(Us, PAWN);
+  Bitboard pawns = relative_rank(Us, ksq) > RANK_4 ? pos.pieces(PAWN) : pos.pieces(Us, PAWN);
   if (pawns)
       while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
 
