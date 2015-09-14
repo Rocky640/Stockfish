@@ -27,6 +27,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
+#include "uci.h"
 
 namespace {
 
@@ -105,7 +106,7 @@ namespace {
     Pawns::Entry* pi;
   };
 
-
+  int p1, p2, p3, p4;
   // Evaluation weights, indexed by the corresponding evaluation term
   enum { Mobility, PawnStructure, PassedPawns, Space, KingSafety };
 
@@ -795,7 +796,12 @@ Value Eval::evaluate(const Position& pos) {
                && !pos.pawn_passed(~strongSide, pos.square<KING>(~strongSide)))
           sf = ei.pi->pawn_span(strongSide) ? ScaleFactor(56) : ScaleFactor(38);
   }
-
+  
+  //sf = ScaleFactor(std::max(sf / 2, sf - 7 * SCALE_FACTOR_NORMAL * (14 - p) / v_eg)); 
+  int p = pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK);  
+  int v_eg = 1 + abs(int(eg_value(score))); 
+  sf = ScaleFactor(std::min(std::max(p1 * sf / 32, sf - p2 * SCALE_FACTOR_NORMAL * (p3 - p) / v_eg), p4 * sf / 32)); 
+  
   // Interpolate between a middlegame and a (scaled by 'sf') endgame score
   Value v =  mg_value(score) * int(me->game_phase())
            + eg_value(score) * int(PHASE_MIDGAME - me->game_phase()) * sf / SCALE_FACTOR_NORMAL;
@@ -873,4 +879,8 @@ void Eval::init() {
       t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
       KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
   }
+  p1= Options["p1"];
+  p2= Options["p2"];
+  p3= Options["p3"];
+  p4= Options["p4"];
 }
