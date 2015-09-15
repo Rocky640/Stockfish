@@ -189,6 +189,11 @@ void Bitboards::init() {
                       StepAttacksBB[make_piece(c, pt)][s] |= to;
               }
 
+  // New: computing a basic Knight "shadow". 
+  // If Ne4, the Knight shadow is g6, c2, c6 and g2. It takes 4 moves to reach those squares
+  for (Square s = SQ_A1; s <= SQ_H8; ++s)
+      StepAttacksBB[KNIGHT_SHADOW][s] = StepAttacksBB[BISHOP][s] & DistanceRingBB[s][1];
+
   Square RookDeltas[] = { DELTA_N,  DELTA_E,  DELTA_S,  DELTA_W  };
   Square BishopDeltas[] = { DELTA_NE, DELTA_SE, DELTA_SW, DELTA_NW };
 

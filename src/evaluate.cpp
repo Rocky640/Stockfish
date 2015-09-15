@@ -184,6 +184,7 @@ namespace {
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
+  const Score KnightShadow       = S( 5, 10);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -542,6 +543,14 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+    }
+
+    // End game bonus if safe from Knight attacks, and/or controlling their Knight
+    if (pos.count<KNIGHT>(Them) == 1)
+    {
+        if (  StepAttacksBB[KNIGHT_SHADOW][pos.square<KNIGHT>(Them)] 
+            & (pos.pieces(Us, BISHOP, ROOK) | pos.pieces(Us, QUEEN)))
+            score += KnightShadow;
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
