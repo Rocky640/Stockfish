@@ -120,11 +120,34 @@ namespace {
 
   #define V(v) Value(v)
   #define S(mg, eg) make_score(mg, eg)
+  //Original values before tuning
+  const Score MobilityBonusRef[][32] = {
+    {}, {},
+    { S(-68,-49), S(-46,-33), S(-3,-12), S( 5, -4), S( 9, 11), S(15, 16), // Knights
+      S( 23, 27), S( 33, 28), S(37, 29) },
+    { S(-49,-44), S(-23,-16), S(16,  1), S(29, 16), S(40, 25), S(51, 34), // Bishops
+      S( 55, 43), S( 61, 49), S(64, 51), S(68, 52), S(73, 55), S(75, 60),
+      S( 80, 65), S( 86, 66) },
+    { S(-50,-57), S(-28,-22), S(-11, 7), S(-1, 29), S( 0, 39), S( 1, 46), // Rooks
+      S( 10, 66), S( 16, 79), S(22, 86), S(23,103), S(30,109), S(33,111),
+      S( 37,115), S( 38,119), S(48,124) },
+    { S(-43,-30), S(-27,-15), S( 1, -5), S( 2, -3), S(14, 10), S(18, 24), // Queens
+      S( 20, 27), S( 33, 37), S(33, 38), S(34, 43), S(40, 46), S(43, 56),
+      S( 46, 61), S( 52, 63), S(52, 63), S(57, 65), S(60, 70), S(61, 74),
+      S( 67, 80), S( 76, 82), S(77, 88), S(82, 94), S(86, 95), S(90, 96),
+      S( 94, 99), S( 96,100), S(99,111), S(99,112) }
+  };
+
+  //+- adjustment that will be applied on the original MobilityBonus,
+  // and put into MobilityBonus
+  
+  Score MobTune[4][4]; 
+  TUNE(SetRange(-20, 20), MobTune);
 
   // MobilityBonus[PieceType][attacked] contains bonuses for middle and end
   // game, indexed by piece type and number of attacked squares not occupied by
   // friendly pieces.
-  const Score MobilityBonus[][32] = {
+  Score MobilityBonus[][32] = {
     {}, {},
     { S(-68,-49), S(-46,-33), S(-3,-12), S( 5, -4), S( 9, 11), S(15, 16), // Knights
       S( 23, 27), S( 33, 28), S(37, 29) },
@@ -873,4 +896,9 @@ void Eval::init() {
       t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
       KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
   }
+    
+  //SPSA tuning. Just tuning the mob 0 to 3
+  for (int i = KNIGHT; i<= QUEEN; i++)
+      for (int mob = 0; mob <= 3; mob++)
+          MobilityBonus[i][mob] = MobilityBonusRef[i][mob] + MobTune[i-2][mob];
 }
