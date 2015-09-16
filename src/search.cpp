@@ -150,12 +150,21 @@ namespace {
 
 } // namespace
 
+//Auxiliary integer array for tuning.
+int KTune[][2] = {{ 1,1 }, { 1,1 }};
+TUNE(SetRange(-128, 128), KTune);
 
 /// Search::init() is called during startup to initialize various lookup tables
 
 void Search::init() {
 
-  const double K[][2] = {{ 0.83, 2.25 }, { 0.50, 3.00 }};
+  // KTune will start at 0. K starts with the original values
+  double K[][2] = {{ 0.83, 2.25 }, { 0.50, 3.00 }};
+
+  K[0][0] += (double) KTune[0][0]/128.0;
+  K[0][1] += (double) KTune[0][1]/128.0;
+  K[1][0] += (double) KTune[1][0]/128.0;
+  K[1][1] += (double) KTune[1][1]/128.0;
 
   for (int pv = 0; pv <= 1; ++pv)
       for (int imp = 0; imp <= 1; ++imp)
@@ -166,6 +175,10 @@ void Search::init() {
 
                   if (r >= 1.5)
                       Reductions[pv][imp][d][mc] = int(r) * ONE_PLY;
+                  else
+                      // must explicitly clear after each game for spsa !!!
+                      // as pointed out by Alwey in June 2015
+                      Reductions[pv][imp][d][mc] = 0 * ONE_PLY;
 
                   // Increase reduction when eval is not improving
                   if (!pv && !imp && Reductions[pv][imp][d][mc] >= 2 * ONE_PLY)
