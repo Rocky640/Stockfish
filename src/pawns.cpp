@@ -160,7 +160,7 @@ namespace {
         if (more_than_one(supporting))
             // Special case: example White a3 b2 c3 Black a4 c4
             // The pawn on b2 deserves a backward penalty
-            backward = !opposed && more_than_one(shift_bb<Up>(supporting));
+            backward = !opposed && more_than_one(shift_bb<Up>(supporting) & theirPawns);
         else
         {
             // We now check whether the pawn is
