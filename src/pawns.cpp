@@ -106,7 +106,8 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, supporting, phalanx;
+
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -141,6 +142,7 @@ namespace {
         lever       =   theirPawns & pawnAttacksBB[s];
         phalanx     =   neighbours & rank_bb(s);
         supported   =   neighbours & rank_bb(s - Up);
+        supporting  =   neighbours & rank_bb(s + Up);
         connected   =   supported | phalanx;
         isolated    =  !neighbours;
 
@@ -153,9 +155,15 @@ namespace {
             || (relative_rank(Us, s) >= RANK_5))
             backward = false;
         else
+        // We now know there are no friendly pawns beside or behind this
+        // pawn on adjacent files.
+        if (more_than_one(supporting))
+            // Special case: example White a3 b2 c3 Black a4 c4
+            // The pawn on b2 deserves a backward penalty
+            backward = !opposed && more_than_one(shift_bb<Up>(supporting));
+        else
         {
-            // We now know there are no friendly pawns beside or behind this
-            // pawn on adjacent files. We now check whether the pawn is
+            // We now check whether the pawn is
             // backward by looking in the forward direction on the adjacent
             // files, and picking the closest pawn there.
             b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);

@@ -133,7 +133,6 @@ inline Bitboard file_bb(Square s) {
   return FileBB[file_of(s)];
 }
 
-
 /// shift_bb() moves a bitboard one step along direction Delta. Mainly for pawns
 
 template<Square Delta>
