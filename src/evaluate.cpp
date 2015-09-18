@@ -290,14 +290,13 @@ namespace {
                          | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
-
-        // if the piece is pinned, compute mob as the average between 
-        // full mobility if it would not pinned (just computed above), 
-        // and current lower mobility when pinned
-        if (bp != b)
-            mob = (mob + popcount<Max15>(bp & mobilityArea[Us]))/2;
-
-        mobility[Us] += MobilityBonus[Pt][mob];
+        if (bp == b)
+            mobility[Us] += MobilityBonus[Pt][mob];
+        else
+        {
+            int mobp = popcount<Pt == QUEEN ? Full : Max15>(bp & mobilityArea[Us]);
+            mobility[Us] += (MobilityBonus[Pt][mob] + MobilityBonus[Pt][mobp]) / 2;
+        }
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
