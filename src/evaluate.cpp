@@ -252,7 +252,7 @@ namespace {
   template<PieceType Pt, Color Us, bool DoTrace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, const Bitboard* mobilityArea) {
 
-    Bitboard b;
+    Bitboard b, bp;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -265,30 +265,37 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+        b = bp =
+            Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
-            b &= LineBB[pos.square<KING>(Us)][s];
+            bp &= LineBB[pos.square<KING>(Us)][s];
 
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= bp;
 
-        if (b & ei.kingRing[Them])
+        if (bp & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            Bitboard bb = b & ei.attackedBy[Them][KING];
+            Bitboard bb = bp & ei.attackedBy[Them][KING];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
         if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][KNIGHT]
-                   | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]);
+            bp &= b &= ~(  ei.attackedBy[Them][KNIGHT]
+                         | ei.attackedBy[Them][BISHOP]
+                         | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
+
+        // if the piece is pinned, compute mob as the average between 
+        // full mobility if it would not pinned (just computed above), 
+        // and current lower mobility when pinned
+        if (bp != b)
+            mob = (mob + popcount<Max15>(bp & mobilityArea[Us]))/2;
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
