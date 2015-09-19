@@ -265,12 +265,20 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+        b =  Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
+        {
+            Bitboard borig = b;
             b &= LineBB[pos.square<KING>(Us)][s];
+            if (Pt == BISHOP || Pt == ROOK)
+                // If the pinned piece attacks the pinner which is a QUEEN,
+                // don't worry about the pin
+                if (b & pos.pieces(Them, QUEEN)) 
+                    b = borig;
+        }
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
