@@ -22,7 +22,6 @@
 #include "bitboard.h"
 #include "bitcount.h"
 #include "misc.h"
-#include <iostream>
 
 int SquareDistance[SQUARE_NB][SQUARE_NB];
 
@@ -216,14 +215,12 @@ void Bitboards::init() {
   // NEW, precompute number of islands based on occupied files
   // Example: White has pawns on a, c, d and f and h file. 
   // The semi open file signature is binary (01001010).
-  // The value used to call this will be 10110101 (files with a pawn) and returned value is 4
-  // (number of disjoint groups of 1)
+  // Islands will be called with parameter 01001010 ^ 0xFF which is 10110101 (files with a pawn) 
+  // and returns 4: the number of disjoint groups of 1
   
-  for (Bitboard b = 0; b < 256; ++b) {
+  for (Bitboard b = 0; b < 256; ++b)
       Islands[b] = popcount<Max15>(b & ~(b >> 1));
-      //if (Islands[b] > 3)
-      //    sync_cout << Islands[b] << " " << Bitboards::pretty(b) << sync_endl;
-  }
+
 }
 
 

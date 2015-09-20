@@ -65,7 +65,8 @@ namespace {
 
   const Score CenterBind = S(16, 0);
 
-  const Score Island = S(20, 20);
+  // Penalty for each pawn island
+  const Score Island = S(10, 20);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -197,7 +198,7 @@ namespace {
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
-    score -= Islands[e->semiopenFiles[Us]] * Island;
+    score -= Islands[b] * Island;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     // Center binds: Two pawns controlling the same central square
