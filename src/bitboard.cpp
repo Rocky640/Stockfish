@@ -22,6 +22,7 @@
 #include "bitboard.h"
 #include "bitcount.h"
 #include "misc.h"
+#include <iostream>
 
 int SquareDistance[SQUARE_NB][SQUARE_NB];
 
@@ -48,6 +49,7 @@ Bitboard ForwardBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
 Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
+int Islands[256];
 
 namespace {
 
@@ -209,6 +211,18 @@ void Bitboards::init() {
               LineBB[s1][s2] = (attacks_bb(pc, s1, 0) & attacks_bb(pc, s2, 0)) | s1 | s2;
               BetweenBB[s1][s2] = attacks_bb(pc, s1, SquareBB[s2]) & attacks_bb(pc, s2, SquareBB[s1]);
           }
+  }
+
+  // NEW, precompute number of islands based on occupied files
+  // Example: White has pawns on a, c, d and f and h file. 
+  // The semi open file signature is binary (01001010).
+  // The value used to call this will be 10110101 (files with a pawn) and returned value is 4
+  // (number of disjoint groups of 1)
+  
+  for (Bitboard b = 0; b < 256; ++b) {
+      Islands[b] = popcount<Max15>(b & ~(b >> 1));
+      //if (Islands[b] > 3)
+      //    sync_cout << Islands[b] << " " << Bitboards::pretty(b) << sync_endl;
   }
 }
 
