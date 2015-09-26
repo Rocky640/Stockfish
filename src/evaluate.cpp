@@ -284,9 +284,14 @@ namespace {
         }
 
         if (Pt == QUEEN)
+        {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+            ei.attackedBy[Us][SQUEEN] |=  b & 
+               ~(   (PseudoAttacks[ROOK  ][s] & pos.pieces(Them, ROOK)) 
+                  | (PseudoAttacks[BISHOP][s] & pos.pieces(Them, BISHOP)));
+        }
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
@@ -515,7 +520,7 @@ namespace {
         while (b)
             score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = defended & (ei.attackedBy[Us][ROOK]);
+        b = defended & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][SQUEEN]);
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
     }
@@ -532,7 +537,7 @@ namespace {
         while (b)
             score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN]);
+        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][SQUEEN]);
         while (b)
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
@@ -719,6 +724,7 @@ Value Eval::evaluate(const Position& pos) {
 
   // Initialize attack and king safety bitboards
   ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
+  ei.attackedBy[WHITE][SQUEEN] = ei.attackedBy[BLACK][SQUEEN] = 0;
   init_eval_info<WHITE>(pos, ei);
   init_eval_info<BLACK>(pos, ei);
 
