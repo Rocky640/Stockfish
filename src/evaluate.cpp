@@ -75,6 +75,9 @@ namespace {
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type (can be also ALL_PIECES).
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
+    Bitboard defPieces[COLOR_NB];
+    Bitboard weakPieces[COLOR_NB];
+
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -147,14 +150,17 @@ namespace {
     { S(42,11), S(63,17) }, // Knights
     { S(18, 5), S(27, 8) }  // Bishops
   };
+  
+  
+  enum { Defended, Weak };
 
   // Threat[defended/weak][minor/major attacking][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
   const Score Threat[][2][PIECE_TYPE_NB] = {
-  { { S(0, 0), S( 0, 0), S(19, 37), S(24, 37), S(44, 97), S(35,106) },   // Defended Minor
-    { S(0, 0), S( 0, 0), S( 9, 14), S( 9, 14), S( 7, 14), S(24, 48) } }, // Defended Major
-  { { S(0, 0), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Weak Minor
-    { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Weak Major
+  { { S(0, 0), S( 0, 0), S(19, 37), S(24, 37), S(44, 97), S(35,106) },   // Minor on Defended
+    { S(0, 0), S( 0, 0), S( 9, 14), S( 9, 14), S( 7, 14), S(24, 48) } }, // Rook on Defended
+  { { S(0, 0), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Minor on Weak
+    { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Major on Weak
   };
 
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
@@ -233,6 +239,8 @@ namespace {
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.defPieces[Us] = (pos.pieces(Us) ^ pos.pieces(Us, PAWN)) & ei.attackedBy[Us][PAWN];
+    ei.weakPieces[Us]= pos.pieces(Us) & ~ei.attackedBy[Us][PAWN];
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -244,6 +252,7 @@ namespace {
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+    
   }
 
 
@@ -252,7 +261,7 @@ namespace {
   template<PieceType Pt, Color Us, bool DoTrace>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility, const Bitboard* mobilityArea) {
 
-    Bitboard b;
+    Bitboard b, b2;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -283,10 +292,23 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
+        // New: compute threats by each individual piece on defended pieces, 
+        // and on weak pieces (except for the Queen).
+
+        b2 = b & ei.defPieces[Them];
+        while (b2)
+            score += Threat[Defended][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
+
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+        else
+        {
+            b2 = b & ei.weakPieces[Them];
+            while (b2)
+                score += Threat[Weak][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
+        }
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
@@ -482,10 +504,7 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
-    enum { Defended, Weak };
-    enum { Minor, Major };
-
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, weak, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -505,45 +524,15 @@ namespace {
             score += ThreatenedByPawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
     }
 
-    // Non-pawn enemies defended by a pawn
-    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
+    // Hanging pieces
+    b = pos.pieces(Them) & ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES];
+    if (b)
+        score += Hanging * popcount<Max15>(b);
 
-    // Add a bonus according to the kind of attacking pieces
-    if (defended)
-    {
-        b = defended & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
-        while (b)
-            score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
-
-        b = defended & (ei.attackedBy[Us][ROOK]);
-        while (b)
-            score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
-    }
-
-    // Enemies not defended by a pawn and under our attack
-    weak =   pos.pieces(Them)
-          & ~ei.attackedBy[Them][PAWN]
-          &  ei.attackedBy[Us][ALL_PIECES];
-
-    // Add a bonus according to the kind of attacking pieces
-    if (weak)
-    {
-        b = weak & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
-        while (b)
-            score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
-
-        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN]);
-        while (b)
-            score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
-
-        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
-        if (b)
-            score += Hanging * popcount<Max15>(b);
-
-        b = weak & ei.attackedBy[Us][KING];
-        if (b)
-            score += more_than_one(b) ? KingOnMany : KingOnOne;
-    }
+    // King attacks
+    b = ei.weakPieces[Them] & ei.attackedBy[Us][KING];
+    if (b)
+        score += more_than_one(b) ? KingOnMany : KingOnOne;
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
