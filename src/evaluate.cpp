@@ -150,8 +150,7 @@ namespace {
     { S(42,11), S(63,17) }, // Knights
     { S(18, 5), S(27, 8) }  // Bishops
   };
-  
-  
+
   enum { Defended, Weak };
 
   // Threat[defended/weak][minor/major attacking][attacked PieceType] contains
@@ -292,23 +291,20 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
-        // New: compute threats by each individual piece on defended pieces, 
-        // and on weak pieces (except for the Queen).
-
+        // Add threats by each individual piece on pawn-defended pieces
+        // and on weak pawns and pieces
         b2 = b & ei.defPieces[Them];
+            while (b2)
+                score += Threat[Defended][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
+
+        b2 = b & ei.weakPieces[Them];
         while (b2)
-            score += Threat[Defended][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
+            score += Threat[Weak][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
 
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
-        else
-        {
-            b2 = b & ei.weakPieces[Them];
-            while (b2)
-                score += Threat[Weak][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
-        }
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
