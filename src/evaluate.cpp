@@ -153,13 +153,13 @@ namespace {
 
   enum { Defended, Weak };
 
-  // Threat[defended/weak][minor/major attacking][attacked PieceType] contains
+  // Threat[defended/weak][minor/rook attacking][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
   const Score Threat[][2][PIECE_TYPE_NB] = {
   { { S(0, 0), S( 0, 0), S(19, 37), S(24, 37), S(44, 97), S(35,106) },   // Minor on Defended
     { S(0, 0), S( 0, 0), S( 9, 14), S( 9, 14), S( 7, 14), S(24, 48) } }, // Rook on Defended
   { { S(0, 0), S( 0,32), S(33, 41), S(31, 50), S(41,100), S(35,104) },   // Minor on Weak
-    { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Major on Weak
+    { S(0, 0), S( 0,27), S(26, 57), S(26, 57), S(0 , 43), S(23, 51) } }  // Rook on Weak
   };
 
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
@@ -291,20 +291,23 @@ namespace {
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
 
-        // Add threats by each individual piece on pawn-defended pieces
-        // and on weak pawns and pieces
-        b2 = b & ei.defPieces[Them];
-            while (b2)
-                score += Threat[Defended][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
-
-        b2 = b & ei.weakPieces[Them];
-        while (b2)
-            score += Threat[Weak][!!(Pt>BISHOP)][type_of(pos.piece_on(pop_lsb(&b2)))];
-
+        
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+        else
+        {
+            // Bonus for each contact with pawn-defended pieces...
+            b2 = b & ei.defPieces[Them];
+            while (b2)
+                score += Threat[Defended][Pt>BISHOP][type_of(pos.piece_on(pop_lsb(&b2)))];
+
+            // ... and with non pawn-defended pawns or pieces
+            b2 = b & ei.weakPieces[Them];
+            while (b2)
+                score += Threat[Weak][Pt>BISHOP][type_of(pos.piece_on(pop_lsb(&b2)))];
+        }
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
