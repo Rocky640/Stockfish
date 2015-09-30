@@ -520,7 +520,7 @@ namespace {
         while (b)
             score += Threat[Defended][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = defended & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][SQUEEN]);
+        b = defended & ei.attackedBy[Us][ROOK];
         while (b)
             score += Threat[Defended][Major][type_of(pos.piece_on(pop_lsb(&b)))];
     }
