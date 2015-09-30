@@ -285,8 +285,8 @@ namespace {
 
         if (Pt == QUEEN)
         {
-            ei.attackedBy[Us][SQUEEN] |=  b & 
-               ~(   (PseudoAttacks[ROOK  ][s] & pos.pieces(Them, ROOK)) 
+            ei.attackedBy[Us][UQUEEN] |=  b & 
+                (   (PseudoAttacks[ROOK  ][s] & pos.pieces(Them, ROOK)) 
                   | (PseudoAttacks[BISHOP][s] & pos.pieces(Them, BISHOP)));
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
@@ -537,7 +537,7 @@ namespace {
         while (b)
             score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][SQUEEN]);
+        b = weak & (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][UQUEEN]);
         while (b)
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
@@ -724,7 +724,7 @@ Value Eval::evaluate(const Position& pos) {
 
   // Initialize attack and king safety bitboards
   ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
-  ei.attackedBy[WHITE][SQUEEN] = ei.attackedBy[BLACK][SQUEEN] = 0;
+  ei.attackedBy[WHITE][UQUEEN] = ei.attackedBy[BLACK][UQUEEN] = 0;
   init_eval_info<WHITE>(pos, ei);
   init_eval_info<BLACK>(pos, ei);
 
