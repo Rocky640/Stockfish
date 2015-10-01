@@ -28,6 +28,8 @@
 #include "material.h"
 #include "pawns.h"
 
+#include "uci.h"
+
 namespace {
 
   namespace Trace {
@@ -107,10 +109,10 @@ namespace {
 
 
   // Evaluation weights, indexed by the corresponding evaluation term
-  enum { Mobility, PawnStructure, PassedPawns, Space, KingSafety };
+  enum { Mobility, Threats, PawnStructure, PassedPawns, Space, KingSafety };
 
-  const struct Weight { int mg, eg; } Weights[] = {
-    {289, 344}, {233, 201}, {221, 273}, {46, 0}, {322, 0}
+  struct Weight { int mg, eg; } Weights[] = {
+    {289, 344}, {256, 256}, {233, 201}, {221, 273}, {46, 0}, {322, 0}
   };
 
   Score operator*(Score s, const Weight& w) {
@@ -563,7 +565,7 @@ namespace {
     if (DoTrace)
         Trace::add(THREAT, Us, score);
 
-    return score;
+    return score * Weights[Threats];
   }
 
 
@@ -877,6 +879,20 @@ void Eval::init() {
   for (int i = 0; i < 400; ++i)
   {
       t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
-      KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
+      KingDanger[i] = make_score(t / 1000, t / 1000) * Weights[KingSafety];
   }
+
+  Weights[0].mg = Options["w00"];
+  Weights[0].eg = Options["w01"];
+  Weights[1].mg = Options["w10"];
+  Weights[1].eg = Options["w11"];
+  Weights[2].mg = Options["w20"];
+  Weights[2].eg = Options["w21"];
+  Weights[3].mg = Options["w30"];
+  Weights[3].eg = Options["w31"];
+  Weights[4].mg = Options["w40"];
+  Weights[4].eg = Options["w41"];
+  Weights[5].mg = Options["w50"];
+  Weights[5].eg = Options["w51"];
+
 }
