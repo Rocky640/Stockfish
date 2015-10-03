@@ -163,7 +163,7 @@ namespace {
 
             // If we have an enemy pawn in the same or next rank, the pawn is
             // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            backward = (b | shift_bb<Up>(b)) & theirPawns & ~e->pawnAttacks[Us];
         }
 
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
