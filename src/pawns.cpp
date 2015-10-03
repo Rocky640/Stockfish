@@ -194,7 +194,7 @@ namespace {
             score -= Isolated[opposed][f];
 
         else if (!supported)
-            score -= Unsupported[opposed][weaktype];
+            score -= Unsupported[weaktype][opposed];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
