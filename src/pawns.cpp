@@ -43,8 +43,12 @@ namespace {
   { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
     S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(67, 42), S(49, 24) };
+  // Unsupported pawn penalty by type and opposed flag
+  const Score Unsupported[3][2] = {
+      { S(67, 42), S(49, 24) }, //true backward
+      { S(33, 21), S(25, 12) }, //semi backward
+      { S(20, 10), S(20, 10) }  //other unsupported cases
+  };
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
@@ -53,9 +57,6 @@ namespace {
   const Score Lever[RANK_NB] = {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
-
-  // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
@@ -106,9 +107,12 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
+    const Bitboard RRank4 = (Us == WHITE ? Rank4BB : Rank5BB);
+
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, lever, connected;
+    int weaktype;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -122,6 +126,9 @@ namespace {
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+
+    Bitboard dblattacks = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns);
+    Bitboard theirSafe       = theirPawns & ~e->pawnAttacks[Us];
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -143,27 +150,35 @@ namespace {
         supported   =   neighbours & rank_bb(s - Up);
         connected   =   supported | phalanx;
         isolated    =  !neighbours;
+        weaktype    =  2;
 
-        // Test for backward pawn.
-        // If the pawn is passed, isolated, lever or connected it cannot be
-        // backward. If there are friendly pawns behind on adjacent files
-        // or if it is sufficiently advanced, it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
-            || (ourPawns & pawn_attack_span(Them, s))
-            || (relative_rank(Us, s) >= RANK_5))
-            backward = false;
-        else
+        // Test for backward or semibackward pawn.
+        // It must not be passed, isolated, lever
+        // If must not have friendly pawns behind on adjacent files
+        // If must not be too advanced
+        
+        if (   !(passed | isolated | lever)
+            && !(ourPawns & pawn_attack_span(Them, s))
+            &&  (relative_rank(Us, s) < RANK_5))
         {
-            // We now know there are no friendly pawns beside or behind this
+            // We now know there are no friendly pawns behind this
             // pawn on adjacent files. We now check whether the pawn is
             // backward by looking in the forward direction on the adjacent
             // files, and picking the closest pawn there.
             b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);
             b = pawn_attack_span(Us, s) & rank_bb(backmost_sq(Us, b));
 
-            // If we have an enemy pawn in the same or next rank, the pawn is
-            // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            // There must be an enemy pawn in the same or next rank
+            // such that the pawn cannot advance without being captured.
+            if ((b | shift_bb<Up>(b)) & theirPawns)
+                // A true backward (0) does not have a phalanx (a pawn on same rank)
+                // A semibackward (1) belongs to a phalanx on rank 2, 
+                // and supports a blocked pawn which is not connected on the next column.
+                // Else, it is the generic unprotected case (2)
+                weaktype = !phalanx ? 0 
+                    : relative_rank(Us, s) == RANK_2 
+                      && shift_bb<Up>(neighbours & ~dblattacks) & theirSafe & RRank4 ? 1
+                    : 2;
         }
 
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
@@ -178,11 +193,8 @@ namespace {
         if (isolated)
             score -= Isolated[opposed][f];
 
-        else if (backward)
-            score -= Backward[opposed];
-
         else if (!supported)
-            score -= UnsupportedPawnPenalty;
+            score -= Unsupported[opposed][weaktype];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
@@ -198,7 +210,7 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     // Center binds: Two pawns controlling the same central square
-    b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
+    b = dblattacks & CenterBindMask[Us];
     score += popcount<Max15>(b) * CenterBind;
 
     return score;
