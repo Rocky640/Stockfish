@@ -54,8 +54,8 @@ namespace {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
-  // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
+  // Unsupported pawn penalty by phalanx
+  const Score UnsupportedPawnPenalty[2] = {S(20, 10), S(15, 5)};
 
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
@@ -182,7 +182,7 @@ namespace {
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= UnsupportedPawnPenalty;
+            score -= UnsupportedPawnPenalty[!!phalanx];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
