@@ -524,7 +524,7 @@ namespace {
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
         b  = weak & ~ei.attackedBy[Them][ALL_PIECES];
-        b |= weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2];
+        //b |= weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2];
         if (b)
             score += Hanging * popcount<Max15>(b);
 
