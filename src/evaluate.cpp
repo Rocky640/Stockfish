@@ -219,8 +219,6 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
 
   // Penalties for enemy's safe checks
-  const int QueenContactCheck = 89;
-  const int RookContactCheck  = 71;
   const int QueenCheck        = 50;
   const int RookCheck         = 37;
   const int BishopCheck       = 6;
@@ -402,40 +400,11 @@ namespace {
         // the pawn shelter (current 'score' value).
         attackUnits =  std::min(74, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
                      +  8 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 25 * popcount<Max15>(undefended)
+                     + 25 * (popcount<Max15>(undefended) +
+                             popcount<Max15>(undefended &  ei.attackedBy[Them][AT_LEAST_2]))
                      + 11 * !!ei.pinnedPieces[Us]
                      - 60 * !pos.count<QUEEN>(Them)
                      - mg_value(score) / 8;
-
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
-        // undefended squares around the king reachable by the enemy queen...
-        b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
-        if (b)
-        {
-            // ...and then remove squares not supported by another enemy piece
-            b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK];
-
-            if (b)
-                attackUnits += QueenContactCheck * popcount<Max15>(b);
-        }
-
-        // Analyse the enemy's safe rook contact checks. Firstly, find the
-        // undefended squares around the king reachable by the enemy rooks...
-        b = undefended & ei.attackedBy[Them][ROOK] & ~pos.pieces(Them);
-
-        // Consider only squares where the enemy's rook gives check
-        b &= PseudoAttacks[ROOK][ksq];
-
-        if (b)
-        {
-            // ...and then remove squares not supported by another enemy piece
-            b &= (  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                  | ei.attackedBy[Them][BISHOP]);
-
-            if (b)
-                attackUnits += RookContactCheck * popcount<Max15>(b);
-        }
 
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
