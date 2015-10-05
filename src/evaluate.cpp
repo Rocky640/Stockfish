@@ -189,6 +189,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score Hanging2           = S(20, 18);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -554,14 +555,17 @@ namespace {
         while (b)
             score += Threat[Weak][Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
-        b |= weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2];
-        if (b)
-            score += Hanging * popcount<Max15>(b);
-
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+
+        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
+        if (b)
+            score += Hanging * popcount<Max15>(b);
+
+        b = ~b & weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2];
+        if (b)
+            score += Hanging2 * popcount<Max15>(b);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
