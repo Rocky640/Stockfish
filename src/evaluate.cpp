@@ -189,7 +189,6 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  const Score Hanging2           = S(20, 18);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -559,13 +558,17 @@ namespace {
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
 
+        // Unprotected weak pieces
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
+
+        // Add also weak pieces defended at most once (not by a pawn, by definition) 
+        // and attacked twice
+        // Since this overlaps with some queen contact checks already computed elsewhere,
+        // exclude these explicitly.
+        b |= weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2]
+                  & ~(ei.attackedBy[Them][KING] & ei.attackedBy[Us][QUEEN]);
         if (b)
             score += Hanging * popcount<Max15>(b);
-
-        b = ~b & weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Us][AT_LEAST_2];
-        if (b)
-            score += Hanging2 * popcount<Max15>(b);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
