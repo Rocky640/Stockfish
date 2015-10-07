@@ -525,7 +525,7 @@ namespace {
     }
 
     // Non-pawn enemies defended by a pawn
-    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
+    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN] & ~ei.attackedBy[Us][PAWN];
 
     // Add a bonus according to the kind of attacking pieces
     if (defended)
@@ -547,6 +547,17 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (weak)
     {
+        b = weak & ei.attackedBy[Us][KING];
+        if (b)
+            score += more_than_one(b) ? KingOnMany : KingOnOne;
+
+        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
+        if (b)
+            score += Hanging * popcount<Max15>(b);
+        
+        // for the remaining, exclude the pieces attacked by a pawn
+        weak &= pos.pieces(Them, PAWN) | ~ei.attackedBy[Us][PAWN];
+
         b = weak & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
             score += Threat[Weak][Minor][type_of(pos.piece_on(pop_lsb(&b)))];
@@ -554,14 +565,6 @@ namespace {
         b = weak & ei.attackedBy[Us][ROOK];
         while (b)
             score += Threat[Weak][Rook][type_of(pos.piece_on(pop_lsb(&b)))];
-
-        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
-        if (b)
-            score += Hanging * popcount<Max15>(b);
-
-        b = weak & ei.attackedBy[Us][KING];
-        if (b)
-            score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
