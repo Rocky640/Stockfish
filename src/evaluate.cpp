@@ -189,6 +189,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score HangingQ           = S(15, 13);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -237,6 +238,7 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
+    ei.attackedBy[Us][Q_ONLY] = 0;
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
@@ -278,8 +280,6 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
-
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
@@ -290,9 +290,17 @@ namespace {
         }
 
         if (Pt == QUEEN)
+        {
+            ei.attackedBy[Us][Q_ONLY] |= b & ~ei.attackedBy[Us][ALL_PIECES];
+            ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+         
+        }
+        else
+            ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
@@ -540,6 +548,10 @@ namespace {
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
+
+        b = weak & ei.attackedBy[Them][Q_ONLY];
+        if (b)
+            score += HangingQ * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
