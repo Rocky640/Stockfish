@@ -102,6 +102,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard blockedPawns[COLOR_NB];
     Pawns::Entry* pi;
   };
 
@@ -234,12 +235,16 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
-
+    
+    // Pawns blocked or on low ranks. Will be excluded from the mobility area
+    ei.blockedPawns[Us] = pos.pieces(Us, PAWN) & (shift_bb<Down>(pos.pieces()) | LowRanks);
+    
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
@@ -691,18 +696,25 @@ namespace {
   // second order bonus/malus based on the known attacking/defending status of the players. 
   Score evaluate_initiative(const Position& pos, const EvalInfo& ei, const Score positional_score) {
 
-    int pawns           =  pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK);
-    int king_separation =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
-    int asymmetry       =  ei.pi->pawn_asymmetry();
+    int eg              = eg_value(positional_score);
+    Color strong_side   = eg > 0 ? WHITE : BLACK;
+
+    // Add pawns on board and mobile pawns of strong side.
+    int pawns           = 2 * pos.count<PAWN>(strong_side)
+                            - popcount<Max15>(ei.blockedPawns[strong_side])
+                            + pos.count<PAWN>(~strong_side);
+
+    int king_separation = distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
+    int asymmetry       = ei.pi->pawn_asymmetry();
 
     // Compute the initiative bonus for the attacking side
-    int attacker_bonus =   8 * (pawns + asymmetry + king_separation) - 120;
+    int attacker_bonus  = 8 * (pawns + asymmetry + king_separation) - 120;
 
-    // Now apply the bonus: note that we find the attacking side by extracting the sign 
+    // Now apply the bonus: note that we find the attacking side by extracting the sign
     // of the endgame value of "positional_score", and that we carefully cap the bonus so
     // that the endgame score with the correction will never be divided by more than two.
-    int eg = eg_value(positional_score);
-    int value = ((eg > 0) - (eg < 0)) * std::max( attacker_bonus , -abs( eg / 2 ) );
+    
+    int value = ((eg > 0) - (eg < 0)) * std::max(attacker_bonus, -abs(eg / 2));
 
     return make_score( 0 , value ) ; 
   }
@@ -744,17 +756,11 @@ Value Eval::evaluate(const Position& pos) {
   init_eval_info<WHITE>(pos, ei);
   init_eval_info<BLACK>(pos, ei);
 
-  // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
-  Bitboard blockedPawns[] = {
-    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
-  };
-
   // Do not include in mobility squares protected by enemy pawns, or occupied
   // by our blocked pawns or king.
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    ~(ei.attackedBy[BLACK][PAWN] | ei.blockedPawns[WHITE] | pos.square<KING>(WHITE)),
+    ~(ei.attackedBy[WHITE][PAWN] | ei.blockedPawns[BLACK] | pos.square<KING>(BLACK))
   };
 
   // Evaluate pieces and mobility
