@@ -692,19 +692,19 @@ namespace {
   Score evaluate_initiative(const Position& pos, const EvalInfo& ei, const Score positional_score) {
 
     int pawns           =  pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK);
-    int king_separation =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
+    int king_separation =  std::min(4, distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK)));
     int asymmetry       =  ei.pi->pawn_asymmetry();
 
     // Compute the initiative bonus for the attacking side
-    int attacker_bonus =   8 * (pawns + asymmetry + king_separation) - 120;
+    int attacker_bonus  =  8 * (pawns + asymmetry + king_separation) - 120;
 
-    // Now apply the bonus: note that we find the attacking side by extracting the sign 
+    // Now apply the bonus: note that we find the attacking side by extracting the sign
     // of the endgame value of "positional_score", and that we carefully cap the bonus so
     // that the endgame score with the correction will never be divided by more than two.
-    int eg = eg_value(positional_score);
-    int value = ((eg > 0) - (eg < 0)) * std::max( attacker_bonus , -abs( eg / 2 ) );
+    int eg    = eg_value(positional_score);
+    int value = ((eg > 0) - (eg < 0)) * std::max(attacker_bonus, -abs(eg / 2));
 
-    return make_score( 0 , value ) ; 
+    return make_score(value / 2, value); 
   }
 
 } // namespace
