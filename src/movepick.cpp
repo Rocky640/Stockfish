@@ -76,7 +76,6 @@ MovePicker::MovePicker(const Position& p, Move ttm, Depth d, const HistoryStats&
   stage = pos.checkers() ? EVASION : MAIN_SEARCH;
   ttMove = ttm && pos.pseudo_legal(ttm) ? ttm : MOVE_NONE;
   endMoves += (ttMove != MOVE_NONE);
-  opponentAttacks = Pawns::probe(pos)->pawn_attacks(~pos.side_to_move());
 }
 
 MovePicker::MovePicker(const Position& p, Move ttm, Depth d, const HistoryStats& h,
@@ -135,7 +134,7 @@ void MovePicker::score<CAPTURES>() {
   // badCaptures[] array, but instead of doing it now we delay until the move
   // has been picked up, saving some SEE calls in case we get a cutoff.
   
-
+  opponentAttacks = Pawns::probe(pos)->pawn_attacks(~pos.side_to_move());
   for (auto& m : *this)
       m.value =  PieceValue[MG][pos.piece_on(to_sq(m))]
                - ((opponentAttacks & to_sq(m)) ? Value(100) : Value(0))
