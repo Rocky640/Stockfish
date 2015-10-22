@@ -99,7 +99,7 @@ private:
   void generate_next_stage();
   ExtMove* begin() { return moves; }
   ExtMove* end() { return endMoves; }
-
+  Bitboard opponentAttacks;
   const Position& pos;
   const HistoryStats& history;
   const CounterMovesHistoryStats& counterMovesHistory;

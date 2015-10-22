@@ -76,6 +76,7 @@ MovePicker::MovePicker(const Position& p, Move ttm, Depth d, const HistoryStats&
   stage = pos.checkers() ? EVASION : MAIN_SEARCH;
   ttMove = ttm && pos.pseudo_legal(ttm) ? ttm : MOVE_NONE;
   endMoves += (ttMove != MOVE_NONE);
+  opponentAttacks = Pawns::probe(pos)->pawn_attacks(~pos.side_to_move());
 }
 
 MovePicker::MovePicker(const Position& p, Move ttm, Depth d, const HistoryStats& h,
@@ -127,14 +128,17 @@ MovePicker::MovePicker(const Position& p, Move ttm, const HistoryStats& h,
 template<>
 void MovePicker::score<CAPTURES>() {
   // Winning and equal captures in the main search are ordered by MVV, preferring
-  // captures near our home rank. Suprisingly, this appears to perform slightly
+  // captures near our home rank. Surprisingly, this appears to perform slightly
   // better than SEE based move ordering: exchanging big pieces before capturing
   // a hanging piece probably helps to reduce the subtree size.
   // In main search we want to push captures with negative SEE values to the
   // badCaptures[] array, but instead of doing it now we delay until the move
   // has been picked up, saving some SEE calls in case we get a cutoff.
+  
+
   for (auto& m : *this)
       m.value =  PieceValue[MG][pos.piece_on(to_sq(m))]
+               - ((opponentAttacks & to_sq(m)) ? Value(100) : Value(0))
                - Value(200 * relative_rank(pos.side_to_move(), to_sq(m)));
 }
 
