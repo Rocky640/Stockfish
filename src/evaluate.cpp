@@ -148,11 +148,12 @@ namespace {
     { S(18, 5), S(27, 8) }  // Bishops
   };
 
-  // Threat[minor/rook][attacked PieceType] contains
+  // Threat[minor/minorsafe/rook][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
   // Attacks on lesser pieces which are pawn defended are not considered.
-  const Score Threat[2][PIECE_TYPE_NB] = {
+  const Score Threat[3][PIECE_TYPE_NB] = {
    { S(0, 0), S(0, 32), S(25, 39), S(28, 44), S(42, 98), S(35,105) }, // Minor attacks
+   { S(0, 0), S(0, 42), S(45, 59), S(48, 64), S(62,118), S(55,125) }, // Minor attacks
    { S(0, 0), S(0, 27), S(26, 57), S(26, 57), S( 0, 30), S(23, 51) }  // Rook attacks
   };
 
@@ -469,6 +470,20 @@ namespace {
     return score;
   }
 
+  
+  //safe_Attacks is a helper function used in evaluate_threats
+  template<PieceType Pt, Color Us>
+  Bitboard safe_Attacks(const Position& pos, const EvalInfo& ei) {
+    const Color Them        = (Us == WHITE ? BLACK    : WHITE);
+
+    Bitboard safe = 0, 
+             b = pos.pieces(Us, Pt) & ~ei.attackedBy[Them][ALL_PIECES];
+    
+    while (b)
+        safe |= pos.attacks_from<Pt>(pop_lsb(&b));
+
+    return safe & ~ei.attackedBy[Them][ALL_PIECES];
+  }
 
   // evaluate_threats() assigns bonuses according to the type of attacking piece
   // and the type of attacked one.
@@ -483,7 +498,7 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
-    enum { Minor, Rook };
+    enum { Minor, MinorSafe, Rook };
 
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
@@ -516,9 +531,14 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (defended | weak)
     {
+        safeThreats = safe_Attacks<KNIGHT, Us>(pos, ei) | safe_Attacks<BISHOP, Us>(pos, ei);
+
         b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
-            score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
+        {
+            Square s = pop_lsb(&b);
+            score += Threat[Minor+!!(safeThreats & s)][type_of(pos.piece_on(s))];
+        }
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
