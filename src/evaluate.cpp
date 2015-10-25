@@ -148,12 +148,12 @@ namespace {
     { S(18, 5), S(27, 8) }  // Bishops
   };
 
-  // Threat[minor/minorsafe/rook][attacked PieceType] contains
+  // Threat[minor/safe minor/rook][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
   // Attacks on lesser pieces which are pawn defended are not considered.
   const Score Threat[3][PIECE_TYPE_NB] = {
    { S(0, 0), S(0, 32), S(25, 39), S(28, 44), S(42, 98), S(35,105) }, // Minor attacks
-   { S(0, 0), S(0, 42), S(45, 59), S(48, 64), S(62,118), S(55,125) }, // Minor attacks
+   { S(0, 0), S(0, 37), S(35, 49), S(38, 54), S(52,108), S(45,115) }, // Safe Minor attacks
    { S(0, 0), S(0, 27), S(26, 57), S(26, 57), S( 0, 30), S(23, 51) }  // Rook attacks
   };
 
