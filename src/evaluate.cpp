@@ -471,10 +471,11 @@ namespace {
   }
 
   
-  //safe_Attacks is a helper function used in evaluate_threats
+  // safe_attacks is a helper function used in evaluate_threats
+  // it returns all squares attacked by non-attacked pieces of type Pt.
   template<PieceType Pt, Color Us>
-  Bitboard safe_Attacks(const Position& pos, const EvalInfo& ei) {
-    const Color Them        = (Us == WHITE ? BLACK    : WHITE);
+  Bitboard safe_attacks(const Position& pos, const EvalInfo& ei) {
+    const Color Them = (Us == WHITE ? BLACK : WHITE);
 
     Bitboard safe = 0, 
              b = pos.pieces(Us, Pt) & ~ei.attackedBy[Them][ALL_PIECES];
@@ -482,7 +483,7 @@ namespace {
     while (b)
         safe |= pos.attacks_from<Pt>(pop_lsb(&b));
 
-    return safe & ~ei.attackedBy[Them][ALL_PIECES];
+    return safe;
   }
 
   // evaluate_threats() assigns bonuses according to the type of attacking piece
@@ -531,7 +532,7 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (defended | weak)
     {
-        safeThreats = safe_Attacks<KNIGHT, Us>(pos, ei) | safe_Attacks<BISHOP, Us>(pos, ei);
+        safeThreats = safe_attacks<KNIGHT, Us>(pos, ei) | safe_attacks<BISHOP, Us>(pos, ei);
 
         b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
