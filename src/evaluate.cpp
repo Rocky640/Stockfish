@@ -176,6 +176,7 @@ namespace {
   };
 
   const Score ThreatenedByHangingPawn = S(40, 60);
+  const Score FollowUpThreat          = S(20, 20);
 
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
@@ -497,9 +498,15 @@ namespace {
                                     | ei.attackedBy[Us][ALL_PIECES]);
 
         safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
+        
+        b = safeThreats & ~ TRank7BB;
+        b = (shift_bb<Right>(b) | shift_bb<Left>(b)) & (pos.pieces(Them) ^ pos.pieces(Them, PAWN));
+        if (b)
+            score += FollowUpThreat;
 
         if (weak ^ safeThreats)
             score += ThreatenedByHangingPawn;
+        
 
         while (safeThreats)
             score += ThreatenedByPawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
