@@ -528,6 +528,10 @@ namespace {
         if (b)
             score += Hanging * popcount<Max15>(b);
 
+        b &= ei.attackedBy[Us][QUEEN];
+        while (b)
+            score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
