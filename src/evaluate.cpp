@@ -527,7 +527,7 @@ namespace {
         {
             s = pop_lsb(&b);
             score += Threat[Minor][type_of(pos.piece_on(s))];
-            if (pos.attacks_from<KNIGHT>(s) & nonPawns)
+            if (pos.attacks_from<KNIGHT>(s) & pos.pieces(Them, ROOK, QUEEN))
                 score += FollowUpThreat;
         }
 
@@ -536,7 +536,7 @@ namespace {
         {
             s = pop_lsb(&b);
             score += Threat[Minor][type_of(pos.piece_on(s))];
-            if (pos.attacks_from<BISHOP>(s) & nonPawns)
+            if (pos.attacks_from<BISHOP>(s) & pos.pieces(Them, ROOK, QUEEN))
                 score += FollowUpThreat;
         }
 
@@ -548,7 +548,7 @@ namespace {
         {
             s = pop_lsb(&b);
             score += Threat[Rook ][type_of(pos.piece_on(s))];
-            if (pos.attacks_from<ROOK>(s) & (pos.pieces(Them, QUEEN) | weak))
+            if (pos.attacks_from<ROOK>(s) & pos.pieces(Them, QUEEN))
                 score += FollowUpThreat;
         }
 
