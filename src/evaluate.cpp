@@ -526,11 +526,17 @@ namespace {
 
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
+        {
             score += Hanging * popcount<Max15>(b);
 
-        b &= ei.attackedBy[Us][QUEEN];
-        while (b)
-            score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+            // Only if Queen is not attacked, compute Q threats on hanging pieces
+            if (pos.pieces(Us, QUEEN) & ~ei.attackedBy[Them][ALL_PIECES])
+            {
+                b &= ei.attackedBy[Us][QUEEN];
+                while (b)
+                    score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+            }
+        }
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
