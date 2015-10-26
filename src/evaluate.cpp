@@ -176,7 +176,7 @@ namespace {
   };
 
   const Score ThreatenedByHangingPawn = S(40, 60);
-  const Score FollowUpThreat          = S(20, 20);
+  const Score FollowUpThreat          = S(15, 15);
 
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
@@ -486,11 +486,13 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, weak, targets, safeThreats;
+    Bitboard nonPawns = pos.pieces(Them) ^ pos.pieces(Them, PAWN);
+    Square s;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
+    weak = nonPawns & ei.attackedBy[Us][PAWN];
 
     if (weak)
     {
@@ -500,7 +502,7 @@ namespace {
         safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
         
         b = safeThreats & ~ TRank7BB;
-        b = (shift_bb<Right>(b) | shift_bb<Left>(b)) & (pos.pieces(Them) ^ pos.pieces(Them, PAWN));
+        b = (shift_bb<Right>(b) | shift_bb<Left>(b)) & nonPawns;
         if (b)
             score += FollowUpThreat;
 
@@ -512,24 +514,43 @@ namespace {
             score += ThreatenedByPawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
     }
 
-    // Non-pawn enemies defended by a pawn
-    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
-
-    // Enemies not defended by a pawn and under our attack
-    weak =   pos.pieces(Them)
-          & ~ei.attackedBy[Them][PAWN]
-          &  ei.attackedBy[Us][ALL_PIECES];
+    // Enemies, except pawn-defended pawns, under our attack
+    targets = nonPawns
+                  | (pos.pieces(Them, PAWN) & ~ei.attackedBy[Them][PAWN]);
+    targets &= ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
-    if (defended | weak)
+    if (targets)
     {
-        b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        b = targets & ei.attackedBy[Us][KNIGHT];
         while (b)
-            score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
+        {
+            s = pop_lsb(&b);
+            score += Threat[Minor][type_of(pos.piece_on(s))];
+            if (pos.attacks_from<KNIGHT>(s) & nonPawns)
+                score += FollowUpThreat;
+        }
+
+        b = targets & ei.attackedBy[Us][BISHOP];
+        while (b)
+        {
+            s = pop_lsb(&b);
+            score += Threat[Minor][type_of(pos.piece_on(s))];
+            if (pos.attacks_from<BISHOP>(s) & nonPawns)
+                score += FollowUpThreat;
+        }
+
+        // For the remaining, exclude pawn-protected targets
+        weak = targets & ~ei.attackedBy[Them][PAWN];
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
-            score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+        {
+            s = pop_lsb(&b);
+            score += Threat[Rook ][type_of(pos.piece_on(s))];
+            if (pos.attacks_from<ROOK>(s) & (pos.pieces(Them, QUEEN) | weak))
+                score += FollowUpThreat;
+        }
 
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
