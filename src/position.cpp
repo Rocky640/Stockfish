@@ -60,7 +60,7 @@ inline PieceType min_attacker(const Bitboard* bb, const Bitboard& stmAttackers,
                        Bitboard& occupied, Bitboard& attackers) {
 
   PieceType pt;
-  for (pt = PAWN; pt <= QUEEN; ++pt) 
+  for (pt = PAWN; pt < QUEEN; ++pt) 
   {
   Bitboard b = stmAttackers & bb[pt];
       if (b)  
