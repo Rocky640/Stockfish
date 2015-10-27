@@ -148,12 +148,15 @@ namespace {
     { S(18, 5), S(27, 8) }  // Bishops
   };
 
-  // Threat[minor/rook][attacked PieceType] contains
+  // Threat[minor/major][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
   // Attacks on lesser pieces which are pawn defended are not considered.
+  
+  // For Queen, only attacks on hanging, non-retaliating pieces are computed.
+  // that is diagonal attacks on Rooks, orthogonal attacks on Bishops, and any on Knight.
   const Score Threat[2][PIECE_TYPE_NB] = {
    { S(0, 0), S(0, 32), S(25, 39), S(28, 44), S(42, 98), S(35,105) }, // Minor attacks
-   { S(0, 0), S(0, 27), S(26, 57), S(26, 57), S( 0, 30), S(23, 51) }  // Rook attacks
+   { S(0, 0), S(0, 27), S(26, 57), S(26, 57), S( 0, 30), S(23, 51) }  // Major attacks
   };
 
   // ThreatenedByPawn[PieceType] contains a penalty according to which piece
@@ -483,7 +486,7 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
-    enum { Minor, Rook };
+    enum { Minor, Major };
 
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
@@ -522,19 +525,22 @@ namespace {
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
-            score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+            score += Threat[Major][type_of(pos.piece_on(pop_lsb(&b)))];
 
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
         {
             score += Hanging * popcount<Max15>(b);
 
-            // Only if Queen is not attacked, compute Q threats on hanging pieces
-            if (pos.pieces(Us, QUEEN) & ~ei.attackedBy[Them][ALL_PIECES])
+            b &= ei.attackedBy[Us][QUEEN];
+            while (b)
             {
-                b &= ei.attackedBy[Us][QUEEN];
-                while (b)
-                    score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+                Square s = pop_lsb(&b);
+                PieceType pt = type_of(pos.piece_on(s));
+                if (    pt <= KNIGHT
+                    || (pt == BISHOP && (PseudoAttacks[ROOK  ][s] & pos.pieces(Us, QUEEN))) 
+                    || (pt == ROOK   && (PseudoAttacks[BISHOP][s] & pos.pieces(Us, QUEEN))))
+                    score += Threat[Major][pt];
             }
         }
 
