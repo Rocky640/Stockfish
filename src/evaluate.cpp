@@ -218,7 +218,7 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
 
   // Penalties for enemy's safe checks
-  const int QueenContactCheck = 89;
+  const int QueenContactCheck = 83;
   const int QueenCheck        = 50;
   const int RookCheck         = 45;
   const int BishopCheck       = 6;
@@ -400,8 +400,8 @@ namespace {
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
         attackUnits =  std::min(72, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
-                     +  9 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 27 * popcount<Max15>(undefended)
+                     + 10 * ei.kingAdjacentZoneAttacksCount[Them]
+                     + 30 * popcount<Max15>(undefended)
                      + 11 * !!ei.pinnedPieces[Us]
                      - 64 * !pos.count<QUEEN>(Them)
                      - mg_value(score) / 8;
