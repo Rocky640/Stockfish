@@ -188,6 +188,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score WeakPinned         = S(20,  9);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -523,6 +524,9 @@ namespace {
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
             score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+
+        if (weak & ei.pinnedPieces[Them])
+            score += WeakPinned;
 
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
