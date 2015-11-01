@@ -293,6 +293,11 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
+        // Remove empty squares attacked by their Minor pieces
+        if (Pt == ROOK)
+            b &= ~((  ei.attackedBy[Them][KNIGHT]
+                    | ei.attackedBy[Them][BISHOP]) & ~pos.pieces());
+
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
@@ -331,6 +336,7 @@ namespace {
 
         if (Pt == ROOK)
         {
+ 
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
             {
@@ -468,7 +474,7 @@ namespace {
 
     return score;
   }
-
+  
 
   // evaluate_threats() assigns bonuses according to the type of attacking piece
   // and the type of attacked one.
