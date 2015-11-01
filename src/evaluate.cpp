@@ -289,10 +289,10 @@ namespace {
         }
 
         if (Pt == QUEEN)
-            // Remove empty squares attacked by opponent Minor and Rook
+            // Remove non-empty squares attacked by opponent Minor and Rook
             b &= ~((  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]) & ~pos.pieces());
+                   | ei.attackedBy[Them][ROOK]) & pos.pieces());
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
