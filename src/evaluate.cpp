@@ -181,7 +181,7 @@ namespace {
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
-  const Score RookOnOpenFile     = S(43, 21);
+  const Score RookOnOpenFile[2]  = {S(43, 21), S(63, 41)};
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
   const Score MinorBehindPawn    = S(16,  0);
@@ -341,7 +341,7 @@ namespace {
 
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
-                score += ei.pi->semiopen_file(Them, file_of(s)) ? RookOnOpenFile : RookOnSemiOpenFile;
+                score += ei.pi->semiopen_file(Them, file_of(s)) ? RookOnOpenFile[ei.pi->openFileCount==1] : RookOnSemiOpenFile;
 
             // Penalize when trapped by the king, even more if king cannot castle
             if (mob <= 3 && !ei.pi->semiopen_file(Us, file_of(s)))

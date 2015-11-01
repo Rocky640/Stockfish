@@ -244,6 +244,8 @@ Entry* probe(const Position& pos) {
   e->key = key;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
   e->asymmetry = popcount<Max15>(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
+  e->openFileCount = popcount<Max15>(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
+
   return e;
 }
 
