@@ -188,6 +188,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score HangingRQ          = S(15, 13);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -277,6 +278,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -390,9 +392,7 @@ namespace {
         // apart from the king itself
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                    & ~ei.attackedBy[Us][AT_LEAST_2];
 
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
@@ -411,10 +411,8 @@ namespace {
         b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
         if (b)
         {
-            // ...and then remove squares not supported by another enemy piece
-            b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK]
-                | ei.attackedBy[Them][KING];
+            // ...and consider only squares supported by another piece
+            b &= ei.attackedBy[Them][AT_LEAST_2];
 
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
@@ -531,6 +529,14 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+       
+        // Weak pieces only defended once, by opponent rook or queen
+        // In some case the defensive duty can harm the mobility of their Major
+        b = weak & (ei.attackedBy[Them][ROOK] | ei.attackedBy[Them][QUEEN])
+                 & ~ei.attackedBy[Them][AT_LEAST_2] & pos.pieces(PAWN);
+
+        if (b)
+            score += HangingRQ * popcount<Max15>(b);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
@@ -729,6 +735,9 @@ Value Eval::evaluate(const Position& pos) {
   ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
   init_eval_info<WHITE>(pos, ei);
   init_eval_info<BLACK>(pos, ei);
+
+  ei.attackedBy[WHITE][AT_LEAST_2] = ei.attackedBy[WHITE][KING] & ei.attackedBy[WHITE][PAWN];
+  ei.attackedBy[BLACK][AT_LEAST_2] = ei.attackedBy[BLACK][KING] & ei.attackedBy[BLACK][PAWN];
 
   // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
   Bitboard blockedPawns[] = {
