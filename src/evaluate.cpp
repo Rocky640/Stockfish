@@ -188,7 +188,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  const Score HangingRQ          = S(15,  0);
+  const Score HangingRQ          = S( 0, 13);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
