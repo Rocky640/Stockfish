@@ -188,7 +188,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
-  const Score HangingRQ          = S(15, 13);
+  const Score HangingRQ          = S(15,  0);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -534,7 +534,6 @@ namespace {
         // In some case the defensive duty can harm the mobility of their Major
         b = weak & (ei.attackedBy[Them][ROOK] | ei.attackedBy[Them][QUEEN])
                  & ~ei.attackedBy[Them][AT_LEAST_2] & pos.pieces(PAWN);
-
         if (b)
             score += HangingRQ * popcount<Max15>(b);
     }
