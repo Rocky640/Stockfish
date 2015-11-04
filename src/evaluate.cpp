@@ -189,7 +189,7 @@ namespace {
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
-  const Score WeakButSafe        = S(10, 10);
+  const Score WeakButSafe        = S(10,  0);
   const Score Checked            = S(20, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -528,9 +528,9 @@ namespace {
         if (b)
             score += Hanging * popcount<Max15>(b);
 
-        b = weak & ~ei.attackedBy[Us][ALL_PIECES];
+        b = weak & pos.pieces(Them, PAWN) & ~ei.attackedBy[Us][ALL_PIECES];
         if (b)
-            score += WeakButSafe * popcount<Max15>(b);
+            score -= WeakButSafe * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
