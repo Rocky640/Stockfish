@@ -189,6 +189,7 @@ namespace {
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
   const Score PawnAttackThreat   = S(20, 20);
+  const Score WeakButSafe        = S(10, 10);
   const Score Checked            = S(20, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -510,8 +511,7 @@ namespace {
 
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
-          & ~ei.attackedBy[Them][PAWN]
-          &  ei.attackedBy[Us][ALL_PIECES];
+          & ~ei.attackedBy[Them][PAWN];
 
     // Add a bonus according to the kind of attacking pieces
     if (defended | weak)
@@ -524,14 +524,21 @@ namespace {
         while (b)
             score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
+        b = weak & ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
+
+        b = weak & ~ei.attackedBy[Us][ALL_PIECES];
+        if (b)
+            score += WeakButSafe * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
+
+    
+
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
