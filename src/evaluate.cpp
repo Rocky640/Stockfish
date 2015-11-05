@@ -178,6 +178,8 @@ namespace {
   const Score ThreatenedByHangingPawn = S(40, 60);
 
   // Assorted bonuses and penalties used by evaluation
+  const Score Hanging            = S(31, 26);
+  const Score HangingR           = S(10, 10);
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
   const Score RookOnPawn         = S( 7, 27);
@@ -187,8 +189,7 @@ namespace {
   const Score MinorBehindPawn    = S(16,  0);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
-  const Score Hanging            = S(31, 26);
-  const Score HangingRQ          = S( 0, 13);
+
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -522,20 +523,18 @@ namespace {
         while (b)
             score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
 
+        b = weak & ei.attackedBy[Us][KING];
+        if (b)
+            score += more_than_one(b) ? KingOnMany : KingOnOne;
+
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
 
-        b = weak & ei.attackedBy[Us][KING];
+        // Attacked pawns or Pieces defended only once by ennemy Rook
+        b = weak & ~ei.attackedBy[Them][AT_LEAST_2] & ei.attackedBy[Them][ROOK];
         if (b)
-            score += more_than_one(b) ? KingOnMany : KingOnOne;
-       
-        // Weak pieces only defended once, by opponent rook or queen
-        // In some case the defensive duty can harm the mobility of their Major
-        b = weak & (ei.attackedBy[Them][ROOK] | ei.attackedBy[Them][QUEEN])
-                 & ~ei.attackedBy[Them][AT_LEAST_2] & pos.pieces(PAWN);
-        if (b)
-            score += HangingRQ * popcount<Max15>(b);
+           score += HangingR * popcount<Max15>(b);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
