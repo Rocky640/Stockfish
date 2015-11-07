@@ -131,6 +131,7 @@ public:
 
   // Properties of moves
   bool legal(Move m, Bitboard pinned) const;
+  int context(Move m, Move prev) const;
   bool pseudo_legal(const Move m) const;
   bool capture(Move m) const;
   bool capture_or_promotion(Move m) const;

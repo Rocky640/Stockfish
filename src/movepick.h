@@ -105,6 +105,8 @@ private:
   Square recaptureSquare;
   Value threshold;
   int stage;
+  Square lastSTMfrom;
+  Square lastSTMto;
   ExtMove *endQuiets, *endBadCaptures = moves + MAX_MOVES - 1;
   ExtMove moves[MAX_MOVES], *cur = moves, *endMoves = moves;
 };

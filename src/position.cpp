@@ -532,6 +532,33 @@ bool Position::legal(Move m, Bitboard pinned) const {
         ||  aligned(from, to_sq(m), square<KING>(us));
 }
 
+int Position::context(Move m, Move prev) const {
+    // m is one of the possible move in current position
+    // prev is the previous move made by same player.
+    if (to_sq(prev) == from_sq(m)) {
+        // Moving twice the same piece
+        if (to_sq(m) == from_sq(prev))
+            // Back to square 1, just undoing previous move !
+            return -500;
+        else if (   type_of(moved_piece(m)) >= BISHOP
+                 && aligned(from_sq(m), to_sq(m), to_sq(prev)))
+            // Slider moving twice along same diagonal or rank or file
+            return -250;
+        else
+            // A move in a different direction
+            return 0;
+    }
+
+    if (    to_sq(m) == from_sq(prev)
+        || (   (type_of(moved_piece(m)) >= BISHOP)
+            && (LineBB[from_sq(m)][to_sq(m)] & from_sq(prev))))
+        // Using free square from_sq
+        // or, for slider, take advantage of newly opened line
+        return 250;
+
+    return 0;
+}
+
 
 /// Position::pseudo_legal() takes a random move and tests whether the move is
 /// pseudo legal. It is used to validate moves from TT that can be corrupted
