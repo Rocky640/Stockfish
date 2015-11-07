@@ -535,8 +535,12 @@ bool Position::legal(Move m, Bitboard pinned) const {
 int Position::context(Move m, Move prev) const {
     // m is one of the possible move in current position
     // prev is the previous move made by same player.
+
     if (to_sq(prev) == from_sq(m)) {
         // Moving twice the same piece
+        if (capture(prev)) 
+            return 0;
+
         if (to_sq(m) == from_sq(prev))
             // Back to square 1, just undoing previous move !
             return -500;
