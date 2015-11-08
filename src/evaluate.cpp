@@ -558,14 +558,25 @@ namespace {
     int d = distance(pos.square<KING>(kingcolor), s);
     if (d <= 1) return d;
 
-    // Squares where King can actually come closer to s
-    Bitboard target =  DistanceRingBB[s][d - 2]
+    // Squares where King can actually come closer to Square s in one move
+    Bitboard target1 =  DistanceRingBB[s][d - 2]
                      & ei.attackedBy[kingcolor][KING]
                      & ~ei.attackedBy[~kingcolor][ALL_PIECES]
                      & ~pos.pieces(kingcolor);
 
-    // If no such square, increase distance evaluation by 1
-    return d + !target;
+    // If no such square, increase the distance evaluation by 1
+    if (!target1) return d + 1;
+
+    if (d <= 2) return d;
+
+    // King can get closer. Can it get even closer ? 
+    Bitboard target2 =   DistanceRingBB[s][d - 3]
+                      & ~ei.attackedBy[~kingcolor][ALL_PIECES]
+                      & ~pos.pieces(kingcolor);
+    while (target1)
+        if (target2 & DistanceRingBB[pop_lsb(&target1)][0]) return d;
+
+    return d + 1;
   }
 
   // evaluate_passed_pawns() evaluates the passed pawns of the given color
