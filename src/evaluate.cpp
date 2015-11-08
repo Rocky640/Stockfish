@@ -554,20 +554,19 @@ namespace {
     return score;
   }
 
-  int realKingDistance(const Color kingcolor, const Square s, const Position& pos, const EvalInfo& ei) {
-        int d = distance(pos.square<KING>(kingcolor), s);
-        if (d <= 1) return d;
-        
-        //Squares where King can actually come closer to s
-        Bitboard target =  DistanceRingBB[s][d - 2]
-                         & ei.attackedBy[kingcolor][KING]
-                         & ~ei.attackedBy[~kingcolor][ALL_PIECES]
-                         & ~pos.pieces(kingcolor);
-        if (!target)
-            return d + 1;
-        else
-            return d;
-    }
+  int evalKingDistance(const Color kingcolor, const Square s, const Position& pos, const EvalInfo& ei) {
+    int d = distance(pos.square<KING>(kingcolor), s);
+    if (d <= 1) return d;
+
+    // Squares where King can actually come closer to s
+    Bitboard target =  DistanceRingBB[s][d - 2]
+                     & ei.attackedBy[kingcolor][KING]
+                     & ~ei.attackedBy[~kingcolor][ALL_PIECES]
+                     & ~pos.pieces(kingcolor);
+
+    // If no such square, increase distance evaluation by 1
+    return d + !target;
+  }
 
   // evaluate_passed_pawns() evaluates the passed pawns of the given color
 
@@ -597,12 +596,12 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  realKingDistance(Them, blockSq, pos, ei) * 5 * rr
-                     - realKingDistance(Us  , blockSq, pos, ei) * 2 * rr;
+            ebonus +=  evalKingDistance(Them, blockSq, pos, ei) * 5 * rr
+                     - evalKingDistance(Us  , blockSq, pos, ei) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= realKingDistance(Us, blockSq + pawn_push(Us), pos, ei) * rr;
+                ebonus -= evalKingDistance(Us, blockSq + pawn_push(Us), pos, ei) * rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
