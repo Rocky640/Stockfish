@@ -554,29 +554,24 @@ namespace {
     return score;
   }
 
-  int evalKingDistance(const Color kingcolor, const Square s, const Position& pos, const EvalInfo& ei) {
-    int d = distance(pos.square<KING>(kingcolor), s);
+  template<Color Us>
+  int kingDistance(const Position& pos, Square blockSq, const EvalInfo& ei) {
+    Square kSq = pos.square<KING>(Us);
+    int d = distance(kSq, blockSq);
     if (d <= 1) return d;
+    // If the King can't move any closer, return increased distance
+    if (!(DistanceRingBB[blockSq][d - 2]
+          &  DistanceRingBB[kSq][0]
+          & ~ei.attackedBy[~Us][ALL_PIECES]
+          & ~pos.pieces(Us))) return d + 1;
+    if (d == 2) return d;
 
-    // Squares where King can actually come closer to Square s in one move
-    Bitboard target1 =  DistanceRingBB[s][d - 2]
-                     & ei.attackedBy[kingcolor][KING]
-                     & ~ei.attackedBy[~kingcolor][ALL_PIECES]
-                     & ~pos.pieces(kingcolor);
-
-    // If no such square, increase the distance evaluation by 1
-    if (!target1) return d + 1;
-
-    if (d <= 2) return d;
-
-    // King can get closer. Can it get even closer ? 
-    Bitboard target2 =   DistanceRingBB[s][d - 3]
-                      & ~ei.attackedBy[~kingcolor][ALL_PIECES]
-                      & ~pos.pieces(kingcolor);
-    while (target1)
-        if (target2 & DistanceRingBB[pop_lsb(&target1)][0]) return d;
-
-    return d + 1;
+    // In best case, after a few moves, can it reach the blockSq ?
+    if (!(DistanceRingBB[blockSq][0]
+          &  DistanceRingBB[kSq][d - 2]
+          & ~ei.attackedBy[~Us][ALL_PIECES]
+          & ~pos.pieces(Us))) return d + 1;
+    return d;
   }
 
   // evaluate_passed_pawns() evaluates the passed pawns of the given color
@@ -607,12 +602,12 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  evalKingDistance(Them, blockSq, pos, ei) * 5 * rr
-                     - evalKingDistance(Us  , blockSq, pos, ei) * 2 * rr;
+            ebonus +=  kingDistance<Them>(pos, blockSq, ei) * 5 * rr
+                     - kingDistance<  Us>(pos, blockSq, ei) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= evalKingDistance(Us, blockSq + pawn_push(Us), pos, ei) * rr;
+                ebonus -= kingDistance<Us>(pos, blockSq + pawn_push(Us), ei) * rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
