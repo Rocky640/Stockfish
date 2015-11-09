@@ -232,8 +232,12 @@ inline bool Position::avoid_alignment(Move m) const {
   Square to = to_sq(m);
   
   if (type_of(piece_on(from))<ROOK) return false;
-  return  (PseudoAttacks[ROOK  ][to] & pieces(~color_of(piece_on(from)), QUEEN, ROOK))
-       || (PseudoAttacks[BISHOP][to] & pieces(~color_of(piece_on(from)), QUEEN, BISHOP));
+  return
+      ((PseudoAttacks[ROOK  ][from] & pieces(~color_of(piece_on(from)), QUEEN, ROOK))
+    || (PseudoAttacks[BISHOP][from] & pieces(~color_of(piece_on(from)), QUEEN, BISHOP)))
+  &&
+   (!  (PseudoAttacks[ROOK  ][to] & pieces(~color_of(piece_on(from)), QUEEN, ROOK))
+    || (PseudoAttacks[BISHOP][to] & pieces(~color_of(piece_on(from)), QUEEN, BISHOP)));
 
 }
 
