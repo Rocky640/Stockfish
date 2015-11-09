@@ -228,11 +228,13 @@ inline Piece Position::moved_piece(Move m) const {
 }
 
 inline bool Position::avoid_alignment(Move m) const {
-  Square s = from_sq(m);
+  Square from = from_sq(m);
+  Square to = to_sq(m);
   
-  if (type_of(piece_on(s))<ROOK) return false;
-  return (PseudoAttacks[ROOK  ][s] & pieces(~color_of(piece_on(s)), QUEEN, ROOK))
-      || (PseudoAttacks[BISHOP][s] & pieces(~color_of(piece_on(s)), QUEEN, BISHOP));
+  if (type_of(piece_on(from))<ROOK) return false;
+  return  (PseudoAttacks[ROOK  ][to] & pieces(~color_of(piece_on(from)), QUEEN, ROOK))
+       || (PseudoAttacks[BISHOP][to] & pieces(~color_of(piece_on(from)), QUEEN, BISHOP));
+
 }
 
 inline Bitboard Position::pieces() const {
