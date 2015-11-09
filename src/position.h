@@ -137,6 +137,7 @@ public:
   bool gives_check(Move m, const CheckInfo& ci) const;
   bool advanced_pawn_push(Move m) const;
   Piece moved_piece(Move m) const;
+  bool avoid_alignment(Move m) const;
   PieceType captured_piece_type() const;
 
   // Piece specific
@@ -224,6 +225,14 @@ inline Piece Position::piece_on(Square s) const {
 
 inline Piece Position::moved_piece(Move m) const {
   return board[from_sq(m)];
+}
+
+inline bool Position::avoid_alignment(Move m) const {
+  Square s = from_sq(m);
+  
+  if (type_of(piece_on(s))<ROOK) return false;
+  return (PseudoAttacks[ROOK  ][s] & pieces(~color_of(piece_on(s)), QUEEN, ROOK))
+      || (PseudoAttacks[BISHOP][s] & pieces(~color_of(piece_on(s)), QUEEN, BISHOP));
 }
 
 inline Bitboard Position::pieces() const {
