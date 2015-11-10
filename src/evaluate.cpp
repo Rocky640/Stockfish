@@ -345,7 +345,9 @@ namespace {
             else 
             {
                 // Half bonus if can reach open or semi-open file
-                b &= ei.pi->semi_area(Us) & mobilityArea[Us];
+                b &=    ei.pi->semi_area(Us)
+				    & ~pos.pieces(Us)
+                    & ~(ei.attackedBy[Them][PAWN] | ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]);
                 if (b)
                     score += ((ei.pi->semi_area(Them) & b) ? RookOnOpenFile : RookOnSemiOpenFile) / 2;
             }
