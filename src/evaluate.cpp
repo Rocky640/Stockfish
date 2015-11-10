@@ -188,6 +188,7 @@ namespace {
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
+  const Score PawnDamage         = S( 5, 20);
   const Score PawnAttackThreat   = S(20, 20);
   const Score Checked            = S(20, 20);
 
@@ -235,9 +236,11 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
-    ei.attackedBy[Them][ALL_PIECES] |= b;
-    ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    Bitboard b = ei.attackedBy[Them][ALL_PIECES] 
+               = ei.attackedBy[Them][KING] 
+               = pos.attacks_from<KING>(pos.square<KING>(Them));
+    
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -354,6 +357,12 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
+    }
+
+    if (Pt == QUEEN)
+    {
+       ei.attackedBy[Us][PAWNS_ONLY] = ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Us][ALL_PIECES];
+	   ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN];
     }
 
     if (DoTrace)
@@ -532,6 +541,10 @@ namespace {
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
     }
+
+    // Threat to damage the pawn structure (create a double pawn)
+    if (defended & ei.pi->bad_captures(Them) & ei.attackedBy[Us][PAWNS_ONLY] & ei.attackedBy[Us][ALL_PIECES])
+       score += PawnDamage;
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
@@ -726,7 +739,7 @@ Value Eval::evaluate(const Position& pos) {
   score += ei.pi->pawns_score() * Weights[PawnStructure];
 
   // Initialize attack and king safety bitboards
-  ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
+
   init_eval_info<WHITE>(pos, ei);
   init_eval_info<BLACK>(pos, ei);
 

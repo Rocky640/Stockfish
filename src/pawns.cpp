@@ -103,8 +103,8 @@ namespace {
 
     const Color  Them  = (Us == WHITE ? BLACK    : WHITE);
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
-    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
-    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SE);
+    const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SW);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
@@ -116,7 +116,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = 0;
+    e->passedPawns[Us] = e->badCaptures[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -189,6 +189,13 @@ namespace {
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
+        else 
+        {
+            if (file_of(s) > FILE_A && neighbours & file_bb(s + Left))
+                e->badCaptures[Us] |= (s + Left);
+            if (file_of(s) < FILE_H && neighbours & file_bb(s + Right))
+                e->badCaptures[Us] |= (s + Right);
+        }
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
