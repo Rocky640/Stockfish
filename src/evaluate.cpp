@@ -344,7 +344,8 @@ namespace {
                 score += ei.pi->semiopen_file(Them, file_of(s)) ? RookOnOpenFile : RookOnSemiOpenFile;
             else 
             {
-                b &= ei.pi->semi_area(Us) & mobilityArea[s];
+                // Half bonus if can reach open or semi-open file
+                b &= ei.pi->semi_area(Us) & mobilityArea[Us];
                 if (b)
                     score += ((ei.pi->semi_area(Them) & b) ? RookOnOpenFile : RookOnSemiOpenFile) / 2;
             }
