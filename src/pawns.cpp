@@ -117,6 +117,7 @@ namespace {
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
     e->passedPawns[Us] = 0;
+    e->semiArea[Us] = ~0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -132,6 +133,7 @@ namespace {
 
         // This file cannot be semi-open
         e->semiopenFiles[Us] &= ~(1 << f);
+        e->semiArea[Us] &= ~file_bb(s);
 
         // Flag the pawn
         neighbours  =   ourPawns   & adjacent_files_bb(f);

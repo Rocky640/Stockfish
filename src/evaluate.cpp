@@ -342,6 +342,12 @@ namespace {
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
                 score += ei.pi->semiopen_file(Them, file_of(s)) ? RookOnOpenFile : RookOnSemiOpenFile;
+            else 
+            {
+                b &= ei.pi->semi_area(Us) & mobilityArea[s];
+                if (b)
+                    score += ((ei.pi->semi_area(Them) & b) ? RookOnOpenFile : RookOnSemiOpenFile) / 2;
+            }
 
             // Penalize when trapped by the king, even more if king cannot castle
             if (mob <= 3 && !ei.pi->semiopen_file(Us, file_of(s)))
