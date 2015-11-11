@@ -35,7 +35,7 @@ struct Entry {
   Score pawns_score() const { return score; }
   Bitboard pawn_attacks(Color c) const { return pawnAttacks[c]; }
   Bitboard passed_pawns(Color c) const { return passedPawns[c]; }
-  Bitboard bad_captures(Color c) const { return badCaptures[c]; }
+  Bitboard files_with_pawns(Color c) const { return filesWithPawns[c]; }
   int pawn_span(Color c) const { return pawnSpan[c]; }
   int pawn_asymmetry() const { return asymmetry; }
 
@@ -65,7 +65,7 @@ struct Entry {
 
   Key key;
   Score score;
-  Bitboard badCaptures[COLOR_NB];
+  Bitboard filesWithPawns[COLOR_NB];
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Square kingSquares[COLOR_NB];

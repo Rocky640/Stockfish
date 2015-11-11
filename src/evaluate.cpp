@@ -361,6 +361,7 @@ namespace {
 
     if (Pt == QUEEN)
     {
+       // The loop had been completed, we can finalize the ei.attackedBy initialization.
        ei.attackedBy[Us][PAWNS_ONLY] = ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Us][ALL_PIECES];
        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN];
     }
@@ -526,6 +527,13 @@ namespace {
     if (defended | weak)
     {
         b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+
+        // Threat to damage the enemy's pawn structure by Minor capturing a Minor or Major.
+        // (opponent can only recapture the defended with a pawn, 
+        // and the defended is on a file which has some pawns already)
+        if (b & defended & ei.pi->files_with_pawns(Them) & ei.attackedBy[Them][PAWNS_ONLY])
+            score += PawnDamage;
+
         while (b)
             score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
@@ -540,12 +548,10 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
-    }
-
-    // Threat to damage the pawn structure (create a double pawn)
-    if (  defended & ei.pi->bad_captures(Them)
-        & ei.attackedBy[Them][PAWNS_ONLY] & ei.attackedBy[Us][ALL_PIECES])
+        
        score += PawnDamage;
+     
+    }
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
