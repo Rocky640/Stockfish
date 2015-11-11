@@ -191,9 +191,9 @@ namespace {
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
         else 
         {
-            if (file_of(s) > FILE_A && neighbours & file_bb(s + Left))
+            if ((file_of(s) > FILE_A) && (neighbours & file_bb(s + Left)))
                 e->badCaptures[Us] |= (s + Left);
-            if (file_of(s) < FILE_H && neighbours & file_bb(s + Right))
+            if ((file_of(s) < FILE_H) && (neighbours & file_bb(s + Right)))
                 e->badCaptures[Us] |= (s + Right);
         }
 

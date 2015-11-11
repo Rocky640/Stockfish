@@ -362,7 +362,7 @@ namespace {
     if (Pt == QUEEN)
     {
        ei.attackedBy[Us][PAWNS_ONLY] = ei.attackedBy[Us][PAWN] & ~ei.attackedBy[Us][ALL_PIECES];
-	   ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN];
+       ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN];
     }
 
     if (DoTrace)
@@ -543,7 +543,8 @@ namespace {
     }
 
     // Threat to damage the pawn structure (create a double pawn)
-    if (defended & ei.pi->bad_captures(Them) & ei.attackedBy[Us][PAWNS_ONLY] & ei.attackedBy[Us][ALL_PIECES])
+    if (  defended & ei.pi->bad_captures(Them)
+        & ei.attackedBy[Them][PAWNS_ONLY] & ei.attackedBy[Us][ALL_PIECES])
        score += PawnDamage;
 
     // Bonus if some pawns can safely push and attack an enemy piece
