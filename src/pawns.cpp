@@ -62,6 +62,12 @@ namespace {
     (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
     (FileDBB | FileEBB) & (Rank4BB | Rank3BB | Rank2BB)
   };
+  
+  // Center bind bonus: Two pawns controlling the same central square
+  const Bitboard LowRanksMask[COLOR_NB] = {
+    Rank3BB | Rank4BB,
+    Rank6BB | Rank5BB
+  };
 
   const Score CenterBind = S(16, 0);
 
@@ -196,6 +202,7 @@ namespace {
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
+    e->filesWithPawns[Us] &= LowRanksMask[Us];
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     // Center binds: Two pawns controlling the same central square
