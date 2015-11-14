@@ -147,6 +147,9 @@ namespace {
     { S(42,11), S(63,17) }, // Knights
     { S(18, 5), S(27, 8) }  // Bishops
   };
+  
+  // A Knight [supported by pawn] which attack an unsupported pawn on rank 7 and a supported pawn on rank 6
+  const Score Outpost2[2] = { S(20, 10), S(30, 8) };
 
   // Threat[minor/rook][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
@@ -304,6 +307,10 @@ namespace {
                 && relative_rank(Us, s) <= RANK_6
                 && !(pos.pieces(Them, PAWN) & pawn_attack_span(Us, s)))
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+          
+            if (Pt == KNIGHT)
+                if (ei.pi->knight_spots(Us) & s)
+                    score += Outpost2[!!(ei.attackedBy[Us][PAWN] & s)];
 
             // Bonus when behind a pawn
             if (    relative_rank(Us, s) < RANK_5

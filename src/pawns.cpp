@@ -108,15 +108,16 @@ namespace {
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, backward, lever, connected, dblSupported;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
+    const Bitboard* knightAttacksBB = StepAttacksBB[make_piece(Them, KNIGHT)];
 
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = 0;
+    e->passedPawns[Us] = e->knightSpots[Them] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -129,20 +130,22 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank rr = relative_rank(Us, s);
 
         // This file cannot be semi-open
         e->semiopenFiles[Us] &= ~(1 << f);
 
         // Flag the pawn
-        neighbours  =   ourPawns   & adjacent_files_bb(f);
-        doubled     =   ourPawns   & forward_bb(Us, s);
-        opposed     =   theirPawns & forward_bb(Us, s);
-        passed      = !(theirPawns & passed_pawn_mask(Us, s));
-        lever       =   theirPawns & pawnAttacksBB[s];
-        phalanx     =   neighbours & rank_bb(s);
-        supported   =   neighbours & rank_bb(s - Up);
-        connected   =   supported | phalanx;
-        isolated    =  !neighbours;
+        neighbours   =   ourPawns   & adjacent_files_bb(f);
+        doubled      =   ourPawns   & forward_bb(Us, s);
+        opposed      =   theirPawns & forward_bb(Us, s);
+        passed       = !(theirPawns & passed_pawn_mask(Us, s));
+        lever        =   theirPawns & pawnAttacksBB[s];
+        phalanx      =   neighbours & rank_bb(s);
+        supported    =   neighbours & rank_bb(s - Up);
+        dblSupported =   more_than_one(supported);
+        connected    =   supported | phalanx;
+        isolated     =  !neighbours;
 
         // Test for backward pawn.
         // If the pawn is passed, isolated, lever or connected it cannot be
@@ -150,7 +153,7 @@ namespace {
         // or if it is sufficiently advanced, it cannot be backward either.
         if (   (passed | isolated | lever | connected)
             || (ourPawns & pawn_attack_span(Them, s))
-            || (relative_rank(Us, s) >= RANK_5))
+            || (rr >= RANK_5))
             backward = false;
         else
         {
@@ -184,18 +187,25 @@ namespace {
         else if (!supported)
             score -= UnsupportedPawnPenalty;
 
+        else if (rr == RANK_3 && !dblSupported)
+            // Example: White b2 and c3
+            // A black knight on a4 or on d1 will be rewarded
+            // Or White g2 and h3, and Black Nf4
+            e->knightSpots[Them] |= knightAttacksBB[s] & knightAttacksBB[lsb(supported)];
+
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][dblSupported][rr];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[rr];
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
+    e->knightSpots[Them] &= ~e->pawnAttacks[Us];
 
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
