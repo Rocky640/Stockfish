@@ -144,6 +144,14 @@ inline Bitboard shift_bb(Bitboard b) {
         : 0;
 }
 
+template<Color c>
+inline Bitboard pawn_shifts_bb(Bitboard b) {
+  if (c == WHITE)
+      return shift_bb<DELTA_NE>(b) | shift_bb<DELTA_NW>(b);
+  if (c == BLACK)
+      return shift_bb<DELTA_SW>(b) | shift_bb<DELTA_SE>(b);
+}
+
 
 /// adjacent_files_bb() returns a bitboard representing all the squares on the
 /// adjacent files of the given one.

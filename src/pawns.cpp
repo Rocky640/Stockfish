@@ -116,10 +116,10 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnWays[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
-    e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+    e->pawnAttacks[Us] = pawn_shifts_bb<Us>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -133,7 +133,7 @@ namespace {
         // This file cannot be semi-open
         e->semiopenFiles[Us] &= ~(1 << f);
 
-        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
+        e->pawnWays[Us] |= forward_bb(Us, s);
 
         // Flag the pawn
         neighbours  =   ourPawns   & adjacent_files_bb(f);

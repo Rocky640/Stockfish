@@ -102,6 +102,9 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+
+    // Squares where a Knight or Bishop should aim for outpost bonus
+    Bitboard outposts[COLOR_NB];
     Pawns::Entry* pi;
   };
 
@@ -139,11 +142,6 @@ namespace {
       S( 56, 80), S( 66, 84), S( 68, 85), S( 69, 88), S( 71, 92), S( 72, 94),
       S( 80, 96), S( 89, 98), S( 94,101), S(102,113), S(106,114), S(107,116),
       S(112,125), S(113,127), S(117,137), S(122,143) }
-  };
-
-  // Mask of allowed outpost squares indexed by color
-  const Bitboard OutpostMask[COLOR_NB] = {
-    Rank4BB | Rank5BB | Rank6BB, Rank5BB | Rank4BB | Rank3BB
   };
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for knights and
@@ -245,6 +243,8 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Bitboard OutpostMask = (Us == WHITE  ? (Rank4BB | Rank5BB | Rank6BB) 
+                                               : (Rank5BB | Rank4BB | Rank3BB));
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
@@ -261,6 +261,11 @@ namespace {
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+
+    // Squares where their pawns can eventually safely push
+    b = ei.pi->pawn_ways(Them) & (~(pos.pieces(Us) | ei.attackedBy[Us][PAWN]) | ei.pi->pawn_attacks(Them));
+    // Outposts, if any, will be on rank 4,5,6
+    ei.outposts[Us] = OutpostMask & ~pawn_shifts_bb<Them>(b | pos.pieces(Them, PAWN));
   }
 
 
@@ -311,13 +316,11 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
-            // Bonus for outpost squares
-            bb = OutpostMask[Us] & ~ei.pi->pawn_attacks_span(Them);
-            if (bb & s)
+            
+            if (ei.outposts[Us] & s)
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
-            else
-            {
-                bb &= b & ~pos.pieces(Us);
+            else {
+                bb = ei.outposts[Us] & b & ~pos.pieces(Us);
                 if (bb)
                    score += ReachableOutpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
             }
@@ -495,8 +498,6 @@ namespace {
 
     const Color Them        = (Us == WHITE ? BLACK    : WHITE);
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
-    const Square Left       = (Us == WHITE ? DELTA_NW : DELTA_SE);
-    const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
@@ -513,7 +514,7 @@ namespace {
         b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
                                     | ei.attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
+        safeThreats = pawn_shifts_bb<Us>(b) & weak;
 
         if (weak ^ safeThreats)
             score += ThreatenedByHangingPawn;
@@ -558,7 +559,7 @@ namespace {
         & ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
+    b =  pawn_shifts_bb<Us>(b)
        &  pos.pieces(Them)
        & ~ei.attackedBy[Us][PAWN];
 
