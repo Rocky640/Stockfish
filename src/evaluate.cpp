@@ -263,7 +263,7 @@ namespace {
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
 
     // Squares where their pawns can eventually safely push
-    b = ei.pi->pawn_ways(Them) & (~(pos.pieces(Us) | ei.attackedBy[Us][PAWN]) | ei.pi->pawn_attacks(Them));
+    b = ei.pi->pawn_ways(Them) & (~pos.pieces(Us) | ei.pi->pawn_attacks(Them));
     // Outposts, if any, will be on rank 4,5,6
     ei.outposts[Us] = OutpostMask & ~pawn_shifts_bb<Them>(b | pos.pieces(Them, PAWN));
   }
