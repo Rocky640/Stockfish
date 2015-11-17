@@ -57,6 +57,9 @@ namespace {
   // Unsupported pawn penalty
   const Score UnsupportedPawnPenalty = S(20, 10);
 
+  // If last obstacle for a passer
+  const Score OnlyOneStopper = S(20, 20);
+
   // Center bind bonus: Two pawns controlling the same central square
   const Bitboard CenterBindMask[COLOR_NB] = {
     (FileDBB | FileEBB) & (Rank5BB | Rank6BB | Rank7BB),
@@ -105,6 +108,7 @@ namespace {
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+		const Bitboard R7 = (Us == WHITE ? Rank7BB : Rank2BB);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
@@ -119,7 +123,11 @@ namespace {
     e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
-    e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+    if (Us == WHITE)
+    {
+        e->pawnAttacks[Us  ] = shift_bb<Right   >(ourPawns  ) | shift_bb<Left    >(ourPawns  );
+        e->pawnAttacks[Them] = shift_bb<DELTA_SW>(theirPawns) | shift_bb<DELTA_SE>(theirPawns);
+    }
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -173,8 +181,16 @@ namespace {
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate passed pawns. Only the frontmost passed
         // pawn on each file is considered a true passed pawn.
-        if (passed && !doubled)
+        if (doubled)
+            score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
+        else if (passed)
             e->passedPawns[Us] |= s;
+        else
+        {
+            b = passed_pawn_mask(Us, s) & theirPawns;
+            if (b && !more_than_one(b) && !(b & e->pawnAttacks[Them]))
+                score += OnlyOneStopper;
+        }
 
         // Score this pawn
         if (isolated)
@@ -188,9 +204,6 @@ namespace {
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
-
-        if (doubled)
-            score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
@@ -244,6 +257,7 @@ Entry* probe(const Position& pos) {
       return e;
 
   e->key = key;
+  
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
   e->asymmetry = popcount<Max15>(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
   return e;
