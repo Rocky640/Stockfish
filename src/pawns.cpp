@@ -108,7 +108,7 @@ namespace {
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
-		const Bitboard R7 = (Us == WHITE ? Rank7BB : Rank2BB);
+    //const Bitboard R7 = (Us == WHITE ? Rank7BB : Rank2BB);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
@@ -119,6 +119,7 @@ namespace {
 
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
+    Bitboard stoppers = 0;
 
     e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
@@ -188,8 +189,9 @@ namespace {
         else
         {
             b = passed_pawn_mask(Us, s) & theirPawns;
-            if (b && !more_than_one(b) && !(b & e->pawnAttacks[Them]))
-                score += OnlyOneStopper;
+            if (b && !more_than_one(b))
+                stoppers |= b;
+                
         }
 
         // Score this pawn
@@ -215,6 +217,11 @@ namespace {
     // Center binds: Two pawns controlling the same central square
     b = shift_bb<Right>(ourPawns) & shift_bb<Left>(ourPawns) & CenterBindMask[Us];
     score += popcount<Max15>(b) * CenterBind;
+
+    // It might happen that one pawn stops more_than_one from being a passer.
+    // By scoring here, each enemy stopper will be penalized only once.
+    // Also, we score only the unprotected stoppers
+    score += popcount<Max15>(stoppers & ~e->pawnAttacks[Them]) * OnlyOneStopper;
 
     return score;
   }
