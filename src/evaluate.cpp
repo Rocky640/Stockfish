@@ -101,6 +101,9 @@ namespace {
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
+    // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area and space mask
+    Bitboard blockingPawns[COLOR_NB];
+
     Bitboard pinnedPieces[COLOR_NB];
     Pawns::Entry* pi;
   };
@@ -245,11 +248,13 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Bitboard LowRank = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.blockingPawns[Us] = pos.pieces(Us, PAWN) & (shift_bb<Down>(pos.pieces()) | LowRank);
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -670,7 +675,7 @@ namespace {
     // SpaceMask[]. A square is unsafe if it is attacked by an enemy
     // pawn, or if it is undefended and attacked by an enemy piece.
     Bitboard safe =   SpaceMask[Us]
-                   & ~pos.pieces(Us, PAWN)
+                   & ~ei.blockingPawns[Us]
                    & ~ei.attackedBy[Them][PAWN]
                    & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
@@ -747,17 +752,11 @@ Value Eval::evaluate(const Position& pos) {
   init_eval_info<WHITE>(pos, ei);
   init_eval_info<BLACK>(pos, ei);
 
-  // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
-  Bitboard blockedPawns[] = {
-    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
-  };
-
   // Do not include in mobility squares protected by enemy pawns, or occupied
-  // by our blocked pawns or king.
+  // by our blocking pawns or king.
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    ~(ei.attackedBy[BLACK][PAWN] | ei.blockingPawns[WHITE] | pos.square<KING>(WHITE)),
+    ~(ei.attackedBy[WHITE][PAWN] | ei.blockingPawns[BLACK] | pos.square<KING>(BLACK))
   };
 
   // Evaluate pieces and mobility
