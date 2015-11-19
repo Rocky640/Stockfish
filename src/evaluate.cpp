@@ -28,6 +28,8 @@
 #include "material.h"
 #include "pawns.h"
 
+#include "uci.h"
+
 namespace {
 
   namespace Trace {
@@ -192,11 +194,12 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score KingOnOne          = S( 2, 58);
   const Score KingOnMany         = S( 6,125);
+  Score Minor1 = S( 6, 0);
+  Score Minor2 = S( 6, 0);
   const Score RookOnPawn         = S( 7, 27);
   const Score RookOnOpenFile     = S(43, 21);
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
-  const Score MinorBehindPawn    = S(16,  0);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
@@ -274,7 +277,8 @@ namespace {
     Score score = SCORE_ZERO;
 
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
-    const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Color Them  = (Us == WHITE ? BLACK   : WHITE);
+    const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
     const Square* pl = pos.squares<Pt>(Us);
 
     ei.attackedBy[Us][Pt] = 0;
@@ -322,11 +326,6 @@ namespace {
                    score += ReachableOutpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
             }
 
-            // Bonus when behind a pawn
-            if (    relative_rank(Us, s) < RANK_5
-                && (pos.pieces(PAWN) & (s + pawn_push(Us))))
-                score += MinorBehindPawn;
-
             // Penalty for pawns on same color square of bishop
             if (Pt == BISHOP)
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
@@ -371,6 +370,16 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
+    }
+
+    if (Pt == BISHOP)
+    {
+        // Replace the MinorBehindPawn bonus with this
+        // Coordination bonus with pawns: either protecting sides, or double the pawn attack
+        b = ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP];
+        if (b)
+            score +=  popcount<Full>(b & ei.attackedBy[Us][PAWN]) * Minor1
+                    + popcount<Full>(b & shift_bb<Down>(ei.attackedBy[Us][PAWN])) * Minor2;
     }
 
     if (DoTrace)
@@ -902,4 +911,6 @@ void Eval::init() {
       t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
       KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
   }
+  Minor1 = make_score(Options["M1a"], Options["M1b"]);
+  Minor2 = make_score(Options["M2a"], Options["M2b"]);
 }
