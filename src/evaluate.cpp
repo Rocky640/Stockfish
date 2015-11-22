@@ -197,6 +197,7 @@ namespace {
   const Score RookOnSemiOpenFile = S(19, 10);
   const Score BishopPawns        = S( 8, 12);
   const Score MinorBehindPawn    = S(16,  0);
+  const Score OverAttack         = S( 5,  0);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
   const Score Hanging            = S(31, 26);
@@ -249,6 +250,7 @@ namespace {
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
+    ei.attackedBy[Us][AT_LEAST_2] = 0;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
     // Init king safety tables only if we are going to use them
@@ -288,7 +290,8 @@ namespace {
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
-
+        
+        ei.attackedBy[Us][AT_LEAST_2] |= b & ei.attackedBy[Us][ALL_PIECES];
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -564,6 +567,8 @@ namespace {
 
     if (b)
         score += popcount<Max15>(b) * PawnAttackThreat;
+    
+    score -= popcount<Full>(ei.attackedBy[Us][AT_LEAST_2]) * OverAttack;
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
