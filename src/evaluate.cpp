@@ -107,10 +107,10 @@ namespace {
 
 
   // Evaluation weights, indexed by the corresponding evaluation term
-  enum { Mobility, PawnStructure, PassedPawns, Space, KingSafety };
+  enum { Mobility, PawnStructure, PassedPawns, KingSafety };
 
   const struct Weight { int mg, eg; } Weights[] = {
-    {289, 344}, {233, 201}, {221, 273}, {46, 0}, {322, 0}
+    {289, 344}, {233, 201}, {221, 273}, {322, 0}
   };
 
   Score operator*(Score s, const Weight& w) {
@@ -683,11 +683,20 @@ namespace {
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
 
     // ...count safe + (behind & safe) with a single popcount
-    int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
-                + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
+    Bitboard b = (Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe);
+    int area   = popcount<Full>(b);
+    int bonus  = pos.count<KNIGHT>(Us) * area * 4;
 
-    return make_score(bonus * weight * weight, 0);
+    if (pos.count<BISHOP>(Us) > 0) 
+    {
+        if (pos.count<BISHOP>(Us) == 1) {
+            b &= (pos.square<BISHOP>(Us) & DarkSquares) ? DarkSquares : ~DarkSquares;
+            area = popcount<Full>(b);
+        }
+        bonus += area * 10;
+    }
+    
+    return make_score(bonus, 0);
   }
 
 
@@ -790,7 +799,7 @@ Value Eval::evaluate(const Position& pos) {
 
   // Evaluate space for both sides, only during opening
   if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12222)
-      score += (evaluate_space<WHITE>(pos, ei) - evaluate_space<BLACK>(pos, ei)) * Weights[Space];
+      score += (evaluate_space<WHITE>(pos, ei) - evaluate_space<BLACK>(pos, ei));
 
   // Evaluate position potential for the winning side
   score += evaluate_initiative(pos, ei.pi->pawn_asymmetry(), eg_value(score));
@@ -839,8 +848,8 @@ Value Eval::evaluate(const Position& pos) {
       Trace::add(PAWN, ei.pi->pawns_score());
       Trace::add(MOBILITY, mobility[WHITE] * Weights[Mobility]
                          , mobility[BLACK] * Weights[Mobility]);
-      Trace::add(SPACE, evaluate_space<WHITE>(pos, ei) * Weights[Space]
-                      , evaluate_space<BLACK>(pos, ei) * Weights[Space]);
+      Trace::add(SPACE, evaluate_space<WHITE>(pos, ei)
+                      , evaluate_space<BLACK>(pos, ei));
       Trace::add(TOTAL, score);
   }
 
