@@ -721,6 +721,9 @@ Value Eval::evaluate(const Position& pos) {
 
   assert(!pos.checkers());
 
+  const Bitboard blockingPawnW = (FileDBB|FileEBB) & (Rank2BB|Rank3BB);
+  const Bitboard blockingPawnB = (FileDBB|FileEBB) & (Rank7BB|Rank8BB);
+
   EvalInfo ei;
   Score score, mobility[2] = { SCORE_ZERO, SCORE_ZERO };
 
@@ -749,8 +752,8 @@ Value Eval::evaluate(const Position& pos) {
 
   // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
   Bitboard blockedPawns[] = {
-    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
+    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | blockingPawnW),
+    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | blockingPawnB)
   };
 
   // Do not include in mobility squares protected by enemy pawns, or occupied
