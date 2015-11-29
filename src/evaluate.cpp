@@ -722,7 +722,7 @@ Value Eval::evaluate(const Position& pos) {
   assert(!pos.checkers());
 
   const Bitboard blockingPawnW = (FileDBB|FileEBB) & (Rank2BB|Rank3BB);
-  const Bitboard blockingPawnB = (FileDBB|FileEBB) & (Rank7BB|Rank8BB);
+  const Bitboard blockingPawnB = (FileDBB|FileEBB) & (Rank7BB|Rank6BB);
 
   EvalInfo ei;
   Score score, mobility[2] = { SCORE_ZERO, SCORE_ZERO };
