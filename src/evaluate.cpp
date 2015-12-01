@@ -348,6 +348,8 @@ namespace {
 
         if (Pt == ROOK)
         {
+            if (pos.pieces(Us, QUEEN))
+            {
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
             {
@@ -369,6 +371,7 @@ namespace {
                     && (rank_of(ksq) == rank_of(s) || relative_rank(Us, ksq) == RANK_1)
                     && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+            }
             }
         }
     }
