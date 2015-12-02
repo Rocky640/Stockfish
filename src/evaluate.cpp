@@ -227,7 +227,7 @@ namespace {
   Score KingDanger[512];
 
   // KingAttackWeights[PieceType] contains king attack weights by piece type
-  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
+  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 6, 4, 4, 1 };
 
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 89;
@@ -313,8 +313,11 @@ namespace {
         {
             // Bonus for outpost squares
             bb = OutpostMask[Us] & ~ei.pi->pawn_attacks_span(Them);
-            if (bb & s)
+            if (bb & s) {
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+                if (b & ei.kingRing[Them])
+                    ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
+            }
             else
             {
                 bb &= b & ~pos.pieces(Us);
