@@ -630,6 +630,9 @@ namespace {
             }
             else if (pos.pieces(Us) & blockSq)
                 mbonus += rr * 3 + r * 2 + 3, ebonus += rr + r * 2;
+
+            else if (! (ei.attackedBy[Us][ALL_PIECES] & blockSq))
+                mbonus = Passed[MG][r - 1], ebonus = Passed[EG][r - 1];
         } // rr != 0
 
         if (pos.count<PAWN>(Us) < pos.count<PAWN>(Them))
