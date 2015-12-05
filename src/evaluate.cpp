@@ -280,6 +280,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -398,9 +399,7 @@ namespace {
         // apart from the king itself.
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                    & ~ei.attackedBy[Us][AT_LEAST_2];
 
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
@@ -419,10 +418,8 @@ namespace {
         b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
         if (b)
         {
-            // ...and then remove squares not supported by another enemy piece
-            b &=  ei.attackedBy[Them][PAWN]   | ei.attackedBy[Them][KNIGHT]
-                | ei.attackedBy[Them][BISHOP] | ei.attackedBy[Them][ROOK]
-                | ei.attackedBy[Them][KING];
+            // ...and consider only squares supported by another piece
+            b &= ei.attackedBy[Them][AT_LEAST_2];
 
             if (b)
                 attackUnits += QueenContactCheck * popcount<Max15>(b);
@@ -532,13 +529,24 @@ namespace {
         while (b)
             score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = weak & ~ei.attackedBy[Them][ALL_PIECES];
-        if (b)
-            score += Hanging * popcount<Max15>(b);
+        if (weak) 
+        {
+            b = weak & ei.attackedBy[Us][KING];
+            if (b)
+                score += more_than_one(b) ? KingOnMany : KingOnOne;
 
-        b = weak & ei.attackedBy[Us][KING];
-        if (b)
-            score += more_than_one(b) ? KingOnMany : KingOnOne;
+                // Hanging pieces: attacked but not defended
+                b = weak & ~ei.attackedBy[Them][ALL_PIECES];
+
+                // Enemy pieces defended only once by enemy Major
+                // and attacked by a Minor are also considered "Hanging"
+                b |= weak & ~ei.attackedBy[Them][AT_LEAST_2] 
+                      & (ei.attackedBy[Them][ROOK] | ei.attackedBy[Them][QUEEN])
+                      & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+
+                if (b)
+                    score += Hanging * popcount<Max15>(b);
+        }
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
@@ -777,7 +785,10 @@ Value Eval::evaluate(const Position& pos) {
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
 
-  // Pawns blocked or on ranks 2 and 3 will be excluded from the mobility area
+  ei.attackedBy[WHITE][AT_LEAST_2] = ei.attackedBy[WHITE][KING] & ei.attackedBy[WHITE][PAWN];
+  ei.attackedBy[BLACK][AT_LEAST_2] = ei.attackedBy[BLACK][KING] & ei.attackedBy[BLACK][PAWN];
+
+  // Pawns blocked or on ranks 2 and 3. Will be excluded from the mobility area
   Bitboard blockedPawns[] = {
     pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
     pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
