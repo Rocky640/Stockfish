@@ -688,20 +688,25 @@ namespace {
   // evaluate_initiative() computes the initiative correction value for the
   // position, i.e. second order bonus/malus based on the known attacking/defending
   // status of the players.
-  Score evaluate_initiative(const Position& pos, int asymmetry, Value eg) {
+  Score evaluate_initiative(const Position& pos, int asymmetry, Value mg, Value eg) {
+    const Bitboard centralFiles = FileCBB | FileDBB | FileEBB | FileFBB;
 
     int kingDistance = distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
     int pawns = pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK);
-
+    int centralPawns = popcount<Max15>(pos.pieces(PAWN) & centralFiles);
+    
     // Compute the initiative bonus for the attacking side
-    int initiative = 8 * (pawns + asymmetry + kingDistance - 15);
+    int mg_initiative = 16 - centralPawns * 2;
+    int eg_initiative = 8 * (pawns + asymmetry + kingDistance - 15);
 
     // Now apply the bonus: note that we find the attacking side by extracting
-    // the sign of the endgame value, and that we carefully cap the bonus so
-    // that the endgame score will never be divided by more than two.
-    int value = ((eg > 0) - (eg < 0)) * std::max(initiative, -abs(eg / 2));
+    // the sign of the mg or eg values, and that we carefully cap the bonus so
+    // that the mg or eg score will never be divided by more than two.
+    
+    int mg_value = ((mg > 0) - (mg < 0)) * std::max(mg_initiative, -abs(mg / 2));
+    int eg_value = ((eg > 0) - (eg < 0)) * std::max(eg_initiative, -abs(eg / 2));
 
-    return make_score(0, value);
+    return make_score(mg_value, eg_value);
   }
 
 
@@ -824,7 +829,7 @@ Value Eval::evaluate(const Position& pos) {
                 - evaluate_space<BLACK>(pos, ei)) * Weights[Space];
 
   // Evaluate position potential for the winning side
-  score += evaluate_initiative(pos, ei.pi->pawn_asymmetry(), eg_value(score));
+  score += evaluate_initiative(pos, ei.pi->pawn_asymmetry(), mg_value(score), eg_value(score));
 
   // Evaluate scale factor for the winning side
   ScaleFactor sf = evaluate_scale_factor(pos, ei, score);
