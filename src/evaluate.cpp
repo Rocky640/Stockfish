@@ -196,7 +196,8 @@ namespace {
   const Score MinorBehindPawn    = S(16,  0);
   const Score TrappedRook        = S(92,  0);
   const Score Unstoppable        = S( 0, 20);
-  const Score Hanging            = S(48, 28);
+  const Score HangingPawn        = S(45, 28);
+  const Score HangingPiece       = S(52, 24);
   const Score PawnAttackThreat   = S(31, 19);
   const Score Checked            = S(20, 20);
 
@@ -534,7 +535,10 @@ namespace {
 
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
-            score += Hanging * popcount<Max15>(b);
+        {
+            score += HangingPawn  * popcount<Max15>(b & pos.pieces(PAWN));
+            score += HangingPiece * popcount<Max15>(b & (pos.pieces() ^ pos.pieces(PAWN)));
+        }
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
