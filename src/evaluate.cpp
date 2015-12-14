@@ -340,12 +340,12 @@ namespace {
         if (Pt == ROOK)
         {
             // Bonus for aligning with enemy pawns on the same rank/file
-            if (relative_rank(Us, s) >= RANK_5)
-            {
-                Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
-                if (alignedPawns)
-                    score += popcount<Max15>(alignedPawns) * RookOnPawn;
-            }
+            //if (relative_rank(Us, s) >= RANK_5)
+            //{
+            //    Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
+            //    if (alignedPawns)
+            //        score += popcount<Max15>(alignedPawns) * RookOnPawn;
+            //}
 
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
