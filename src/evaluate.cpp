@@ -141,24 +141,11 @@ namespace {
       S( 80, 96), S( 89, 98), S( 94,101), S(102,113), S(106,114), S(107,116),
       S(112,125), S(113,127), S(117,137), S(122,143) }
   };
-  Score MobilityBonus[][32] = {
-    {}, {},
-    { S(-70,-52), S(-52,-37), S( -7,-17), S(  0, -6), S(  8,  5), S( 16,  9), // Knights
-      S( 23, 20), S( 31, 21), S( 36, 22) },
-    { S(-49,-44), S(-22,-13), S( 16,  0), S( 27, 11), S( 38, 19), S( 52, 34), // Bishops
-      S( 56, 44), S( 65, 47), S( 67, 51), S( 73, 56), S( 81, 59), S( 83, 69),
-      S( 95, 72), S(100, 75) },
-    { S(-49,-57), S(-22,-14), S(-10, 18), S( -5, 39), S( -4, 50), S( -2, 58), // Rooks
-      S(  6, 78), S( 11, 86), S( 17, 92), S( 19,103), S( 26,111), S( 27,115),
-      S( 36,119), S( 41,121), S( 50,122) },
-    { S(-41,-24), S(-26, -8), S(  0,  6), S(  2, 14), S( 12, 27), S( 21, 40), // Queens
-      S( 22, 45), S( 37, 55), S( 40, 57), S( 43, 63), S( 50, 68), S( 52, 74),
-      S( 56, 80), S( 66, 84), S( 68, 85), S( 69, 88), S( 71, 92), S( 72, 94),
-      S( 80, 96), S( 89, 98), S( 94,101), S(102,113), S(106,114), S(107,116),
-      S(112,125), S(113,127), S(117,137), S(122,143) }
-  };
   
-  //SPSA auxiliary variables that will be tuned. See calculation in Eval::Init()
+  // this will be adjusted based on MobilityBonusRef and spsa W and D in EVal::Init()
+  Score MobilityBonus[32][32];
+  
+  //SPSA auxiliary variables that will be tuned
   
   //Weight for mid game and end game
   int W[2][PIECE_TYPE_NB] = {
@@ -785,7 +772,7 @@ Value Eval::evaluate(const Position& pos) {
   assert(!pos.checkers());
 
   EvalInfo ei;
-  Score score, mobility[2] = { SCORE_ZERO, SCORE_ZERO };
+  Score score, mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
   // Initialize score by reading the incrementally updated scores included in
   // the position object (material + piece square tables). Score is computed
@@ -825,7 +812,7 @@ Value Eval::evaluate(const Position& pos) {
 
   // Evaluate all pieces but king and pawns
   score += evaluate_pieces<DoTrace>(pos, ei, mobility, mobilityArea);
-  score += (mobility[WHITE] - mobility[BLACK]) / 256;
+  score += mobility[WHITE] - mobility[BLACK];
 
   // Evaluate kings after all other pieces because we need full attack
   // information when computing the king safety evaluation.
@@ -874,8 +861,8 @@ Value Eval::evaluate(const Position& pos) {
       Trace::add(MATERIAL, pos.psq_score());
       Trace::add(IMBALANCE, ei.me->imbalance());
       Trace::add(PAWN, ei.pi->pawns_score());
-      Trace::add(MOBILITY, mobility[WHITE] / 256
-                         , mobility[BLACK] / 256);
+      Trace::add(MOBILITY, mobility[WHITE]
+                         , mobility[BLACK]);
       Trace::add(SPACE, evaluate_space<WHITE>(pos, ei) * Weights[Space]
                       , evaluate_space<BLACK>(pos, ei) * Weights[Space]);
       Trace::add(TOTAL, score);
@@ -945,7 +932,7 @@ void Eval::init() {
   //SPSA: adjust the mobilitybonus array
   for (int Pt = KNIGHT; Pt <= QUEEN; Pt++)
       for (int m = 0; m<=maxmob[Pt]; m++)
-          MobilityBonus[Pt][m] = make_score(D[0][Pt] + W[0][Pt] * mg_value(MobilityBonusRef[Pt][m]),
-                                            D[1][Pt] + W[1][Pt] * eg_value(MobilityBonusRef[Pt][m]));
+          MobilityBonus[Pt][m] = make_score(D[0][Pt] + (W[0][Pt] * mg_value(MobilityBonusRef[Pt][m])) / 256,
+                                            D[1][Pt] + (W[1][Pt] * eg_value(MobilityBonusRef[Pt][m])) / 256);
 
 }
