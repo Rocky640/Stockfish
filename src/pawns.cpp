@@ -30,34 +30,54 @@ namespace {
 
   #define V Value
   #define S(mg, eg) make_score(mg, eg)
-
-  // Doubled pawn penalty by file
-  const Score Doubled[FILE_NB] = {
+  
+    // Doubled pawn penalty by file
+  const Score DoubledRef[FILE_NB] = {
     S(13, 43), S(20, 48), S(23, 48), S(23, 48),
     S(23, 48), S(23, 48), S(20, 48), S(13, 43) };
 
   // Isolated pawn penalty by opposed flag and file
-  const Score Isolated[2][FILE_NB] = {
+  const Score IsolatedRef[2][FILE_NB] = {
   { S(37, 45), S(54, 52), S(60, 52), S(60, 52),
     S(60, 52), S(60, 52), S(54, 52), S(37, 45) },
   { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
     S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
 
   // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(67, 42), S(49, 24) };
+  Score BackwardRef[2] = { S(67, 42), S(49, 24) };
+
+  // Levers bonus by rank
+  const Score LeverRef[RANK_NB] = {
+    S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
+    S(20,20), S(40,40), S(0, 0), S(0, 0) };
+
+  // Unsupported pawn penalty, when neither isolated or backward
+  const Score UnsupportedPawnPenaltyRef = S(20, 10);
+
+  const Score CenterBindRef = S(16, 0);
+
+  // *** Following will be assigned in Pawns::Init() 
+  // based on Ref above and SPSA auxiliary variables
+  
+  // Doubled pawn penalty by file
+  Score Doubled[FILE_NB];
+
+  // Isolated pawn penalty by opposed flag and file
+  Score Isolated[2][FILE_NB];
+
+  // Backward pawn penalty by opposed flag
+  Score Backward[2];
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
   // Levers bonus by rank
-  const Score Lever[RANK_NB] = {
-    S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
-    S(20,20), S(40,40), S(0, 0), S(0, 0) };
+  Score Lever[RANK_NB];
 
-  // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
+  // Unsupported pawn penalty, when neither isolated or backward
+  Score UnsupportedPawnPenalty;
 
-  const Score CenterBind = S(16, 0);
+  Score CenterBind;
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -210,10 +230,61 @@ namespace Pawns {
 /// hard-coded tables, when makes sense, we prefer to calculate them with a formula
 /// to reduce independent parameters and to allow easier tuning and better insight.
 
+
+// *** SPSA auxiliary variables
+
+// Will use same factor (WeakFactor) and delta (WeakDelta)
+// for isolated, backward, unsupported, and doubled
+Score WeakFactor;
+Score WeakDelta;
+
+// Other SPSA auxiliary variabled for connected, lever, and centerbind
+int ConnectedSeedFactor = 208;
+int ConnectedSeedDelta  = 0;
+
+int LeverFactor = 208;
+int CenterBindFactor = 214;
+
+TUNE (ConnectedSeedFactor, SetRange(150, 300));
+TUNE (WeakDelta, ConnectedSeedDelta, SetRange(-6, 6));
+TUNE (WeakFactor, LeverFactor, CenterBindFactor, SetRange(150, 300));
+
+// *** Tuning helper
+Score adjust(Score ref, Score factor, Score delta) {
+    return make_score((int) mg_value(ref) * mg_value(factor) / 256 + mg_value(delta), 
+                      (int) eg_value(ref) * eg_value(factor) / 256 + eg_value(delta));
+}
+
+// End of SPSA global
+
+
 void init()
 {
-  static const int Seed[RANK_NB] = { 0, 6, 15, 10, 57, 75, 135, 258 };
+  int Seed[RANK_NB] = { 0, 6, 15, 10, 57, 75, 135, 258 };
+  
+  // *** SPSA local adjustments using auxiliary variables
+  for (Rank r = RANK_2; r < RANK_8; ++r)
+      Seed[r] = ((Seed[r] * ConnectedSeedFactor) / 256) + ConnectedSeedDelta;
 
+  for (int opp = 0; opp <= 1; ++opp)
+  {
+      Backward[opp] = adjust(BackwardRef[opp], WeakFactor, WeakDelta);
+      for (File f = FILE_A; f <= FILE_H; ++f)
+         Isolated[opp][f] = adjust(IsolatedRef[opp][f], WeakFactor, WeakDelta);
+  }
+
+  UnsupportedPawnPenalty = adjust(UnsupportedPawnPenaltyRef, WeakFactor, WeakDelta);
+  
+  for (File f = FILE_A; f <= FILE_H; ++f)
+      Doubled[f] = adjust(DoubledRef[f], WeakFactor, WeakDelta);
+
+  for (Rank r = RANK_1; r <= RANK_8; ++r)
+    Lever[r] = adjust(LeverRef[r] , make_score(LeverFactor, LeverFactor) , SCORE_ZERO);
+
+  CenterBind = adjust(CenterBindRef, make_score(CenterBindFactor, 0), SCORE_ZERO);
+
+  // *** End of SPSA Adjustment using auxiliary variables
+  
   for (int opposed = 0; opposed <= 1; ++opposed)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
           for (int apex = 0; apex <= 1; ++apex)
