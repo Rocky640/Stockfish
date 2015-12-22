@@ -235,20 +235,18 @@ namespace Pawns {
 
 // Will use same factor (WeakFactor) and delta (WeakDelta)
 // for isolated, backward, unsupported, and doubled
-Score WeakFactor;
-Score WeakDelta;
+Score WeakFactor = make_score(214, 203);
+Score WeakDelta = SCORE_ZERO;
 
 // Other SPSA auxiliary variabled for connected, lever, and centerbind
 int ConnectedSeedFactor = 208;
 int ConnectedSeedDelta  = 0;
-
 int LeverFactor = 208;
 int CenterBindFactor = 214;
 
-TUNE (ConnectedSeedFactor, SetRange(150, 300));
-TUNE (WeakDelta, ConnectedSeedDelta, SetRange(-6, 6));
-TUNE (WeakFactor, LeverFactor, CenterBindFactor, SetRange(150, 300));
-
+TUNE (SetRange(150, 300), ConnectedSeedFactor, WeakFactor, LeverFactor, CenterBindFactor);
+TUNE (SetRange(-10,  10), ConnectedSeedDelta,  WeakDelta );
+ 
 // *** Tuning helper
 Score adjust(Score ref, Score factor, Score delta) {
     return make_score((int) mg_value(ref) * mg_value(factor) / 256 + mg_value(delta), 
