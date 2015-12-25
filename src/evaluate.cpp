@@ -398,8 +398,7 @@ namespace {
         undefended =  ei.attackedBy[Them][ALL_PIECES]
                     & ei.attackedBy[Us][KING]
                     & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
+                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]);
 
         // Initialize the 'attackUnits' variable, which is used later on as an
         // index into the KingDanger[] array. The initial value is based on the
