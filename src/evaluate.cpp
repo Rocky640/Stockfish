@@ -232,11 +232,12 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
-    ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
-    ei.attackedBy[Them][ALL_PIECES] |= b;
-    ei.attackedBy[Us][AT_LEAST_2] = 0;
-    ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Them][ALL_PIECES] = b | ei.pi->pawn_attacks(Them);
+    ei.attackedBy[Them][AT_LEAST_2] = b & ei.pi->pawn_attacks(Them);
+    
+    ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -276,11 +277,10 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
-        ei.attackedBy[Us][AT_LEAST_2] |= (ei.attackedBy[Us][ALL_PIECES] & b);
-
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= (ei.attackedBy[Us][ALL_PIECES] & b);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -763,7 +763,6 @@ Value Eval::evaluate(const Position& pos) {
   score += ei.pi->pawns_score() * Weights[PawnStructure];
 
   // Initialize attack and king safety bitboards
-  ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
 
