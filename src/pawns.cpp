@@ -55,7 +55,7 @@ namespace {
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
   // Unsupported pawn penalty by number of pawns supported
-  const Score Unsupported[3] = { S(20, 10), S(20, 10), S(25, 15) };
+  Score Unsupported[3] = { S(20, 10), S(20, 10), S(25, 15) };
   
   TUNE(Unsupported);
 
