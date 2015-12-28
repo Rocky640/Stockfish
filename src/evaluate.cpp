@@ -108,10 +108,10 @@ namespace {
 
 
   // Evaluation weights, indexed by the corresponding evaluation term
-  enum { PawnStructure, PassedPawns, Space, KingSafety };
+  enum { PawnStructure, PassedPawns, Space };
 
   const struct Weight { int mg, eg; } Weights[] = {
-    {214, 203}, {193, 262}, {47, 0}, {330, 0}
+    {214, 203}, {193, 262}, {47, 0}
   };
 
   Score operator*(Score s, const Weight& w) {
@@ -401,21 +401,27 @@ namespace {
             & ei.attackedBy[Us][KING]
             & ~ei.attackedBy[Us][AT_LEAST_2];
 
-        // Amongst the above, find squares attacked by 2 pieces
+        // Amongst the above, find squares attacked by 2 pieces where a piece move is possible.
         b2 = b1 & ei.attackedBy[Them][AT_LEAST_2] & ~pos.pieces(Them);
 
         // Initialize the 'attackUnits' variable, which is used later on as an
-        // index into the KingDanger[] array. The initial value is based on the
-        // number and types of the enemy's attacking pieces, the number of
-        // attacked and undefended squares around our king and the quality of
-        // the pawn shelter (current 'score' value).
-        attackUnits =  std::min(72, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
+        // index into the KingDanger[] array.
+        attackUnits = 
+                     // Number and types of the enemy's attacking pieces on the kingring area
+                        std::min(72, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
+                     // Number of attacks adjacents to the king
                      +  9 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 27 * popcount<Max15>(b1)
-                     + (41-27) * popcount<Max15>(b2)
-                     + (89-(41-27)) * popcount<Max15>(b2 & ei.attackedBy[Them][QUEEN])
+                     // Number of attacked squares defended by the King alone
+                     + 24 * popcount<Max15>(b1)
+                     // Some of these squares are attacked by 2 and deserve an extra bonus
+                     + 21 * popcount<Max15>(b2)
+                     // Some of these attacked by 2 are in fact Queen Contact Checks.
+                     + 68 * popcount<Max15>(b2 & ei.attackedBy[Them][QUEEN])
+                     // If some pieces are pinned, the defense might be more difficult
                      + 11 * !!ei.pinnedPieces[Us]
+                     // If opponent has no queen, reduce the strength of his attack
                      - 64 * !pos.count<QUEEN>(Them)
+                     // Quality of the pawn shelter (current 'score' value).
                      - mg_value(score) / 8;
 
         // Analyse the enemy's safe distance checks for sliders and knights
@@ -892,6 +898,6 @@ void Eval::init() {
   for (int i = 0; i < 400; ++i)
   {
       t = std::min(Peak, std::min(i * i * 27, t + MaxSlope));
-      KingDanger[i] = make_score(t / 1000, 0) * Weights[KingSafety];
+      KingDanger[i] = make_score(t / 776, 0);
   }
 }
