@@ -54,8 +54,10 @@ namespace {
     S( 0, 0), S( 0, 0), S(0, 0), S(0, 0),
     S(20,20), S(40,40), S(0, 0), S(0, 0) };
 
-  // Unsupported pawn penalty
-  const Score UnsupportedPawnPenalty = S(20, 10);
+  // Unsupported pawn penalty by number of pawns supported
+  const Score Unsupported[3] = { S(20, 10), S(20, 10), S(25, 15) };
+  
+  TUNE(Unsupported);
 
   const Score CenterBind = S(16, 0);
 
@@ -180,7 +182,10 @@ namespace {
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= UnsupportedPawnPenalty;
+        {
+            b = neighbours & rank_bb(s + Up);
+            score -= Unsupported[b ? (more_than_one(b) ? 2 : 1) : 0];
+        }
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
