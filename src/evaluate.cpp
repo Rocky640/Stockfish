@@ -101,6 +101,8 @@ namespace {
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
+    Bitboard mobilityArea[COLOR_NB];
+
     Bitboard pinnedPieces[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
@@ -108,10 +110,10 @@ namespace {
 
 
   // Evaluation weights, indexed by the corresponding evaluation term
-  enum { PawnStructure, PassedPawns, Space, KingSafety };
+  enum { PawnStructure, PassedPawns, KingSafety };
 
   const struct Weight { int mg, eg; } Weights[] = {
-    {214, 203}, {193, 262}, {47, 0}, {330, 0}
+    {214, 203}, {193, 262}, {330, 0}
   };
 
   Score operator*(Score s, const Weight& w) {
@@ -199,6 +201,10 @@ namespace {
   const Score PawnAttackThreat   = S(31, 19);
   const Score Checked            = S(20, 20);
 
+  // SPSA tuning for types of space
+  int w[4] = {47, 47, 47, 47};
+  TUNE(SetRange(-100, 100), w);
+  
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
   // happen in Chess960 games.
@@ -232,6 +238,7 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
@@ -248,6 +255,14 @@ namespace {
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+    
+    // Pawns blocked or on ranks 2 and 3 will be excluded from the mobility area
+    b = pos.pieces(Us, PAWN) & (shift_bb<Down>(pos.pieces()) | LowRanks);
+    
+    // Do not include in mobility area squares protected by enemy pawns, or occupied
+    // by our blocked pawns or king.
+    ei.mobilityArea[Us] = ~(ei.pi->pawn_attacks(Them) | b | pos.square<KING>(WHITE));
+
   }
 
 
@@ -255,8 +270,7 @@ namespace {
   // color and type.
 
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
-  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility,
-                        const Bitboard* mobilityArea) {
+  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility) {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
@@ -295,7 +309,7 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
+        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & ei.mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
@@ -367,13 +381,13 @@ namespace {
         Trace::add(Pt, Us, score);
 
     // Recursively call evaluate_pieces() of next piece type until KING excluded
-    return score - evaluate_pieces<DoTrace, Them, NextPt>(pos, ei, mobility, mobilityArea);
+    return score - evaluate_pieces<DoTrace, Them, NextPt>(pos, ei, mobility);
   }
 
   template<>
-  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*) { return SCORE_ZERO; }
   template<>
-  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*) { return SCORE_ZERO; }
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
@@ -660,12 +674,14 @@ namespace {
                   : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
 
     // Find the safe squares for our pieces inside the area defined by
-    // SpaceMask. A square is unsafe if it is attacked by an enemy
-    // pawn, or if it is undefended and attacked by an enemy piece.
-    Bitboard safe =   SpaceMask
-                   & ~pos.pieces(Us, PAWN)
-                   & ~ei.attackedBy[Them][PAWN]
-                   & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+    // SpaceMask and our mobilityArea, which excludes squares controlled by enemy pawns
+    Bitboard space     = SpaceMask & ei.mobilityArea[Us];
+    
+    // Partition the space in 4 distinct categories, according to which sides controls the square
+    Bitboard space_0 = space &  ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES];
+    Bitboard space_1 = space &  ei.attackedBy[Us][ALL_PIECES] &  ei.attackedBy[Them][ALL_PIECES];
+    Bitboard space_2 = space & ~ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES];
+    Bitboard space_3 = space & ~ei.attackedBy[Us][ALL_PIECES] &  ei.attackedBy[Them][ALL_PIECES];
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
@@ -675,12 +691,15 @@ namespace {
     // Since SpaceMask[Us] is fully on our half of the board...
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
 
-    // ...count safe + (behind & safe) with a single popcount
-    int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
-                + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
+    // ...count each space_i + (behind & space_i) with a single popcount
+    int bonus = w[0] * popcount<Full>((Us == WHITE ? space_0 << 32 : space_0 >> 32) | (behind & space_0));
+    bonus    += w[1] * popcount<Full>((Us == WHITE ? space_1 << 32 : space_1 >> 32) | (behind & space_1));
+    bonus    += w[2] * popcount<Full>((Us == WHITE ? space_2 << 32 : space_2 >> 32) | (behind & space_2));
+    bonus    += w[3] * popcount<Full>((Us == WHITE ? space_3 << 32 : space_3 >> 32) | (behind & space_3));
 
-    return make_score(bonus * weight * weight, 0);
+    int weight =  pos.count<KNIGHT>(Us) + pos.count<KNIGHT>(Them)
+                + pos.count<BISHOP>(Us) + pos.count<BISHOP>(Them);
+    return make_score(bonus * weight * weight / 256, 0);
   }
 
 
@@ -776,21 +795,10 @@ Value Eval::evaluate(const Position& pos) {
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
 
-  // Pawns blocked or on ranks 2 and 3 will be excluded from the mobility area
-  Bitboard blockedPawns[] = {
-    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
-  };
 
-  // Do not include in mobility area squares protected by enemy pawns, or occupied
-  // by our blocked pawns or king.
-  Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
-  };
 
   // Evaluate all pieces but king and pawns
-  score += evaluate_pieces<DoTrace>(pos, ei, mobility, mobilityArea);
+  score += evaluate_pieces<DoTrace>(pos, ei, mobility);
   score += mobility[WHITE] - mobility[BLACK];
 
   // Evaluate kings after all other pieces because we need full attack
@@ -819,8 +827,8 @@ Value Eval::evaluate(const Position& pos) {
 
   // Evaluate space for both sides, only during opening
   if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12222)
-      score += (  evaluate_space<WHITE>(pos, ei)
-                - evaluate_space<BLACK>(pos, ei)) * Weights[Space];
+      score +=   evaluate_space<WHITE>(pos, ei)
+               - evaluate_space<BLACK>(pos, ei);
 
   // Evaluate position potential for the winning side
   score += evaluate_initiative(pos, ei.pi->pawn_asymmetry(), eg_value(score));
@@ -841,8 +849,8 @@ Value Eval::evaluate(const Position& pos) {
       Trace::add(IMBALANCE, ei.me->imbalance());
       Trace::add(PAWN, ei.pi->pawns_score());
       Trace::add(MOBILITY, mobility[WHITE], mobility[BLACK]);
-      Trace::add(SPACE, evaluate_space<WHITE>(pos, ei) * Weights[Space]
-                      , evaluate_space<BLACK>(pos, ei) * Weights[Space]);
+      Trace::add(SPACE, evaluate_space<WHITE>(pos, ei)
+                      , evaluate_space<BLACK>(pos, ei));
       Trace::add(TOTAL, score);
   }
 
