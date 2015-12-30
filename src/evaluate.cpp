@@ -201,8 +201,8 @@ namespace {
   const Score PawnAttackThreat   = S(31, 19);
   const Score Checked            = S(20, 20);
 
-  // SPSA tuning for types of space
-  int w[4] = {47, 47, 47, 47};
+  // SPSA tuning for space corridors a/h b/g c/f and d/e
+  int w[4] = {0, 0, 47, 47};
   TUNE(SetRange(-100, 100), w);
   
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -670,18 +670,13 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard SpaceMask =
-      Us == WHITE ? (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB)
-                  : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
+      Us == WHITE ? (Rank2BB | Rank3BB | Rank4BB)
+                  : (Rank7BB | Rank6BB | Rank5BB);
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask and our mobilityArea, which excludes squares controlled by enemy pawns
-    Bitboard space     = SpaceMask & ei.mobilityArea[Us];
-    
-    // Partition the space in 4 distinct categories, according to which sides controls the square
-    Bitboard space_0 = space &  ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES];
-    Bitboard space_1 = space &  ei.attackedBy[Us][ALL_PIECES] &  ei.attackedBy[Them][ALL_PIECES];
-    Bitboard space_2 = space & ~ei.attackedBy[Us][ALL_PIECES] & ~ei.attackedBy[Them][ALL_PIECES];
-    Bitboard space_3 = space & ~ei.attackedBy[Us][ALL_PIECES] &  ei.attackedBy[Them][ALL_PIECES];
+    Bitboard space = SpaceMask & ei.mobilityArea[Us] &
+                     (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
@@ -690,12 +685,15 @@ namespace {
 
     // Since SpaceMask[Us] is fully on our half of the board...
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
+    
+    // ...assemble a bitboard with the behind area mirrored on the opponent side
+    Bitboard b = (Us == WHITE ? space << 32 : space >> 32) | (behind & space);
 
-    // ...count each space_i + (behind & space_i) with a single popcount
-    int bonus = w[0] * popcount<Full>((Us == WHITE ? space_0 << 32 : space_0 >> 32) | (behind & space_0));
-    bonus    += w[1] * popcount<Full>((Us == WHITE ? space_1 << 32 : space_1 >> 32) | (behind & space_1));
-    bonus    += w[2] * popcount<Full>((Us == WHITE ? space_2 << 32 : space_2 >> 32) | (behind & space_2));
-    bonus    += w[3] * popcount<Full>((Us == WHITE ? space_3 << 32 : space_3 >> 32) | (behind & space_3));
+    // ...which allows to count each space + (behind & space) with a single popcount
+    int bonus = w[0] * popcount<Full>(b & (FileABB | FileHBB));
+    bonus    += w[1] * popcount<Full>(b & (FileBBB | FileGBB));
+    bonus    += w[2] * popcount<Full>(b & (FileCBB | FileFBB));
+    bonus    += w[3] * popcount<Full>(b & (FileDBB | FileEBB));
 
     int weight =  pos.count<KNIGHT>(Us) + pos.count<KNIGHT>(Them)
                 + pos.count<BISHOP>(Us) + pos.count<BISHOP>(Them);
