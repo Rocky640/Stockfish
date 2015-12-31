@@ -57,12 +57,12 @@ const string PieceToChar(" PNBRQK  pnbrqk");
 // from the bitboards and scan for new X-ray attacks behind it.
 
 template<int Pt>
-PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
+PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers, Bitboard pinned,
                        Bitboard& occupied, Bitboard& attackers) {
 
   Bitboard b = stmAttackers & bb[Pt];
   if (!b)
-      return min_attacker<Pt+1>(bb, to, stmAttackers, occupied, attackers);
+      return min_attacker<Pt+1>(bb, to, stmAttackers, pinned, occupied, attackers);
 
   occupied ^= b & ~(b - 1);
 
@@ -72,12 +72,12 @@ PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
   if (Pt == ROOK || Pt == QUEEN)
       attackers |= attacks_bb<ROOK>(to, occupied) & (bb[ROOK] | bb[QUEEN]);
 
-  attackers &= occupied; // After X-ray that may add already processed pieces
+  attackers &= occupied & ~pinned; // After X-ray that may add already processed pieces
   return (PieceType)Pt;
 }
 
 template<>
-PieceType min_attacker<KING>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&) {
+PieceType min_attacker<KING>(const Bitboard*, Square, Bitboard, Bitboard, Bitboard&, Bitboard&) {
   return KING; // No need to update bitboards: it is the last cycle
 }
 
@@ -978,7 +978,7 @@ Key Position::key_after(Move m) const {
 /// Position::see() is a static exchange evaluator: It tries to estimate the
 /// material gain or loss resulting from a move.
 
-Value Position::see_sign(Move m) const {
+Value Position::see_sign(Move m, Bitboard pinned) const {
 
   assert(is_ok(m));
 
@@ -988,10 +988,10 @@ Value Position::see_sign(Move m) const {
   if (PieceValue[MG][moved_piece(m)] <= PieceValue[MG][piece_on(to_sq(m))])
       return VALUE_KNOWN_WIN;
 
-  return see(m);
+  return see(m, pinned);
 }
 
-Value Position::see(Move m) const {
+Value Position::see(Move m, Bitboard pinned) const {
 
   Square from, to;
   Bitboard occupied, attackers, stmAttackers;
@@ -1022,7 +1022,7 @@ Value Position::see(Move m) const {
 
   // Find all attackers to the destination square, with the moving piece
   // removed, but possibly an X-ray attacker added behind it.
-  attackers = attackers_to(to, occupied) & occupied;
+  attackers = attackers_to(to, occupied) & occupied & ~pinned;
 
   // If the opponent has no attackers we are finished
   stm = ~stm;
@@ -1045,7 +1045,7 @@ Value Position::see(Move m) const {
       swapList[slIndex] = -swapList[slIndex - 1] + PieceValue[MG][captured];
 
       // Locate and remove the next least valuable attacker
-      captured = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers);
+      captured = min_attacker<PAWN>(byTypeBB, to, stmAttackers, pinned, occupied, attackers);
       stm = ~stm;
       stmAttackers = attackers & pieces(stm);
       ++slIndex;

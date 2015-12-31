@@ -68,21 +68,23 @@ namespace {
 /// ordering is at the current node.
 
 MovePicker::MovePicker(const Position& p, Move ttm, Depth d, const HistoryStats& h,
-                       const CounterMovesStats& cmh, Move cm, Search::Stack* s)
+                       const CounterMovesStats& cmh, Move cm, Search::Stack* s, Bitboard pins)
            : pos(p), history(h), counterMovesHistory(&cmh), ss(s), countermove(cm), depth(d) {
 
   assert(d > DEPTH_ZERO);
-
+  pinned = pins;
   stage = pos.checkers() ? EVASION : MAIN_SEARCH;
   ttMove = ttm && pos.pseudo_legal(ttm) ? ttm : MOVE_NONE;
   endMoves += (ttMove != MOVE_NONE);
 }
 
 MovePicker::MovePicker(const Position& p, Move ttm, Depth d,
-                       const HistoryStats& h, Square s)
+                       const HistoryStats& h, Square s, Bitboard pins)
            : pos(p), history(h), counterMovesHistory(nullptr) {
 
   assert(d <= DEPTH_ZERO);
+  
+  pinned = pins;
 
   if (pos.checkers())
       stage = EVASION;
@@ -104,18 +106,19 @@ MovePicker::MovePicker(const Position& p, Move ttm, Depth d,
   endMoves += (ttMove != MOVE_NONE);
 }
 
-MovePicker::MovePicker(const Position& p, Move ttm, const HistoryStats& h, Value th)
+MovePicker::MovePicker(const Position& p, Move ttm, const HistoryStats& h, Value th, Bitboard pins)
            : pos(p), history(h), counterMovesHistory(nullptr), threshold(th) {
 
   assert(!pos.checkers());
 
   stage = PROBCUT;
+  pinned = pins;
 
   // In ProbCut we generate captures with SEE higher than the given threshold
   ttMove =   ttm
           && pos.pseudo_legal(ttm)
           && pos.capture(ttm)
-          && pos.see(ttm) > threshold ? ttm : MOVE_NONE;
+          && pos.see(ttm, pinned) > threshold ? ttm : MOVE_NONE;
 
   endMoves += (ttMove != MOVE_NONE);
 }
@@ -153,7 +156,7 @@ void MovePicker::score<EVASIONS>() {
   Value see;
 
   for (auto& m : *this)
-      if ((see = pos.see_sign(m)) < VALUE_ZERO)
+      if ((see = pos.see_sign(m, pinned)) < VALUE_ZERO)
           m.value = see - HistoryStats::Max; // At the bottom
 
       else if (pos.capture(m))
@@ -255,7 +258,7 @@ Move MovePicker::next_move() {
           move = pick_best(cur++, endMoves);
           if (move != ttMove)
           {
-              if (pos.see_sign(move) >= VALUE_ZERO)
+              if (pos.see_sign(move, pinned) >= VALUE_ZERO)
                   return move;
 
               // Losing capture, move it to the tail of the array
@@ -292,7 +295,7 @@ Move MovePicker::next_move() {
 
       case PROBCUT_CAPTURES:
            move = pick_best(cur++, endMoves);
-           if (move != ttMove && pos.see(move) > threshold)
+           if (move != ttMove && pos.see(move, pinned) > threshold)
                return move;
            break;
 
