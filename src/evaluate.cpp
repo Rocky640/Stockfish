@@ -565,7 +565,7 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
-        else if (b & ei.kingReach[Us][1])
+        else if (weak & ei.kingReach[Us][1])
             score += KingOnOne / 2;
     }
 
