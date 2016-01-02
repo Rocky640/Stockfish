@@ -100,8 +100,14 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
-
     Bitboard pinnedPieces[COLOR_NB];
+    
+    // kingReach[color][# of king moves] represent the squares that could be attacked
+    // by a King of given color after 0, 1 or 2 successive "legal" king moves 
+    // assuming no reply by opponent and considering attacked squares by opponent and
+    // squares occupied by same color pieces.
+    Bitboard kingReach[COLOR_NB][3];
+
     Material::Entry* me;
     Pawns::Entry* pi;
   };
@@ -234,6 +240,7 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
+    ei.attackedBy[Us][PINNED_PIECES] = 0;
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
@@ -277,7 +284,10 @@ namespace {
                          : pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
+        {
+            ei.attackedBy[Us][PINNED_PIECES] |= b;
             b &= LineBB[pos.square<KING>(Us)][s];
+        }
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
@@ -375,20 +385,37 @@ namespace {
   template<>
   Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
 
+  // Evaluate exactly the squares which can be attacked after 1 or 2 King moves
+  template<Color Us>
+  void init_king_reach(const Square ksq, const Position& pos, EvalInfo& ei) {
+
+      const Color Them = (Us == WHITE ? BLACK : WHITE);
+
+      Bitboard allowed = ~(  ei.attackedBy[Them][ALL_PIECES] 
+                           | ei.attackedBy[Them][PINNED_PIECES] 
+                           | pos.pieces(Us));
+
+      ei.kingReach[Us][0] = DistanceRingBB[ksq][0];
+      ei.kingReach[Us][1] = shift_all(ei.kingReach[Us][0] & allowed);
+      ei.kingReach[Us][2] = shift_all(ei.kingReach[Us][1] & allowed);
+  }
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
   template<Color Us, bool DoTrace>
-  Score evaluate_king(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_king(const Position& pos, EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
     Bitboard undefended, b, b1, b2, safe;
     int attackUnits;
     const Square ksq = pos.square<KING>(Us);
-
+    
     // King shelter and enemy pawns storm
     Score score = ei.pi->king_safety<Us>(pos, ksq);
+    
+    // King 1 and 2-mobility
+    init_king_reach<Us>(ksq, pos, ei);
 
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
@@ -538,6 +565,8 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += more_than_one(b) ? KingOnMany : KingOnOne;
+        else if (b & ei.kingReach[Us][1])
+            score += KingOnOne / 2;
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
@@ -561,6 +590,12 @@ namespace {
     return score;
   }
 
+  template<Color Us>
+  int eval_king_distance(const Square target, const Position& pos, const EvalInfo& ei) {
+      int d = distance(target, pos.square<KING>(Us));
+      if (d > 3 || (ei.kingReach[Us][d - 1] & target)) return d;
+      return d + 1;
+  }
 
   // evaluate_passed_pawns() evaluates the passed pawns of the given color
 
@@ -590,12 +625,12 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
+            ebonus +=  eval_king_distance<Them> (blockSq, pos, ei) * 5 * rr
+                     - eval_king_distance<Us>   (blockSq, pos, ei) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
+                ebonus -= eval_king_distance<Us> (blockSq + pawn_push(Us), pos, ei) * rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))

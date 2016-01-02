@@ -141,9 +141,17 @@ inline Bitboard shift_bb(Bitboard b) {
   return  Delta == DELTA_N  ?  b             << 8 : Delta == DELTA_S  ?  b             >> 8
         : Delta == DELTA_NE ? (b & ~FileHBB) << 9 : Delta == DELTA_SE ? (b & ~FileHBB) >> 7
         : Delta == DELTA_NW ? (b & ~FileABB) << 7 : Delta == DELTA_SW ? (b & ~FileABB) >> 9
+        : Delta == DELTA_E ?  (b & ~FileHBB) << 1 : Delta == DELTA_W  ? (b & ~FileABB) >> 1
         : 0;
 }
 
+inline Bitboard shift_all(Bitboard b) {
+    if (!b) return 0;
+    return   shift_bb<DELTA_N>(b) | shift_bb<DELTA_S>(b)
+           | shift_bb<DELTA_E>(b) | shift_bb<DELTA_W>(b)
+           | shift_bb<DELTA_NE>(b) | shift_bb<DELTA_SE>(b)
+           | shift_bb<DELTA_NW>(b) | shift_bb<DELTA_SW>(b);
+}
 
 /// adjacent_files_bb() returns a bitboard representing all the squares on the
 /// adjacent files of the given one.
