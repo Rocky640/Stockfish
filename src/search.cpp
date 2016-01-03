@@ -930,7 +930,7 @@ moves_loop: // When in check search starts from here
           && !captureOrPromotion
           && !inCheck
           && !givesCheck
-          && !(ci.pinned & (pos.pieces()^pos.pieces(PAWN)))
+          && !(ci.pinned & pos.pieces(PAWN))
           && !pos.advanced_pawn_push(move)
           &&  bestValue > VALUE_MATED_IN_MAX_PLY)
       {
