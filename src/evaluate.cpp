@@ -172,15 +172,24 @@ namespace {
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
+  // Array starts with rank 2 up to rank 7
   const Value Passed[][RANK_NB] = {
-    { V(0), V( 1), V(34), V(90), V(214), V(328) },
-    { V(7), V(14), V(37), V(63), V(134), V(189) }
+    { V(0), V( 1), V(34), V(90), V(214), V(328) }, //mg value
+    { V(7), V(14), V(37), V(63), V(134), V(189) }  //eg value
   };
 
   // PassedFile[File] contains a bonus according to the file of a passed pawn.
   const Score PassedFile[] = {
     S( 12,  10), S( 3, 10), S( 1, -8), S(-27, -12),
     S(-27, -12), S( 1, -8), S( 3, 10), S( 12,  10)
+  };
+
+  // Endgame factor according to rank of a passed pawn
+  // will be multiplied by king distance to square just in front.
+  // Array starts with rank 2 up to rank 7
+  const int KingFactor[2][RANK_NB] = {
+      {0,  0,  5, 13, 20,  38}, // Friendly king penalty factor
+      {0,  0,  9, 29, 56,  95}  // Enemy king bonus factor
   };
 
   const Score ThreatenedByHangingPawn = S(70, 63);
@@ -590,12 +599,12 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
+            ebonus +=  distance(pos.square<KING>(Them), blockSq) * KingFactor[1][r]
+                     - distance(pos.square<KING>(Us  ), blockSq) * KingFactor[0][r];
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
+                ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * (KingFactor[0][r] / 2);
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
