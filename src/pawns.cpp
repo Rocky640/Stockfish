@@ -34,10 +34,12 @@ namespace {
 
   // Isolated pawn penalty by opposed flag and file
   const Score Isolated[2][FILE_NB] = {
-    { S(37, 45), S(54, 52), S(60, 52), S(60, 52),
-      S(60, 52), S(60, 52), S(54, 52), S(37, 45) },
-    { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
+    { S(32, 40), S(49, 47), S(55, 47), S(55, 47),  // not opposed
+      S(55, 47), S(55, 47), S(49, 47), S(32, 40) },
+    { S(25, 30), S(36, 35), S(40, 35), S(40, 35),  // opposed
       S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
+
+  const Score IsolatedNotPassed = S(10, 10);
 
   // Backward pawn penalty by opposed flag
   const Score Backward[2] = { S(67, 42), S(49, 24) };
@@ -167,6 +169,8 @@ namespace {
         // pawn on each file is considered a true passed pawn.
         if (passed && !doubled)
             e->passedPawns[Us] |= s;
+        else if (isolated & !opposed)
+            score -= IsolatedNotPassed;
 
         // Score this pawn
         if (isolated)
