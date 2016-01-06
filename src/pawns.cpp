@@ -277,6 +277,10 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
 /// Entry::do_king_safety() calculates a bonus for king safety. It is called only
 /// when king square changes, which is about 20% of total king_safety() calls.
 
+int pawndist[] = {0, 0, 15, 30, 45, 60, 75, 90, 105};
+
+TUNE(SetRange(-20, 120), pawndist);
+
 template<Color Us>
 Score Entry::do_king_safety(const Position& pos, Square ksq) {
 
@@ -289,7 +293,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
       while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
 
   if (relative_rank(Us, ksq) > RANK_4)
-      return make_score(0, -16 * minKingPawnDistance);
+      return make_score(0, -pawndist[minKingPawnDistance]);
 
   Value bonus = shelter_storm<Us>(pos, ksq);
 
@@ -300,7 +304,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   if (pos.can_castle(MakeCastling<Us, QUEEN_SIDE>::right))
       bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_C1)));
 
-  return make_score(bonus, -16 * minKingPawnDistance);
+  return make_score(bonus, -pawndist[minKingPawnDistance]);
 }
 
 // Explicit template instantiation
