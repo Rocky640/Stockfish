@@ -39,8 +39,8 @@ namespace {
     { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
       S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
       
-  // More end game penalty if the isolated is on rank 2 and blocked.
-  const Score RearIsolated[FILE_NB] = {
+  // End game penalty if not in a pawn chain, on rank 2 and blocked.
+  const Score RearExposed[FILE_NB] = {
       S(0,16), S(0, 8), S(0, 4), S(0, 2),
       S(0, 2), S(0, 4), S(0, 8), S(0,16)
   };
@@ -106,7 +106,7 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, phalanx, supporting;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -142,6 +142,7 @@ namespace {
         lever       =   theirPawns & pawnAttacksBB[s];
         phalanx     =   neighbours & rank_bb(s);
         supported   =   neighbours & rank_bb(s - Up);
+        supporting  =   neighbours & rank_bb(s + Up);
         connected   =   supported | phalanx;
         isolated    =  !neighbours;
 
@@ -177,20 +178,19 @@ namespace {
 
         // Score this pawn
         if (isolated)
-        {
             score -= Isolated[opposed][f];
-            if (rr == RANK_2 && (theirPawns & (s + Up)))
-                score -= RearIsolated[f];
-        }
 
         else if (backward)
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
+            score -= Unsupported[more_than_one(supporting)];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][rr];
+
+        else if (rr == RANK_2 && (theirPawns & (s + Up)) && !supporting)
+            score -= RearExposed[f];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
