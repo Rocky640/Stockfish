@@ -41,8 +41,8 @@ namespace {
       
   // More end game penalty if the isolated is on rank 2 and blocked.
   const Score RearIsolated[FILE_NB] = {
-      S(0, 40), S(0, 15), S(0, 10), S(0, 5),
-      S(0, 5),  S(0, 10), S(0, 15), S(0, 40)
+      S(0,16), S(0, 8), S(0, 4), S(0, 2),
+      S(0, 2), S(0, 4), S(0, 8), S(0,16)
   };
 
   // Backward pawn penalty by opposed flag
