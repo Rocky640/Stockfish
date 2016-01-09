@@ -38,6 +38,12 @@ namespace {
       S(60, 52), S(60, 52), S(54, 52), S(37, 45) },
     { S(25, 30), S(36, 35), S(40, 35), S(40, 35),
       S(40, 35), S(40, 35), S(36, 35), S(25, 30) } };
+      
+  // More end game penalty if the isolated is on rank 2 and blocked.
+  const Score RearIsolated[FILE_NB] = {
+      S(0, 40), S(0, 15), S(0, 10), S(0, 5),
+      S(0, 5),  S(0, 10), S(0, 15), S(0, 40)
+  };
 
   // Backward pawn penalty by opposed flag
   const Score Backward[2] = { S(67, 42), S(49, 24) };
@@ -123,6 +129,7 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank rr = relative_rank(Us, s);
 
         e->semiopenFiles[Us] &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -144,7 +151,7 @@ namespace {
         // or if it is sufficiently advanced, it cannot be backward either.
         if (   (passed | isolated | lever | connected)
             || (ourPawns & pawn_attack_span(Them, s))
-            || (relative_rank(Us, s) >= RANK_5))
+            || (rr >= RANK_5))
             backward = false;
         else
         {
@@ -170,7 +177,11 @@ namespace {
 
         // Score this pawn
         if (isolated)
+        {
             score -= Isolated[opposed][f];
+            if (rr == RANK_2 && (theirPawns & (s + Up)))
+                score -= RearIsolated[f];
+        }
 
         else if (backward)
             score -= Backward[opposed];
@@ -179,13 +190,13 @@ namespace {
             score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][more_than_one(supported)][rr];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[rr];
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
