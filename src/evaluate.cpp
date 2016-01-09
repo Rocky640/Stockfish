@@ -198,7 +198,7 @@ namespace {
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
-  const Score UselessAttack       = S(10, 10);
+  const Score MinorOnPawn         = S(10, 10);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
@@ -543,13 +543,13 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
     
-    // Penalty when attacking pawn-defended pawns only with pieces.
+    // Bonus when attacking pawn-defended pawns with Minors and pawn
     b =   pos.pieces(Them, PAWN)
         & ei.attackedBy[Them][PAWN]
-        & ei.attackedBy[Us][ALL_PIECES] 
-        & ~ei.attackedBy[Us][PAWN];
+        & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP])
+        & ei.attackedBy[Us][PAWN];
     if (b)
-        score -= UselessAttack * popcount<Max15>(b);
+        score += MinorOnPawn * popcount<Max15>(b);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
