@@ -194,7 +194,7 @@ namespace {
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 7, 27);
-  const Score TrappedRook         = S(92,  0);
+  const Score TrappedRook         = S(92+22,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
@@ -215,7 +215,7 @@ namespace {
   // index to KingDanger[].
   Score KingDanger[512];
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
+  // KingAttackWeights[PieceType] contains s attack weights by piece type
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
 
   // Penalties for enemy's safe checks
@@ -353,7 +353,7 @@ namespace {
                 score += RookOnFile[!!ei.pi->semiopen_file(Them, file_of(s))];
 
             // Penalize when trapped by the king, even more if king cannot castle
-            else if (mob <= 3)
+            else if (mob <= 4)
             {
                 Square ksq = pos.square<KING>(Us);
 
@@ -787,8 +787,8 @@ Value Eval::evaluate(const Position& pos) {
   // Do not include in mobility area squares protected by enemy pawns, or occupied
   // by our blocked pawns or king.
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE]),
+    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK])
   };
 
   // Evaluate all pieces but king and pawns
