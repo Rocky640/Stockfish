@@ -112,7 +112,7 @@ namespace {
   enum { PassedPawns, Space, KingSafety };
 
   const struct Weight { int mg, eg; } Weights[] = {
-    {214, 203}, {193, 262}, {47, 0}, {330, 0} };
+    {193, 262}, {47, 0}, {330, 0} };
 
   Score operator*(Score s, const Weight& w) {
     return make_score(mg_value(s) * w.mg / 256, eg_value(s) * w.eg / 256);
