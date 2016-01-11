@@ -109,7 +109,7 @@ namespace {
 
 
   // Evaluation weights, indexed by the corresponding evaluation term
-  enum { PawnStructure, PassedPawns, Space, KingSafety };
+  enum { PassedPawns, Space, KingSafety };
 
   const struct Weight { int mg, eg; } Weights[] = {
     {214, 203}, {193, 262}, {47, 0}, {330, 0} };
@@ -771,7 +771,7 @@ Value Eval::evaluate(const Position& pos) {
 
   // Probe the pawn hash table
   ei.pi = Pawns::probe(pos);
-  score += ei.pi->pawns_score() * Weights[PawnStructure];
+  score += ei.pi->pawns_score();
 
   // Initialize attack and king safety bitboards
   ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
@@ -841,7 +841,7 @@ Value Eval::evaluate(const Position& pos) {
   {
       Trace::add(MATERIAL, pos.psq_score());
       Trace::add(IMBALANCE, ei.me->imbalance());
-      Trace::add(PAWN, ei.pi->pawns_score() * Weights[PawnStructure]);
+      Trace::add(PAWN, ei.pi->pawns_score());
       Trace::add(MOBILITY, mobility[WHITE], mobility[BLACK]);
       Trace::add(SPACE, evaluate_space<WHITE>(pos, ei) * Weights[Space]
                       , evaluate_space<BLACK>(pos, ei) * Weights[Space]);

@@ -88,6 +88,12 @@ namespace {
   // Max bonus for king safety. Corresponds to start position with all the pawns
   // in front of the king and no enemy pawn on the horizon.
   const Value MaxSafetyBonus = V(258);
+  
+  // Weight according to number of pawns of side (0 to 8)
+  // WIll be tuned by SPSA
+  int PW[9] =  {208, 208, 208, 208, 208, 208, 208, 208, 208};
+  
+  TUNE (PW);
 
   #undef S
   #undef V
@@ -191,7 +197,7 @@ namespace {
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
-    return score;
+    return score * PW[pos.count<PAWN>(Us)] / 256;
   }
 
 } // namespace
