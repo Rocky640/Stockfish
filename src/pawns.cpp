@@ -197,7 +197,8 @@ namespace {
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
-    return score * PW[pos.count<PAWN>(Us)] / 256;
+    return make_score((mg_value(score) * PW[pos.count<PAWN>(Us)]) / 256,
+                      (eg_value(score) * PW[pos.count<PAWN>(Us)]) / 256);
   }
 
 } // namespace
