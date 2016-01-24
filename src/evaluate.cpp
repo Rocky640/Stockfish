@@ -194,7 +194,8 @@ namespace {
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 7, 27);
-  const Score TrappedRook         = S(92,  0);
+  const Score RookCoordination    = S(15, 15);
+  const Score TrappedRook         = S(80,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
@@ -281,6 +282,14 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        if (Pt == ROOK || Pt == QUEEN)
+        {
+            // Penalty when not coordinating with other majors
+            if (     ei.attackedBy[Us][ROOK]
+                && ~(ei.attackedBy[Us][ROOK] & b & mobilityArea[Us]))
+                score -= RookCoordination;
+        }
+
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -360,7 +369,7 @@ namespace {
                 if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
                     && (rank_of(ksq) == rank_of(s) || relative_rank(Us, ksq) == RANK_1)
                     && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                    score -= (TrappedRook - make_score(mob * 20, 0)) * (1 + !pos.can_castle(Us));
             }
         }
     }
@@ -556,6 +565,10 @@ namespace {
 
     if (b)
         score += ThreatByPawnPush * popcount<Max15>(b);
+
+    // Major Coordination bonus
+    if (pos.count<ROOK>(Us) > 0 )
+
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
