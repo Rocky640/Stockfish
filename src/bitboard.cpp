@@ -50,6 +50,8 @@ Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
 Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
 
+Bitboard Corners;
+
 namespace {
 
   // De Bruijn sequences. See chessprogramming.wikispaces.com/BitScan
@@ -144,6 +146,8 @@ void Bitboards::init() {
       SquareBB[s] = 1ULL << s;
       BSFTable[bsf_index(SquareBB[s])] = s;
   }
+  
+  Corners = SquareBB[SQ_A1] | SquareBB[SQ_A8] | SquareBB[SQ_H1] | SquareBB[SQ_H8];
 
   for (Bitboard b = 2; b < 256; ++b)
       MSBTable[b] = MSBTable[b - 1] + !more_than_one(b);
