@@ -298,7 +298,7 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
         if (Pt == BISHOP || Pt == KNIGHT)
-            mob = popcount<Max15>(b & mobilityArea[Us] & ~Corners);
+            mob = popcount<Max15>(b & mobilityArea[Us] & ~Sides);
         else
             mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 

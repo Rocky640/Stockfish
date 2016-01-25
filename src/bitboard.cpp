@@ -50,7 +50,7 @@ Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
 Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
 
-Bitboard Corners;
+Bitboard Sides;
 
 namespace {
 
@@ -146,8 +146,6 @@ void Bitboards::init() {
       SquareBB[s] = 1ULL << s;
       BSFTable[bsf_index(SquareBB[s])] = s;
   }
-  
-  Corners = SquareBB[SQ_A1] | SquareBB[SQ_A8] | SquareBB[SQ_H1] | SquareBB[SQ_H8];
 
   for (Bitboard b = 2; b < 256; ++b)
       MSBTable[b] = MSBTable[b - 1] + !more_than_one(b);
@@ -160,6 +158,8 @@ void Bitboards::init() {
 
   for (File f = FILE_A; f <= FILE_H; ++f)
       AdjacentFilesBB[f] = (f > FILE_A ? FileBB[f - 1] : 0) | (f < FILE_H ? FileBB[f + 1] : 0);
+
+  Sides = FileBB[FILE_A] | FileBB[FILE_H] | RankBB[RANK_1] | RankBB[RANK_8];
 
   for (Rank r = RANK_1; r < RANK_8; ++r)
       InFrontBB[WHITE][r] = ~(InFrontBB[BLACK][r + 1] = InFrontBB[BLACK][r] | RankBB[r]);
