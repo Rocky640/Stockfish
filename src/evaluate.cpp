@@ -299,6 +299,14 @@ namespace {
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
+        if (Pt == ROOK)
+        {
+            bb = b & mobilityArea[Us] 
+                   & ( ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]);
+            if (bb)
+                mob -= popcount<Max15>(bb) / 2;
+        }
+
         mobility[Us] += MobilityBonus[Pt][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
