@@ -193,7 +193,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
-  const Score RookOnPawn          = S( 7, 27);
+  const Score RookOnAligned       = S( 7, 27);
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
@@ -343,9 +343,9 @@ namespace {
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
             {
-                Bitboard alignedPawns = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
-                if (alignedPawns)
-                    score += RookOnPawn * popcount<Max15>(alignedPawns);
+                Bitboard alignedPieces = pos.pieces(Them) & PseudoAttacks[ROOK][s];
+                if (alignedPieces)
+                    score += RookOnAligned * popcount<Max15>(alignedPieces);
             }
 
             // Bonus when on an open or semi-open file
