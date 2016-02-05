@@ -268,7 +268,7 @@ namespace {
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
     const Bitboard SixthRank = (Us == WHITE ? Rank6BB : Rank3BB);
-	const Bitboard FifthRank = (Us == WHITE ? Rank5BB : Rank4BB);
+    //const Bitboard FifthRank = (Us == WHITE ? Rank5BB : Rank4BB);
     const Square* pl = pos.squares<Pt>(Us);
 
     ei.attackedBy[Us][Pt] = 0;
@@ -322,12 +322,12 @@ namespace {
                 score += MinorBehindPawn;
 
             // Penalty for pawns on the same color square as the bishop.
-            // Penalize more if Bishop does not see its relative rank 6.
+            // Penalize more if Bishop cannot "see" its relative rank 6 because of pawns.
             if (Pt == BISHOP)
             {
-                score -= BishopPawns 
+                score -= BishopPawns
                          * (  ei.pi->pawns_on_same_color_squares(Us, s) 
-                            + !(b & SixthRank));
+                            + !(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & SixthRank));
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
