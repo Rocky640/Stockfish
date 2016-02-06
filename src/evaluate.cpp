@@ -784,11 +784,11 @@ Value Eval::evaluate(const Position& pos) {
     pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
   };
 
-  // Do not include in mobility area squares protected by enemy pawns, or occupied
-  // by our blocked pawns or king.
+  // Do not include in mobility area squares protected by enemy pawns, (unless challenged by our pawns)
+  // or occupied by our blocked pawns or king.
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    ~((ei.attackedBy[BLACK][PAWN] & ~pos.pieces(WHITE, PAWN)) | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
+    ~((ei.attackedBy[WHITE][PAWN] & ~pos.pieces(BLACK, PAWN)) | blockedPawns[BLACK] | pos.square<KING>(BLACK))
   };
 
   // Evaluate all pieces but king and pawns
