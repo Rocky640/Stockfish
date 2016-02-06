@@ -543,7 +543,9 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    b = weak & pos.pieces(Them, PAWN);
+    b =   pos.pieces(Them, PAWN)
+       & ~ei.attackedBy[Them][PAWN]
+       & ~ei.attackedBy[Us][ALL_PIECES];
     if (b)
         score -= UnattackedWeakPawn * popcount<Max15>(b);
 
