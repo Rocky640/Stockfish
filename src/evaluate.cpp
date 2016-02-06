@@ -198,6 +198,7 @@ namespace {
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
+  const Score UnattackedWeakPawn  = S( 8,  8);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
@@ -541,6 +542,10 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    b = weak & pos.pieces(Them, PAWN);
+    if (b)
+        score -= UnattackedWeakPawn * popcount<Max15>(b);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
