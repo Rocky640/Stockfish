@@ -198,7 +198,7 @@ namespace {
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
-  const Score UnattackedWeakPawn  = S( 8,  8);
+  const Score UnattackedWeakPawn  = S( 4,  4);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
