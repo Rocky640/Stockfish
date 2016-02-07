@@ -110,7 +110,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->healthyPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -168,6 +168,9 @@ namespace {
         if (passed && !doubled)
             e->passedPawns[Us] |= s;
 
+        if (!backward & !doubled & !isolated)
+            e->healthyPawns[Us] |= s;
+
         // Score this pawn
         if (isolated)
             score -= Isolated[opposed][f];
@@ -192,6 +195,35 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     return score;
+  }
+
+  // Find out if any side has a healthy majority
+
+  Score majority(const Position& pos, Pawns::Entry* e) {
+
+    Bitboard wPawns = pos.pieces(WHITE, PAWN) & ~e->passedPawns[WHITE];
+    Bitboard bPawns = pos.pieces(BLACK, PAWN) & ~e->passedPawns[BLACK];
+
+    int total = 0;
+
+    for (File f = FILE_C; f <= FILE_F; ++f)
+    {
+        if (e->semiopen_file(WHITE, f) && e->semiopen_file(BLACK, f))
+        {
+           for (int boardSide = 0; boardSide <= 1; boardSide++)
+           {
+               Bitboard b = SideBB[f][boardSide];
+               int ws = popcount<Max15>(wPawns & b);
+               int bs = popcount<Max15>(bPawns & b);
+               if (ws > bs)
+                   total += (wPawns & b) == (e->healthyPawns[WHITE] & b);
+               else if (bs > ws)
+                   total -= (bPawns & b) == (e->healthyPawns[BLACK] & b);
+            }
+        }
+        ++f;
+    }
+    return make_score(0, total * 20);
   }
 
 } // namespace
@@ -233,6 +265,7 @@ Entry* probe(const Position& pos) {
 
   e->key = key;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
+  e->score += majority(pos, e);
   e->asymmetry = popcount<Max15>(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
   return e;
 }
