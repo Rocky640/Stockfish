@@ -235,7 +235,7 @@ namespace {
         }
         ++f;
     }
-    return make_score(0, -penalty * 5);
+    return make_score(0, -penalty * 10);
   }
 
 } // namespace
