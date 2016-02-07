@@ -197,14 +197,16 @@ namespace {
     return score;
   }
 
-  // Find out if any side has a healthy majority
+  // Find out if any side has a healthy majority on either side of an open file.
 
-  Score majority(const Position& pos, Pawns::Entry* e) {
+  Score evaluate_majorities(const Position& pos, Pawns::Entry* e) {
 
     Bitboard wPawns = pos.pieces(WHITE, PAWN) & ~e->passedPawns[WHITE];
     Bitboard bPawns = pos.pieces(BLACK, PAWN) & ~e->passedPawns[BLACK];
 
     int total = 0;
+    bool done[2];
+    done[0] = done[1] = false;
 
     for (File f = FILE_C; f <= FILE_F; ++f)
     {
@@ -212,18 +214,26 @@ namespace {
         {
            for (int boardSide = 0; boardSide <= 1; boardSide++)
            {
+               if (done[boardSide]) continue;
+
                Bitboard b = SideBB[f][boardSide];
                int ws = popcount<Max15>(wPawns & b);
                int bs = popcount<Max15>(bPawns & b);
                if (ws > bs)
+               {
                    total += (wPawns & b) == (e->healthyPawns[WHITE] & b);
+                   done[boardSide] = true;
+               }
                else if (bs > ws)
+               {
                    total -= (bPawns & b) == (e->healthyPawns[BLACK] & b);
+                   done[boardSide] = true;
+               }
             }
         }
         ++f;
     }
-    return make_score(0, total * 20);
+    return make_score(0, total * 10);
   }
 
 } // namespace
@@ -265,8 +275,10 @@ Entry* probe(const Position& pos) {
 
   e->key = key;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
-  e->score += majority(pos, e);
   e->asymmetry = popcount<Max15>(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
+  if (e->asymmetry)
+      e->score += evaluate_majorities(pos, e);
+
   return e;
 }
 
