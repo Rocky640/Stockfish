@@ -197,14 +197,16 @@ namespace {
     return score;
   }
 
-  // Find out if any side has a healthy majority on either side of an open file.
+  // Find out if any side has a pawn majority on either side of an open file.
+  // If the majority is compromised (contains unhealthy pawns), give a penalty.
+  // This will compensate for extra points given to some connected not opposed.
 
   Score evaluate_majorities(const Position& pos, Pawns::Entry* e) {
 
     Bitboard wPawns = pos.pieces(WHITE, PAWN) & ~e->passedPawns[WHITE];
     Bitboard bPawns = pos.pieces(BLACK, PAWN) & ~e->passedPawns[BLACK];
 
-    int total = 0;
+    int penalty = 0;
     bool done[2];
     done[0] = done[1] = false;
 
@@ -221,19 +223,19 @@ namespace {
                int bs = popcount<Max15>(bPawns & b);
                if (ws > bs)
                {
-                   total += (wPawns & b) == (e->healthyPawns[WHITE] & b);
+                   penalty += !!(~e->healthyPawns[WHITE] & b);
                    done[boardSide] = true;
                }
                else if (bs > ws)
                {
-                   total -= (bPawns & b) == (e->healthyPawns[BLACK] & b);
+                   penalty -= !!(~e->healthyPawns[BLACK] & b);
                    done[boardSide] = true;
                }
             }
         }
         ++f;
     }
-    return make_score(0, total * 5);
+    return make_score(0, -penalty * 5);
   }
 
 } // namespace
