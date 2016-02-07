@@ -233,7 +233,7 @@ namespace {
         }
         ++f;
     }
-    return make_score(0, total * 10);
+    return make_score(0, total * 5);
   }
 
 } // namespace
