@@ -232,10 +232,10 @@ namespace {
                    done[boardSide] = true;
                }
             }
+            ++f;
         }
-        ++f;
     }
-    return make_score(0, -penalty * 15);
+    return make_score(0, -penalty * 10);
   }
 
 } // namespace
