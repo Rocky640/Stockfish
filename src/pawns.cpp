@@ -93,7 +93,7 @@ namespace {
   #undef V
 
   template<Color Us>
-  Score evaluate(const Position& pos, Pawns::Entry* e) {
+  Score evaluate(const Position& pos, Pawns::Entry* e, Bitboard* badPawns) {
 
     const Color  Them  = (Us == WHITE ? BLACK    : WHITE);
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
@@ -102,7 +102,7 @@ namespace {
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, backward, lever, connected, blocked;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -110,7 +110,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = badPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -131,6 +131,7 @@ namespace {
         neighbours  =   ourPawns   & adjacent_files_bb(f);
         doubled     =   ourPawns   & forward_bb(Us, s);
         opposed     =   theirPawns & forward_bb(Us, s);
+        blocked     =   theirPawns & (s + Up);
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
         phalanx     =   neighbours & rank_bb(s);
@@ -167,6 +168,10 @@ namespace {
         // pawn on each file is considered a true passed pawn.
         if (passed && !doubled)
             e->passedPawns[Us] |= s;
+        
+        // Pawns which will can harm the possibilities of a pawn majority to create a passed pawn
+        else if (doubled | isolated | (backward & ~blocked))
+            badPawns[Us] |= s;
 
         // Score this pawn
         if (isolated)
@@ -192,6 +197,73 @@ namespace {
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
 
     return score;
+  }
+
+  // Find out if any side has a pawn majority on either side of an open file.
+  // If the majority is compromised (contains "bad", unhealthy pawns), give a penalty.
+
+  Score evaluate_majorities(const Position& pos, Pawns::Entry* e, const Bitboard* badPawns) {
+      
+    if (!(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK] & 0x3C))
+        // None of file  c, d, e of f is completely open.
+        return SCORE_ZERO;
+
+    // Consider only the pawns which are not passed yet.
+    Bitboard wPawns = pos.pieces(WHITE, PAWN) & ~e->passedPawns[WHITE];
+    Bitboard bPawns = pos.pieces(BLACK, PAWN) & ~e->passedPawns[BLACK];
+
+    int penalty = 0;
+    File f, g;
+
+    // Find the first open file from the left
+    for (f = FILE_C; f <= FILE_F; ++f)
+    {
+        if (e->semiopen_file(WHITE, f) && e->semiopen_file(BLACK, f))
+        {
+            //look at the files at the left of the open file f
+            Bitboard b = SideBB[f][0];
+            int ws = popcount<Max15>(wPawns & b);
+            int bs = popcount<Max15>(bPawns & b);
+            if (ws > bs)
+               penalty += !!(badPawns[WHITE] & b);
+            else if (bs > ws)
+               penalty -= !!(badPawns[BLACK] & b);
+            
+            break;
+        }
+    }
+
+    // Find the first open file from the right
+    for (g = FILE_F; g >= f; --g)
+    {
+        if (e->semiopen_file(WHITE, g) && e->semiopen_file(BLACK, g))
+        {
+            //look at the files at the right of the open file g
+            Bitboard b = SideBB[g][1];
+            int ws = popcount<Max15>(wPawns & b);
+            int bs = popcount<Max15>(bPawns & b);
+            if (ws > bs)
+               penalty += !!(badPawns[WHITE] & b);
+            else if (bs > ws)
+               penalty -= !!(badPawns[BLACK] & b);
+            break;
+        }
+    }
+    
+    // Consider also the central pawns on files C and D when between open files C and F
+
+    if (f == g + 3)
+    {
+        Bitboard b = SideBB[f][1] & SideBB[g][0];
+        int ws = popcount<Max15>(wPawns & b);
+        int bs = popcount<Max15>(bPawns & b);
+        if (ws > bs)
+           penalty += !!(badPawns[WHITE] & b);
+        else if (bs > ws)
+           penalty -= !!(badPawns[BLACK] & b);
+    }
+    
+    return make_score(0, -penalty * 8);
   }
 
 } // namespace
@@ -231,9 +303,14 @@ Entry* probe(const Position& pos) {
   if (e->key == key)
       return e;
 
+  Bitboard badPawns[COLOR_NB];
+
   e->key = key;
-  e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
+  e->score = evaluate<WHITE>(pos, e, badPawns) - evaluate<BLACK>(pos, e, badPawns);
+  e->score += evaluate_majorities(pos, e, badPawns);
+  
   e->asymmetry = popcount<Max15>(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
+
   return e;
 }
 

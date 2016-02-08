@@ -40,6 +40,7 @@ Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
 Bitboard AdjacentFilesBB[FILE_NB];
+Bitboard SideBB[FILE_NB][2];
 Bitboard InFrontBB[COLOR_NB][RANK_NB];
 Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
@@ -155,7 +156,11 @@ void Bitboards::init() {
       RankBB[r] = r > RANK_1 ? RankBB[r - 1] << 8 : Rank1BB;
 
   for (File f = FILE_A; f <= FILE_H; ++f)
+  {
       AdjacentFilesBB[f] = (f > FILE_A ? FileBB[f - 1] : 0) | (f < FILE_H ? FileBB[f + 1] : 0);
+      SideBB[f][0] = f > FILE_A ? SideBB[f - 1][0] | FileBB[f - 1] : 0;
+      SideBB[f][1] = ~(SideBB[f][0] | FileBB[f]);
+  }
 
   for (Rank r = RANK_1; r < RANK_8; ++r)
       InFrontBB[WHITE][r] = ~(InFrontBB[BLACK][r + 1] = InFrontBB[BLACK][r] | RankBB[r]);
