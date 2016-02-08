@@ -209,32 +209,43 @@ namespace {
     int penalty = 0;
     bool done[2];
     done[0] = done[1] = false;
+    File f;
 
-    for (File f = FILE_C; f <= FILE_F; ++f)
+    // find first open file from the left
+    for (f = FILE_C; f <= FILE_F; ++f)
     {
         if (e->semiopen_file(WHITE, f) && e->semiopen_file(BLACK, f))
         {
-           for (int boardSide = 0; boardSide <= 1; boardSide++)
-           {
-               if (done[boardSide]) continue;
-
-               Bitboard b = SideBB[f][boardSide];
-               int ws = popcount<Max15>(wPawns & b);
-               int bs = popcount<Max15>(bPawns & b);
-               if (ws > bs)
-               {
-                   penalty += !!(~e->healthyPawns[WHITE] & b);
-                   done[boardSide] = true;
-               }
-               else if (bs > ws)
-               {
-                   penalty -= !!(~e->healthyPawns[BLACK] & b);
-                   done[boardSide] = true;
-               }
-            }
-            ++f;
+            //look at the files at the left of the open file f
+            Bitboard b = SideBB[f][0];
+            int ws = popcount<Max15>(wPawns & b);
+            int bs = popcount<Max15>(bPawns & b);
+            if (ws > bs)
+               penalty += !!(~e->healthyPawns[WHITE] & b);
+            else if (bs > ws)
+               penalty -= !!(~e->healthyPawns[BLACK] & b);
+            
+            break;
         }
     }
+
+    // find first open file from the right
+    for (File g = FILE_F; g >= f; --g)
+    {
+        if (e->semiopen_file(WHITE, g) && e->semiopen_file(BLACK, g))
+        {
+            //look at the files at the right of the open file g
+            Bitboard b = SideBB[g][1];
+            int ws = popcount<Max15>(wPawns & b);
+            int bs = popcount<Max15>(bPawns & b);
+            if (ws > bs)
+               penalty += !!(~e->healthyPawns[WHITE] & b);
+            else if (bs > ws)
+               penalty -= !!(~e->healthyPawns[BLACK] & b);
+            break;
+        }
+    }
+    
     return make_score(0, -penalty * 10);
   }
 
