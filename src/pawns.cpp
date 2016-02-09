@@ -263,7 +263,7 @@ namespace {
            penalty -= !!(badPawns[BLACK] & b);
     }
     
-    return make_score(0, -penalty * 8);
+    return make_score(0, -penalty * 40);
   }
 
 } // namespace
