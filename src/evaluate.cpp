@@ -673,7 +673,7 @@ namespace {
     // Penalize when we do not evenly control on both colours.
     int c1 =  popcount<Full>( DarkSquares & safe);
     int c2 =  popcount<Full>(~DarkSquares & safe);
-    bonus -= ((c1 > c2) ? c1 - c2 : c2 - c1) * 2;
+    bonus -= (c1 > c2) ? c1 - c2 : c2 - c1;
     
     return make_score(bonus * weight * weight * 2 / 11, 0);
   }
