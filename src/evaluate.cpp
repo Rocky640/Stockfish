@@ -311,7 +311,7 @@ namespace {
             // Compensate if bishop can access good diagonals.
             if (Pt == BISHOP)
                 score -= BishopPawns 
-                         * (  ei.pi->pawns_on_same_color_squares(Us, s) + 1
+                         * (  ei.pi->pawns_on_same_color_squares(Us, s) + 2
                             - ei.pi->good_diagonals(Us, (b & mobilityArea[Us]) | s));
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
