@@ -59,6 +59,8 @@ namespace {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
     S(17, 16), S(33, 32), S(0, 0), S(0, 0) };
 
+  const Score Upawns = S(5, 5);
+
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
     { V( 97), V(21), V(26), V(51), V(87), V( 89), V( 99) },
@@ -99,6 +101,14 @@ namespace {
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+
+    const Bitboard WestU  = (Us == WHITE ? SquareBB[SQ_A3] | SquareBB[SQ_B2] | SquareBB[SQ_C2] | SquareBB[SQ_D3] 
+                                         : SquareBB[SQ_A6] | SquareBB[SQ_B7] | SquareBB[SQ_C7] | SquareBB[SQ_D6]);
+    const Bitboard WestV  = (Us == WHITE ? SquareBB[SQ_D4] : SquareBB[SQ_D5]);
+
+    const Bitboard EastU  = (Us == WHITE ? SquareBB[SQ_E3] | SquareBB[SQ_F2] | SquareBB[SQ_G2] | SquareBB[SQ_H3] 
+                                         : SquareBB[SQ_E6] | SquareBB[SQ_F7] | SquareBB[SQ_G7] | SquareBB[SQ_H6]);
+    const Bitboard EastV  = (Us == WHITE ? SquareBB[SQ_E4] : SquareBB[SQ_E5]);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
@@ -187,6 +197,11 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+
+    // If we have a U-shape blocked in the center, penalize.
+    if (   ((WestU & ourPawns) == WestU) && (WestV & theirPawns)
+        || ((EastU & ourPawns) == EastU) && (EastV & theirPawns))
+       score -= Upawns;
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
