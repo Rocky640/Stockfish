@@ -199,8 +199,8 @@ namespace {
     }
 
     // If we have a U-shape blocked in the center, penalize.
-    if (   ((WestU & ourPawns) == WestU) && (WestV & theirPawns)
-        || ((EastU & ourPawns) == EastU) && (EastV & theirPawns))
+    if (   (((WestU & ourPawns) == WestU) && (WestV & theirPawns))
+        || (((EastU & ourPawns) == EastU) && (EastV & theirPawns)))
        score -= Upawns;
 
     b = e->semiopenFiles[Us] ^ 0xFF;
