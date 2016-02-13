@@ -59,7 +59,7 @@ namespace {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
     S(17, 16), S(33, 32), S(0, 0), S(0, 0) };
 
-  const Score Upawns = S(5, 5);
+  const Score Upawns = S(10, 10);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
