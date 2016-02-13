@@ -100,6 +100,8 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
+    const Bitboard SideFiles = FileABB | FileHBB;
+
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
@@ -116,7 +118,18 @@ namespace {
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+    e->goodDiagonals[Us][WHITE][DIAGTYPE_F] = e->goodDiagonals[Us][WHITE][DIAGTYPE_B]
+     = e->goodDiagonals[Us][BLACK][DIAGTYPE_F] = e->goodDiagonals[Us][BLACK][DIAGTYPE_B] = 0;
 
+    // Consider the diagonals of length 6 to 8 which have no friendly pawns (except on the side)
+    // and at most one ennemy pawn.
+    for (int d = 5; d <= 9; d++) {
+        if (!(ourPawns & FDiagBB[d] & ~SideFiles) && !more_than_one(theirPawns & FDiagBB[d]))
+            e->goodDiagonals[Us][(d + 1) % 2][DIAGTYPE_F] += 1;
+        if (!(ourPawns & BDiagBB[d] & ~SideFiles) && !more_than_one(theirPawns & BDiagBB[d]))
+            e->goodDiagonals[Us][d % 2][DIAGTYPE_B] += 1;
+    }
+    
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
     {

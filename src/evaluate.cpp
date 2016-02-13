@@ -307,9 +307,12 @@ namespace {
                 && (pos.pieces(PAWN) & (s + pawn_push(Us))))
                 score += MinorBehindPawn;
 
-            // Penalty for pawns on the same color square as the bishop
+            // Penalty for pawns on the same color square as the bishop.
+            // Compensate if bishop can access good diagonals.
             if (Pt == BISHOP)
-                score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+                score -= BishopPawns 
+                         * (  ei.pi->pawns_on_same_color_squares(Us, s) + 1
+                            - ei.pi->good_diagonals(Us, (b & mobilityArea[Us]) | s));
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially

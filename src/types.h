@@ -253,6 +253,19 @@ enum Rank {
   RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NB
 };
 
+enum DiagType {
+  DIAGTYPE_F, DIAGTYPE_B, DIAGTYPE_NB
+};
+
+enum FDiag {
+  FD_H1, FD_G1, FD_F1, FD_E1, FD_D1, FD_C1, FD_B1, FD_A1, 
+  FD_A2, FD_A3, FD_A4, FD_A5, FD_A6, FD_A7, FD_A8, FD_MAIN5, FD_NB
+};
+
+enum BDiag {
+  BD_A1, BD_B1, BD_C1, BD_D1, BD_E1, BD_F1, BD_G1, BD_H1, 
+  BD_H2, BD_H3, BD_H4, BD_H5, BD_H6, BD_H7, BD_H8, BD_MAIN5, BD_NB
+};
 
 /// Score enum stores a middlegame and an endgame value in a single integer
 /// (enum). The least significant 16 bits are used to store the endgame value

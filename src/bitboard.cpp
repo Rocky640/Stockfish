@@ -40,6 +40,9 @@ Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
 Bitboard AdjacentFilesBB[FILE_NB];
+Bitboard FDiagBB[FD_NB];
+Bitboard BDiagBB[BD_NB];
+
 Bitboard InFrontBB[COLOR_NB][RANK_NB];
 Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
 Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
@@ -210,6 +213,28 @@ void Bitboards::init() {
               LineBB[s1][s2] = (attacks_bb(pc, s1, 0) & attacks_bb(pc, s2, 0)) | s1 | s2;
               BetweenBB[s1][s2] = attacks_bb(pc, s1, SquareBB[s2]) & attacks_bb(pc, s2, SquareBB[s1]);
           }
+  }
+
+  // different approach
+  FDiagBB[FD_MAIN5] = FDiagBB[FD_A1] = LineBB[SQ_A1][SQ_H8];
+  BDiagBB[BD_MAIN5] = BDiagBB[BD_H1] = LineBB[SQ_H1][SQ_A8];
+
+  for (int i = 1; i <= 7; ++i)
+  {
+      FDiagBB[FD_A1 + i] = shift_bb<DELTA_N>(FDiagBB[FD_A1 + i - 1]);
+      FDiagBB[FD_A1 - i] = shift_bb<DELTA_S>(FDiagBB[FD_A1 - i + 1]);
+      
+      BDiagBB[BD_H1 + i] = shift_bb<DELTA_N>(BDiagBB[BD_H1 + i - 1]);
+      BDiagBB[BD_H1 - i] = shift_bb<DELTA_S>(BDiagBB[BD_H1 - i + 1]);
+      
+      if (i <= 2) {
+          FDiagBB[FD_MAIN5] |= FDiagBB[FD_A1 + i] | FDiagBB[FD_A1 - i];
+		  BDiagBB[BD_MAIN5] |= BDiagBB[BD_H1 + i] | BDiagBB[BD_H1 - i];
+      }
+
+
+      assert(BBDiagBB[BD_H1 + i] == BDiagBB[BD_H1 + i]);
+      assert(BBDiagBB[BD_H1 - i] == BDiagBB[BD_H1 - i]);
   }
 }
 

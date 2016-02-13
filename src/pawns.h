@@ -52,6 +52,11 @@ struct Entry {
     return pawnsOnSquares[c][!!(DarkSquares & s)];
   }
 
+  int good_diagonals(Color c, Bitboard mobility) const {
+    return  (mobility & FDiagBB[FD_MAIN5] ? goodDiagonals[c][!(DarkSquares & mobility)][DIAGTYPE_F] : 0)
+          + (mobility & BDiagBB[BD_MAIN5] ? goodDiagonals[c][!(DarkSquares & mobility)][DIAGTYPE_B] : 0);
+  }
+
   template<Color Us>
   Score king_safety(const Position& pos, Square ksq)  {
     return  kingSquares[Us] == ksq && castlingRights[Us] == pos.can_castle(Us)
@@ -75,6 +80,7 @@ struct Entry {
   int semiopenFiles[COLOR_NB];
   int pawnSpan[COLOR_NB];
   int pawnsOnSquares[COLOR_NB][COLOR_NB]; // [color][light/dark squares]
+  int goodDiagonals[COLOR_NB][COLOR_NB][2]; // [color][light/dark squares][forward/backward diagonal]
   int asymmetry;
 };
 
