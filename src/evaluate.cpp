@@ -505,8 +505,9 @@ namespace {
     // Non-pawn enemies defended by a pawn
     defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
 
-    // Enemies not defended by a pawn and under our attack
-    weak =   pos.pieces(Them)
+    // Enemies not defended by a pawn, and not already penalized.
+    weak =  ~weak
+          &  pos.pieces(Them)
           & ~ei.attackedBy[Them][PAWN]
           &  ei.attackedBy[Us][ALL_PIECES];
 
