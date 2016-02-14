@@ -186,7 +186,7 @@ namespace {
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
-  const Score OnePawnDefense      = S( 8,  4);
+  const Score WellDefended        = S( 8,  4);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
@@ -357,7 +357,7 @@ namespace {
     
     if (Pt == QUEEN)
     {
-        ei.attackedBy[Us][PAWN_ONLY] =  ei.pi->single_attacks(Them) & ~ei.attackedBy[Us][ALL_PIECES];
+        ei.attackedBy[Us][NON_PAWN] =  ei.attackedBy[Us][ALL_PIECES] | ei.pi->dble_attacks(Them);
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN];
     }
 
@@ -534,10 +534,11 @@ namespace {
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
-
-        b = defended & ei.attackedBy[Them][PAWN_ONLY];
+        
+        // Defended by a pawn and something else
+        b = defended & ei.attackedBy[Them][NON_PAWN];
         if (b)
-            score += OnePawnDefense * popcount<Max15>(b);
+            score -= WellDefended * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
