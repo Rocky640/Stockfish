@@ -537,7 +537,7 @@ namespace {
 
         b = defended & ei.attackedBy[Them][PAWN_ONLY];
         if (b)
-            score += OnePawnDefense * popcount<Max15>(b);
+            score -= OnePawnDefense * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
