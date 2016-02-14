@@ -186,6 +186,7 @@ namespace {
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
+  const Score OnePawnDefense      = S( 8,  4);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
@@ -224,9 +225,10 @@ namespace {
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
-    ei.attackedBy[Them][ALL_PIECES] |= b;
-    ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    
+    Bitboard b = ei.attackedBy[Them][ALL_PIECES] = ei.attackedBy[Them][KING] 
+               = pos.attacks_from<KING>(pos.square<KING>(Them));
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -351,6 +353,12 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
+    }
+    
+    if (Pt == QUEEN)
+    {
+        ei.attackedBy[Us][PAWN_ONLY] =  ei.pi->single_attacks(Them) & ~ei.attackedBy[Us][ALL_PIECES];
+        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN];
     }
 
     if (DoTrace)
@@ -503,7 +511,9 @@ namespace {
     }
 
     // Non-pawn enemies defended by a pawn
-    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
+    defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) 
+              & ei.attackedBy[Them][PAWN]
+              & ei.attackedBy[Us][ALL_PIECES];
 
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
@@ -524,6 +534,10 @@ namespace {
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
             score += Hanging * popcount<Max15>(b);
+
+        b = defended & ei.attackedBy[Them][PAWN_ONLY];
+        if (b)
+            score += OnePawnDefense * popcount<Max15>(b);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
@@ -762,7 +776,6 @@ Value Eval::evaluate(const Position& pos) {
   score += ei.pi->pawns_score();
 
   // Initialize attack and king safety bitboards
-  ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
 
