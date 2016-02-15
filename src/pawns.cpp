@@ -100,7 +100,7 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, supporting, phalanx;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -110,7 +110,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->chainImprovers[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -133,6 +133,7 @@ namespace {
         opposed     =   theirPawns & forward_bb(Us, s);
         passed      = !(theirPawns & passed_pawn_mask(Us, s));
         lever       =   theirPawns & pawnAttacksBB[s];
+        supporting  =   neighbours & rank_bb(s + Up);
         phalanx     =   neighbours & rank_bb(s);
         supported   =   neighbours & rank_bb(s - Up);
         connected   =   supported | phalanx;
@@ -167,6 +168,9 @@ namespace {
         // pawn on each file is considered a true passed pawn.
         if (passed && !doubled)
             e->passedPawns[Us] |= s;
+        
+        if (supporting && !backward)
+            e->chainImprovers[Us] |= s;
 
         // Score this pawn
         if (isolated)
@@ -176,7 +180,7 @@ namespace {
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
+            score -= Unsupported[more_than_one(supporting)];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
