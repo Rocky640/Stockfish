@@ -531,8 +531,8 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some opponent pawn chain improvements are blocked
-    b = ei.pi->chain_improvers(Them) & shift_bb<Up>(pos.pieces());
+    // Bonus if some opponent pawn chain improvements are controlled
+    b = ei.pi->chain_improvers(Them) & shift_bb<Up>(pos.pieces(Us));
     if (b)
         score += ChainBlocker * popcount<Max15>(b);
 
