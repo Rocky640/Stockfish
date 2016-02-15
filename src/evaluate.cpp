@@ -532,7 +532,7 @@ namespace {
     }
 
     // Bonus if some opponent pawn chain improvements are controlled
-    b = ei.pi->chain_improvers(Them) & shift_bb<Up>(pos.pieces(Us));
+    b = ei.pi->chain_improvers(Them) & shift_bb<Up>(pos.pieces(Us) ^ pos.pieces(Us, PAWN));
     if (b)
         score += ChainBlocker * popcount<Max15>(b);
 
