@@ -183,6 +183,7 @@ void UCI::loop(int argc, char* argv[]) {
 
       else if (token == "ucinewgame")
       {
+          Pawns::init();
           Search::clear();
           Time.availableNodes = 0;
       }
