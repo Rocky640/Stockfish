@@ -46,8 +46,9 @@ namespace {
   // by number of pawns it supports [less than 2 / exactly 2].
   const Score Unsupported[2] = { S(17, 8), S(21, 12) };
 
-  // Connected pawn bonus by opposed, phalanx, twice supported and rank
-  Score Connected[2][2][2][RANK_NB];
+  // Connected pawn bonus by (front) opposed, side opposed[less than 2 / 2+]
+  // phalanx, twice supported and rank.
+  Score Connected[2][2][2][2][RANK_NB];
 
   // Doubled pawn penalty by file
   const Score Doubled[FILE_NB] = {
@@ -100,7 +101,7 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, sideOpposed, doubled, supported, phalanx;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
     Score score = SCORE_ZERO;
@@ -131,7 +132,8 @@ namespace {
         neighbours  =   ourPawns   & adjacent_files_bb(f);
         doubled     =   ourPawns   & forward_bb(Us, s);
         opposed     =   theirPawns & forward_bb(Us, s);
-        passed      = !(theirPawns & passed_pawn_mask(Us, s));
+        sideOpposed =   theirPawns & pawn_attack_span(Us, s);
+        passed      =  !(opposed | sideOpposed);
         lever       =   theirPawns & pawnAttacksBB[s];
         phalanx     =   neighbours & rank_bb(s);
         supported   =   neighbours & rank_bb(s - Up);
@@ -142,25 +144,23 @@ namespace {
         // If the pawn is passed, isolated, lever or connected it cannot be
         // backward. If there are friendly pawns behind on adjacent files
         // or if it is sufficiently advanced, it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
+        if (   (!sideOpposed | isolated | lever | connected)
             || (ourPawns & pawn_attack_span(Them, s))
             || (relative_rank(Us, s) >= RANK_5))
             backward = false;
         else
         {
-            // We now know there are no friendly pawns beside or behind this
-            // pawn on adjacent files. We now check whether the pawn is
-            // backward by looking in the forward direction on the adjacent
-            // files, and picking the closest pawn there.
-            b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);
-            b = pawn_attack_span(Us, s) & rank_bb(backmost_sq(Us, b));
+            // We now know there is at least one friendly neighbour, and it is in front.
+            // There is also an enemy sideOpposed.
+            // Pick the closest rank amongst these.
+            b = rank_bb(backmost_sq(Us, neighbours | sideOpposed));
 
-            // If we have an enemy pawn in the same or next rank, the pawn is
-            // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            // If the enemy pawn is on the same or next rank as our neighbour, the pawn is
+            // backward because it cannot safely get on same rank as neighbour
+            backward = (b | shift_bb<Up>(b)) & sideOpposed;
         }
 
-        assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
+        assert(opposed | passed | !!sideOpposed);
 
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate them. Only the frontmost passed
@@ -179,7 +179,8 @@ namespace {
             score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][more_than_one(sideOpposed)]
+                              [!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
@@ -207,13 +208,15 @@ void init()
   static const int Seed[RANK_NB] = { 0, 8, 19, 13, 71, 94, 169, 324 };
 
   for (int opposed = 0; opposed <= 1; ++opposed)
-      for (int phalanx = 0; phalanx <= 1; ++phalanx)
-          for (int apex = 0; apex <= 1; ++apex)
-              for (Rank r = RANK_2; r < RANK_8; ++r)
+      for (int manySideOpposed = 0; manySideOpposed <= 1; ++manySideOpposed)
+          for (int phalanx = 0; phalanx <= 1; ++phalanx)
+              for (int apex = 0; apex <= 1; ++apex)
+                  for (Rank r = RANK_2; r < RANK_8; ++r)
   {
       int v = (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
+      v += (!(opposed || manySideOpposed) ? 3 * v / 16 : 0);
       v += (apex ? v / 2 : 0);
-      Connected[opposed][phalanx][apex][r] = make_score(v, v * 5 / 8);
+      Connected[opposed][manySideOpposed][phalanx][apex][r] = make_score(v, v * 5 / 8);
   }
 }
 
