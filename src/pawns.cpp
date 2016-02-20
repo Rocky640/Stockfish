@@ -39,8 +39,12 @@ namespace {
     { S(21, 24), S(30, 28), S(33, 28), S(33, 28),
       S(33, 28), S(33, 28), S(30, 28), S(21, 24) } };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(56, 33), S(41, 19) };
+  // Backward pawn penalty by opposed flag, and
+  // by number of pawns it supports [less than 2 / exactly 2].
+  const Score Backward[2][2] = { 
+    { S(56, 33), S(41, 19) }, 
+    { S(60, 37), S(45, 23) }
+  };
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward,
   // by number of pawns it supports [less than 2 / exactly 2].
@@ -173,7 +177,7 @@ namespace {
             score -= Isolated[opposed][f];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= Backward[opposed][more_than_one(neighbours & rank_bb(s + Up))];
 
         else if (!supported)
             score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
