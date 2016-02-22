@@ -186,6 +186,7 @@ namespace {
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
   const Score Hanging             = S(48, 28);
+  const Score Loose               = S(10, 10);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
@@ -482,7 +483,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, b2, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -528,6 +529,33 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+    }
+    
+    // Loose non-pawns: opponent pieces which are neither attacked or defended
+    // Include Queens as well.
+    weak =  pos.pieces(Them QUEEN) 
+          | (   (pos.pieces(Them) ^ pos.pieces(Them, KING, PAWN))
+             & ~(ei.attackedBy[Them][ALL_PIECES] | ei.attackedBy[Us][ALL_PIECES]));
+
+    while (weak)
+    {
+       Square s = pop_lsb(&weak);
+       b = PseudoAttacks[ROOK][s] & pos.pieces(Us, ROOK, QUEEN);
+       while (b)
+       {
+           //A rook or queen is aligned with s. Check how many pieces in between
+           b2 = LineBB[s][pop_lsb(&b)] & pos.pieces();
+           if (!more_than_one(b2) && pos.pieces())
+               score += LooseBonus;
+       }
+       b = PseudoAttacks[BISHOP][s] & pos.pieces(Us, BISHOP, QUEEN);
+       while (b)
+       {
+           //A bishop or queen is aligned with s. Check how many pieces in between
+           b2 = LineBB[s][pop_lsb(&b)] & pos.pieces();
+           if (!more_than_one(b2) && pos.pieces())
+               score += LooseBonus;
+       }
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
