@@ -532,9 +532,9 @@ namespace {
     }
     
     // Loose non-pawns: opponent pieces which are neither attacked or defended
-    // Include Queens as well.
-    weak =  pos.pieces(Them QUEEN) 
-          | (   (pos.pieces(Them) ^ pos.pieces(Them, KING, PAWN))
+    // Always include Queens too.
+    weak =  pos.pieces(Them, QUEEN)
+          | (   (pos.pieces(Them) ^ pos.pieces(Them, PAWN, KING))
              & ~(ei.attackedBy[Them][ALL_PIECES] | ei.attackedBy[Us][ALL_PIECES]));
 
     while (weak)
@@ -543,18 +543,19 @@ namespace {
        b = PseudoAttacks[ROOK][s] & pos.pieces(Us, ROOK, QUEEN);
        while (b)
        {
-           //A rook or queen is aligned with s. Check how many pieces in between
+           // A rook or queen is aligned with s. 
+           // If only 1 piece in between, either color, score a bonus.
            b2 = LineBB[s][pop_lsb(&b)] & pos.pieces();
-           if (!more_than_one(b2) && pos.pieces())
-               score += LooseBonus;
+           if (!more_than_one(b2))
+               score += Loose;
        }
        b = PseudoAttacks[BISHOP][s] & pos.pieces(Us, BISHOP, QUEEN);
        while (b)
        {
            //A bishop or queen is aligned with s. Check how many pieces in between
            b2 = LineBB[s][pop_lsb(&b)] & pos.pieces();
-           if (!more_than_one(b2) && pos.pieces())
-               score += LooseBonus;
+           if (!more_than_one(b2))
+               score += Loose;
        }
     }
 
