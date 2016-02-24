@@ -531,30 +531,32 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
     
-    // Loose non-pawns: opponent pieces which are neither attacked or defended
+    // Take a look at opponent pieces which are neither attacked or defended 
+    // So they are not hanging (this was handled above). Just loose.
     // Always include Queens too.
     weak =  pos.pieces(Them, QUEEN)
           | (   (pos.pieces(Them) ^ pos.pieces(Them, PAWN, KING))
              & ~(ei.attackedBy[Them][ALL_PIECES] | ei.attackedBy[Us][ALL_PIECES]));
 
+    // Look for potential x-ray attacks or discovered attacks.
+    // If any, the piece in between might do a discovered attack,
+    // or may be relatively pinned.
     while (weak)
     {
        Square s = pop_lsb(&weak);
-       b = PseudoAttacks[ROOK][s] & pos.pieces(Us, ROOK, QUEEN);
+       // Find all our sliders aligned with s
+       b =  (PseudoAttacks[ROOK  ][s] & pos.pieces(Us, ROOK, QUEEN))
+          | (PseudoAttacks[BISHOP][s] & pos.pieces(Us, BISHOP, QUEEN));
+
        while (b)
-       {
-           // A rook or queen is aligned with s. 
-           // If only 1 piece in between, either color, score a bonus.
-           b2 = LineBB[s][pop_lsb(&b)] & pos.pieces();
-           if (!more_than_one(b2))
-               score += Loose;
-       }
-       b = PseudoAttacks[BISHOP][s] & pos.pieces(Us, BISHOP, QUEEN);
-       while (b)
-       {
-           //A bishop or queen is aligned with s. Check how many pieces in between
-           b2 = LineBB[s][pop_lsb(&b)] & pos.pieces();
-           if (!more_than_one(b2))
+       {   
+           // Are there any pieces in between ?
+           b2 = BetweenBB[s][pop_lsb(&b)] & pos.pieces();
+
+           // If there is one and only one, and not a pawn, score the bonus
+           // (It might be empty if our slider was pinned, so the attack was not recorded,
+           // or if the 'loose' piece is a Queen which is not 'loose'.
+           if (b2 && !more_than_one(b2) && !(b2 & pos.pieces(PAWN)))
                score += Loose;
        }
     }
