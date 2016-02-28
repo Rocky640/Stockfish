@@ -102,6 +102,7 @@ namespace {
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
+    Bitboard mobilityArea[COLOR_NB];
     Bitboard pinnedPieces[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
@@ -214,30 +215,38 @@ namespace {
   const int KnightCheck       = 14;
 
 
-  // eval_init() initializes king and attack bitboards for a given color
-  // adding pawn attacks. To be done at the beginning of the evaluation.
+  // eval_init() initializes king and pawn attack bitboards, as well as mobilityArea
 
   template<Color Us>
   void eval_init(const Position& pos, EvalInfo& ei) {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
-    ei.attackedBy[Them][ALL_PIECES] |= b;
-    ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
+    Bitboard b = ei.attackedBy[Them][ALL_PIECES] 
+               = ei.attackedBy[Them][KING] 
+               = pos.attacks_from<KING>(pos.square<KING>(Them));
+    ei.attackedBy[Them][ALL_PIECES] |= ei.attackedBy[Them][PAWN] = ei.pi->pawn_attacks(Them);
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
-        b &= ei.attackedBy[Us][PAWN];
+        b &= ei.pi->pawn_attacks(Us);
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
         ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+
+    // Pawns blocked or on low ranks will be excluded from the mobility area
+    b = pos.pieces(Us, PAWN) & (shift_bb<Down>(pos.pieces()) | LowRanks);
+
+    // Mobility area includes every squares, except those protected by enemy pawns, 
+    // or occupied by our blocked pawns or king.
+    ei.mobilityArea[Us] = ~(ei.attackedBy[Them][PAWN] | pos.square<KING>(Us) | b);
   }
 
 
@@ -245,8 +254,7 @@ namespace {
   // color and type.
 
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
-  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility,
-                        const Bitboard* mobilityArea) {
+  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility) {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
@@ -285,7 +293,7 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
+        int mob = popcount<Pt == QUEEN ? Full : Max15>(b & ei.mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
@@ -357,13 +365,13 @@ namespace {
         Trace::add(Pt, Us, score);
 
     // Recursively call evaluate_pieces() of next piece type until KING is excluded
-    return score - evaluate_pieces<DoTrace, Them, NextPt>(pos, ei, mobility, mobilityArea);
+    return score - evaluate_pieces<DoTrace, Them, NextPt>(pos, ei, mobility);
   }
 
   template<>
-  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*) { return SCORE_ZERO; }
   template<>
-  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*) { return SCORE_ZERO; }
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
@@ -653,12 +661,11 @@ namespace {
     // SpaceMask. A square is unsafe if it is attacked by an enemy
     // pawn, or if it is undefended and attacked by an enemy piece.
     Bitboard safe =   SpaceMask
-                   & ~pos.pieces(Us, PAWN)
-                   & ~ei.attackedBy[Them][PAWN]
+                   &  ei.mobilityArea[Us]
                    & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    // Find all squares which are at most three squares behind some friendly pawn
-    Bitboard behind = pos.pieces(Us, PAWN);
+    // Find all squares which are at most three squares behind some pawn
+    Bitboard behind = pos.pieces(PAWN);
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
@@ -762,25 +769,11 @@ Value Eval::evaluate(const Position& pos) {
   score += ei.pi->pawns_score();
 
   // Initialize attack and king safety bitboards
-  ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
 
-  // Pawns blocked or on ranks 2 and 3 will be excluded from the mobility area
-  Bitboard blockedPawns[] = {
-    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
-  };
-
-  // Do not include in mobility area squares protected by enemy pawns, or occupied
-  // by our blocked pawns or king.
-  Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
-  };
-
   // Evaluate all pieces but king and pawns
-  score += evaluate_pieces<DoTrace>(pos, ei, mobility, mobilityArea);
+  score += evaluate_pieces<DoTrace>(pos, ei, mobility);
   score += mobility[WHITE] - mobility[BLACK];
 
   // Evaluate kings after all other pieces because we need full attack
