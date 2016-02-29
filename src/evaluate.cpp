@@ -645,6 +645,7 @@ namespace {
   Score evaluate_space(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
     const Bitboard SpaceMask =
       Us == WHITE ? (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB)
                   : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
@@ -661,8 +662,12 @@ namespace {
     Bitboard behind = pos.pieces(Us, PAWN);
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
+    
+    // Squares in front of opponent pawns which cannot be pawn attacked 
+    // also deserves an additional bonus
+    behind |= shift_bb<Down>(pos.pieces(Them, PAWN)) & ~ei.pi->pawn_attacks_span(Them);
 
-    // Since SpaceMask[Us] is fully on our half of the board...
+    // Since SpaceMask is fully on our half of the board...
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
 
     // ...count safe + (behind & safe) with a single popcount
