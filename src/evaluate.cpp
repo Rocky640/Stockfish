@@ -663,14 +663,8 @@ namespace {
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
     
-    // Squares in front of opponent pawns which cannot be pawn attacked 
-    // also deserves an additional bonus
-    Bitboard behind2 = pos.pieces(Them, PAWN);
-    behind2 |= (Us == WHITE ? behind2 >>  8 : behind2 <<  8);
-    behind2 |= (Us == WHITE ? behind2 >> 16 : behind2 << 16);
-    behind2 &= ~ei.pi->pawn_attacks_span(Them);
-    
-    behind |= behind2;
+    // Weak opponent pawns in our space also deserves an additional bonus
+    behind |= pos.pieces(Them, PAWN) & ~ei.pi->pawn_attacks_span(Them);
 
     // Since SpaceMask is fully on our half of the board...
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
