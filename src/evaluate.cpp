@@ -645,7 +645,7 @@ namespace {
   Score evaluate_space(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    //const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
     const Bitboard SpaceMask =
       Us == WHITE ? (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB)
                   : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
@@ -658,13 +658,10 @@ namespace {
                    & ~ei.attackedBy[Them][PAWN]
                    & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    // Find all squares which are at most three squares behind some friendly pawn
-    Bitboard behind = pos.pieces(Us, PAWN);
+    // Find all squares which are at most three squares behind some friendly, non isolated pawn
+    Bitboard behind = pos.pieces(Us, PAWN) & ~ei.pi->isolated_pawns(Us);
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
-    
-    // Weak opponent pawns in our space also deserves an additional bonus
-    behind |= pos.pieces(Them, PAWN) & ~ei.pi->pawn_attacks_span(Them);
 
     // Since SpaceMask is fully on our half of the board...
     assert(unsigned(safe >> (Us == WHITE ? 32 : 0)) == 0);
