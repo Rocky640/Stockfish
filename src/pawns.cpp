@@ -172,7 +172,8 @@ namespace {
         // Score this pawn
         if (isolated)
         {
-            e->isolatedPawns[Us] |= s;
+            if (!opposed) 
+                e->isolatedPawns[Us] |= s;
             score -= Isolated[opposed][f];
         }
 
