@@ -77,13 +77,18 @@ namespace {
     // attacked by a given color and piece type (can be also ALL_PIECES).
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
-    // kingRing[color] is the zone around the king which is considered
+    // kingRing[color][0] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
     // squares two ranks in front of the king. For instance, if black's king
-    // is on g8, kingRing[BLACK] is a bitboard containing the squares f8, h8,
+    // is on g8, kingRing[BLACK][0] is a bitboard containing the squares f8, h8,
     // f7, g7, h7, f6, g6 and h6.
-    Bitboard kingRing[COLOR_NB];
+    
+    // kingRing[color][1] is the restricted zone attacked by the King, 
+    // but also any friendly pawns in the 3 next rows in front of this area.
+    // In this test, for a Kg1, the [1] bitboard will contain adjacent squares to 
+    // the King, f1, h1 f2, g2 h2, and any White pawn in the f3-h3-h5-f5 area
+    Bitboard kingRing[COLOR_NB][2];
 
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
@@ -231,13 +236,17 @@ namespace {
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
-        ei.kingRing[Them] = b | shift_bb<Down>(b);
-        b &= ei.attackedBy[Us][PAWN];
+        ei.kingRing[Them][0] = b | shift_bb<Down>(b);
+        ei.kingRing[Them][1] = pos.pieces(Them, PAWN)
+            & (Us == WHITE ? ei.kingRing[Them][0] >>  16 : ei.kingRing[Them][0] <<  16);
+        ei.kingRing[Them][1] |= ei.kingRing[Them][0];
+
+        b = ei.kingRing[Them][1] & ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
         ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
     }
     else
-        ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+        ei.kingRing[Them][0] = ei.kingAttackersCount[Us] = 0;
   }
 
 
@@ -271,11 +280,11 @@ namespace {
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
-        if (b & ei.kingRing[Them])
+        if (b & ei.kingRing[Them][0])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            bb = b & ei.attackedBy[Them][KING];
+            bb = b & ei.kingRing[Them][1];
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
