@@ -85,9 +85,9 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     
     // kingRing[color][1] is the restricted zone attacked by the King, 
-    // but also any friendly pawns in the 3 next rows in front of this area.
+    // but also any friendly pawns in the 2 next rows in front of this area.
     // In this test, for a Kg1, the [1] bitboard will contain adjacent squares to 
-    // the King, f1, h1 f2, g2 h2, and any White pawn in the f3-h3-h5-f5 area
+    // the King, f1, h1 f2, g2 h2, and any White pawn in the f3-h3-h4-f4 area
     Bitboard kingRing[COLOR_NB][2];
 
     // kingAttackersCount[color] is the number of pieces of the given color
@@ -237,9 +237,8 @@ namespace {
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
         ei.kingRing[Them][0] = b | shift_bb<Down>(b);
-        ei.kingRing[Them][1] = pos.pieces(Them, PAWN)
-            & (Us == WHITE ? ei.kingRing[Them][0] >>  16 : ei.kingRing[Them][0] <<  16);
-        ei.kingRing[Them][1] |= ei.kingRing[Them][0];
+        ei.kingRing[Them][1] =  ei.kingRing[Them][0]
+                              | (pos.pieces(Them, PAWN) & shift_bb<Down>(ei.kingRing[Them][0]));
 
         b = ei.kingRing[Them][1] & ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = b ? popcount<Max15>(b) : 0;
