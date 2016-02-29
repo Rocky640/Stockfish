@@ -507,7 +507,7 @@ namespace {
 
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
-          & ~ei.attackedBy[Them][PAWN]
+          &  (ei.pinnedPieces[Them] | ~ei.attackedBy[Them][PAWN])
           &  ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
