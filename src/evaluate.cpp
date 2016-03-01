@@ -151,7 +151,7 @@ namespace {
   // ThreatBySafePawn[PieceType] contains bonuses according to which piece
   // type is attacked by a pawn which is protected or is not attacked.
   const Score ThreatBySafePawn[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 0), S(176, 139), S(131, 127), S(217, 218), S(203, 215) };
+    S(0, 0), S(0, 25), S(176, 139), S(131, 127), S(217, 218), S(203, 215) };
 
   // Threat[by minor/by rook][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
@@ -485,8 +485,9 @@ namespace {
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
-    // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
+    // Non-pawn enemies (or pinned pawns) attacked by a pawn
+    weak = (pos.pieces(Them) ^ (pos.pieces(Them, PAWN) & ~ei.pinnedPieces[Them])) 
+          & ei.attackedBy[Us][PAWN];
 
     if (weak)
     {
@@ -507,7 +508,8 @@ namespace {
 
     // Enemies not defended by a pawn and under our attack
     weak =   pos.pieces(Them)
-          &  (ei.pinnedPieces[Them] | ~ei.attackedBy[Them][PAWN])
+          &  ((ei.pinnedPieces[Them] & ~ei.pi->dble_attacks(Us)) 
+              | ~ei.attackedBy[Them][PAWN])
           &  ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
