@@ -237,7 +237,7 @@ namespace {
     if (pos.non_pawn_material(Us) >= QueenValueMg)
     {
         ei.kingRing[Them][0] = b | shift_bb<Down>(b);
-        ei.kingRing[Them][1] =  ei.kingRing[Them][0]
+        ei.kingRing[Them][1] =  b
                               | (pos.pieces(Them, PAWN) & shift_bb<Down>(ei.kingRing[Them][0]));
 
         b = ei.kingRing[Them][1] & ei.attackedBy[Us][PAWN];
