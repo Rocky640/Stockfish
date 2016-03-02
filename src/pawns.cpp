@@ -41,6 +41,7 @@ namespace {
 
   // Backward pawn penalty by opposed flag
   const Score Backward[2] = { S(56, 33), S(41, 19) };
+  const Score SupportedSentry =  S(10, 10);
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward,
   // by number of pawns it supports [less than 2 / exactly 2].
@@ -100,9 +101,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, backward, supported, phalanx;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, lever, connected;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -145,7 +146,7 @@ namespace {
         if (   (passed | isolated | lever | connected)
             || (ourPawns & pawn_attack_span(Them, s))
             || (relative_rank(Us, s) >= RANK_5))
-            backward = false;
+            backward = 0;
         else
         {
             // We now know there are no friendly pawns beside or behind this
@@ -157,7 +158,9 @@ namespace {
 
             // If we have an enemy pawn in the same or next rank, the pawn is
             // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            backward = b & theirPawns;
+            if (!backward)
+                backward = shift_bb<Up>(b) & theirPawns;
         }
 
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
@@ -173,7 +176,12 @@ namespace {
             score -= Isolated[opposed][f];
 
         else if (backward)
+        {
             score -= Backward[opposed];
+            if (   !opposed 
+                && ((shift_bb<Left>(backward) | shift_bb<Right>(backward)) & theirPawns))
+                score -= SupportedSentry;
+        }
 
         else if (!supported)
             score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
