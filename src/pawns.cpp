@@ -178,9 +178,12 @@ namespace {
         else if (backward)
         {
             score -= Backward[opposed];
+            
+            // The backward bitboard represents the opponent pawn(s) which are holding 
+            // our pawn on the s square
             if (   !opposed 
                 && ((shift_bb<Left>(backward) | shift_bb<Right>(backward)) & theirPawns))
-                score -= SupportedSentry;
+                score += SupportedSentry;
         }
 
         else if (!supported)
