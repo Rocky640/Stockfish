@@ -286,7 +286,13 @@ namespace {
                    | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
-
+        if (Pt == ROOK) {
+            // X-Ray was interesting to compute king attacks, but less precise when considering the true mobility.
+            if (b & mobilityArea[Us] & pos.pieces(Us, ROOK)) mob -= 1;
+            if (b & mobilityArea[Us] & pos.pieces(Us, QUEEN)) mob -= 1;
+            if (mob < 0) mob  = 0;
+        }
+        
         mobility[Us] += MobilityBonus[Pt][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
