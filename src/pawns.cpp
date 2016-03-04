@@ -110,7 +110,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -170,10 +170,17 @@ namespace {
 
         // Score this pawn
         if (isolated)
+        {
+            e->weakPawns[Us] |= s;
             score -= Isolated[opposed][f];
+        }
 
         else if (backward)
+        {
             score -= Backward[opposed];
+            if (!(theirPawns & (s + Up)))
+                e->weakPawns[Us] |= s;
+        }
 
         else if (!supported)
             score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
@@ -269,6 +276,10 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
                   rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked]
                  [std::min(f, FILE_H - f)][rkThem];
   }
+
+  ourPawns &= weakPawns[Us] & DistanceRingBB[ksq][1];
+  if (ourPawns)
+      safety -= Value(6) * popcount<Max15>(ourPawns);
 
   return safety;
 }
