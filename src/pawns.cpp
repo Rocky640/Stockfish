@@ -276,7 +276,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
 
   ourPawns &= weakPawns[Us] & DistanceRingBB[ksq][1];
   if (ourPawns)
-      safety -= Value(6) * popcount<Max15>(ourPawns);
+      safety -= Value(10) * popcount<Max15>(ourPawns);
 
   return safety;
 }
