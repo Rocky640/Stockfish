@@ -170,10 +170,7 @@ namespace {
 
         // Score this pawn
         if (isolated)
-        {
-            e->weakPawns[Us] |= s;
             score -= Isolated[opposed][f];
-        }
 
         else if (backward)
         {
