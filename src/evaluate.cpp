@@ -544,7 +544,7 @@ namespace {
         && ( ~ei.attackedBy[Them][AT_LEAST_2]
             & ei.attackedBy[Them][BISHOP]
             & pos.pieces(Them, PAWN) & HomeRanks))
-        score += BadDefender;
+        score -= BadDefender;
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
