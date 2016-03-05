@@ -181,6 +181,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
+  const Score BadDefender         = S( 8, 12);
   const Score RookOnPawn          = S( 7, 27);
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
@@ -225,6 +226,7 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
+    ei.attackedBy[Us][AT_LEAST_2] = 0;
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
@@ -269,6 +271,7 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        ei.attackedBy[Us][AT_LEAST_2] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
@@ -479,6 +482,10 @@ namespace {
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
+    const Bitboard HomeRanks= (Us == WHITE ? in_front_bb(Them, RANK_5) 
+                                           : in_front_bb(Us, RANK_4));
+    const Bitboard LowRanks = (Us == WHITE ? in_front_bb(Them, RANK_3) 
+                                           : in_front_bb(Us, RANK_6));
 
     enum { Minor, Rook };
 
@@ -529,6 +536,15 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    // Find cases where opponent have only one Bishop
+    // which is the single defender of a low rank pawn and is defending from behind
+    if (pos.count<BISHOP>(Them) == 1
+        && (pos.pieces(Them, BISHOP) & LowRanks)
+        && ( ~ei.attackedBy[Them][AT_LEAST_2]
+            & ei.attackedBy[Them][BISHOP]
+            & pos.pieces(Them, PAWN) & HomeRanks))
+        score += BadDefender;
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
