@@ -482,8 +482,8 @@ namespace {
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
-    const Bitboard HomeRanks= (Us == WHITE ? in_front_bb(Them, RANK_5) 
-                                           : in_front_bb(Us, RANK_4));
+    const Bitboard HomeRanks= (Us == WHITE ? in_front_bb(Them, RANK_4) 
+                                           : in_front_bb(Us, RANK_5));
     const Bitboard LowRanks = (Us == WHITE ? in_front_bb(Them, RANK_3) 
                                            : in_front_bb(Us, RANK_6));
 
