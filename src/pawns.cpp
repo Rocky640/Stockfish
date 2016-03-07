@@ -40,7 +40,7 @@ namespace {
       S(33, 28), S(33, 28), S(30, 28), S(21, 24) } };
 
   // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(56, 33), S(41, 19) };
+  const Score Backward[2] = { S(56, 21), S(41, 7) };
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward,
   // by number of pawns it supports [less than 2 / exactly 2].
@@ -58,6 +58,9 @@ namespace {
   const Score Lever[RANK_NB] = {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
     S(17, 16), S(33, 32), S(0, 0), S(0, 0) };
+
+  // Bonus for each square controlled in the opponent side by our pawns
+  const Score Control = S(20,20);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -99,11 +102,12 @@ namespace {
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+    const Square DownRight = (Us == WHITE ? DELTA_SE : DELTA_NW);
+    const Square DownLeft  = (Us == WHITE ? DELTA_SW : DELTA_NE);
 
     Bitboard b, neighbours, doubled, supported, phalanx;
     Square s;
     bool passed, isolated, opposed, backward, lever, connected;
-    Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
 
@@ -114,8 +118,13 @@ namespace {
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
+    e->pawnAttacks[Them] = shift_bb<DownRight>(theirPawns) | shift_bb<DownLeft>(theirPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount<Max15>(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+
+    b =  in_front_bb(Us, relative_rank(Us, RANK_4))
+       & e->pawnAttacks[Us] & ~e->pawnAttacks[Them];
+    Score score = Control * popcount<Full>(b);
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
