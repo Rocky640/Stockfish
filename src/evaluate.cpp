@@ -335,12 +335,17 @@ namespace {
                 if (alignedPawns)
                     score += RookOnPawn * popcount<Max15>(alignedPawns);
             }
-
+            
+          
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pi->semiopen_file(Them, file_of(s))];
+            
+            // Penalty for being in the way of friendly pawn
+            else if (forward_bb(Them, s) & pos.pieces(Us, PAWN))
+                score -= RookOnPawn;
 
-            // Penalize when trapped by the king, even more if the king cannot castle
+            // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
             {
                 Square ksq = pos.square<KING>(Us);
