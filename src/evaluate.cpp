@@ -285,6 +285,12 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
+        if (Pt == ROOK || Pt == QUEEN)
+            // When piece is not blocking, but aligned in front of friendly pawn,
+            // do not count that pawn for the mobility calculation
+            // since a pawn push can only reduce the mobility
+            b &= ~(b & forward_bb(Them, s) & pos.pieces(Us, PAWN));
+
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
