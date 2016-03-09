@@ -182,6 +182,7 @@ namespace {
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 7, 27);
+  const Score RookInFront         = S(13, 20);
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
@@ -285,12 +286,6 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        if (Pt == ROOK || Pt == QUEEN)
-            // When piece is not blocking, but aligned in front of friendly pawn,
-            // do not count that pawn for the mobility calculation
-            // since a pawn push can only reduce the mobility
-            b &= ~(b & forward_bb(Them, s) & pos.pieces(Us, PAWN));
-
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
@@ -345,6 +340,10 @@ namespace {
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pi->semiopen_file(Them, file_of(s))];
+
+            // Penalty for being in front of friendly pawn
+            else if (forward_bb(Them, s) & pos.pieces(Us, PAWN))
+                score -= RookInFront;
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
