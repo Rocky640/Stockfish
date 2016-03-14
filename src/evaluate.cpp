@@ -180,7 +180,8 @@ namespace {
 
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
-  const Score BishopPawns         = S( 8, 12);
+  const Score BishopPawns         = S( 6, 10);
+  const Score BishopCenterPawns   = S(10, 14);
   const Score RookOnPawn          = S( 7, 27);
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
@@ -309,7 +310,10 @@ namespace {
 
             // Penalty for pawns on the same color square as the bishop
             if (Pt == BISHOP)
-                score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
+            {
+                score -=   BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s)
+                         + BishopCenterPawns * ei.pi->pawns_on_same_color_center_squares(Us, s);
+            }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
