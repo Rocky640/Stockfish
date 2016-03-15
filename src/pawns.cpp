@@ -108,7 +108,7 @@ namespace {
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
     const Bitboard Center = 
        (Us == WHITE ? in_front_bb(Them, RANK_5) & (FileCBB | FileDBB | FileEBB | FileFBB)
-                    : in_front_bb(Us  , RANK_4) & (FileCBB | FileDBB | FileEBB | FileFBB));
+                    : in_front_bb(Them, RANK_4) & (FileCBB | FileDBB | FileEBB | FileFBB));
 
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
