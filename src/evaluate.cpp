@@ -751,10 +751,16 @@ Value Eval::evaluate(const Position& pos) {
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
 
-  // Pawns blocked or on ranks 2 and 3 will be excluded from the mobility area
+   // Squares on rank 2 or 3 of which front square is controlled by opponent pawn.
+  Bitboard holded[] = {
+    shift_bb<DELTA_S>(ei.attackedBy[BLACK][PAWN]) & (Rank2BB | Rank3BB),
+    shift_bb<DELTA_N>(ei.attackedBy[WHITE][PAWN]) & (Rank7BB | Rank6BB),
+  };
+
+  // Pawns blocked or holded on rank 2 or 3 will be excluded from the mobility area
   Bitboard blockedPawns[] = {
-    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | Rank2BB | Rank3BB),
-    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | Rank7BB | Rank6BB)
+    pos.pieces(WHITE, PAWN) & (shift_bb<DELTA_S>(pos.pieces()) | holded[WHITE]),
+    pos.pieces(BLACK, PAWN) & (shift_bb<DELTA_N>(pos.pieces()) | holded[BLACK])
   };
 
   // Do not include in mobility area squares protected by enemy pawns, or occupied
