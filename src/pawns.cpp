@@ -39,8 +39,12 @@ namespace {
     { S(21, 24), S(30, 28), S(33, 28), S(33, 28),
       S(33, 28), S(33, 28), S(30, 28), S(21, 24) } };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(56, 33), S(41, 19) };
+  // Backward pawn penalty by opposed and phalanx 
+  // When phalanx, this is a special semi backward case where
+  // if the other member of the duo moves up the pawn will become a real backward
+  const Score Backward[2][2] = { 
+      { S(56, 33), S(49, 26) },   //non opposed
+      { S(41, 19), S(34, 12) } }; //opposed
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward,
   // by number of pawns it supports [less than 2 / exactly 2].
@@ -100,9 +104,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, phalanx, backward;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, lever, connected;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -123,6 +127,7 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank r = relative_rank(Us, s);
 
         e->semiopenFiles[Us] &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -139,25 +144,37 @@ namespace {
         isolated    =  !neighbours;
 
         // Test for backward pawn.
-        // If the pawn is passed, isolated, lever or connected it cannot be
-        // backward. If there are friendly pawns behind on adjacent files
-        // or if it is sufficiently advanced, it cannot be backward either.
-        if (   (passed | isolated | lever | connected)
+        // If the pawn is passed, isolated, lever it cannot be backward.
+        // If there are friendly pawns behind on adjacent files or if it
+        // is sufficiently advanced, it cannot be backward either.
+        if (   (passed | isolated | lever)
             || (ourPawns & pawn_attack_span(Them, s))
-            || (relative_rank(Us, s) >= RANK_5))
-            backward = false;
+            || (r >= RANK_5))
+            backward = 0;
         else
         {
-            // We now know there are no friendly pawns beside or behind this
-            // pawn on adjacent files. We now check whether the pawn is
-            // backward by looking in the forward direction on the adjacent
-            // files, and picking the closest pawn there.
-            b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);
-            b = pawn_attack_span(Us, s) & rank_bb(backmost_sq(Us, b));
+            // We now know there are no friendly pawns behind this
+            // pawn on adjacent files and since it is not isolated, 
+            // there is some on same rank or in front.
 
-            // If we have an enemy pawn in the same or next rank, the pawn is
-            // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            // Look at side pawns on the front rows
+            // (If we have a phalanx, we pretend the side neighbour is one square up.)
+            b = (ourPawns | theirPawns | shift_bb<Up>(phalanx)) & pawn_attack_span(Us, s);
+
+            // Now pick the closest rank
+            b = rank_bb(backmost_sq(Us, b));
+
+            // If there is a side enemy pawn on that rank or the next, the pawn is
+            // backward because it cannot advance level with his next neighbour without being captured.
+            backward = (b | shift_bb<Up>(b)) & theirPawns & adjacent_files_bb(f);
+
+            // In the special phalanx case, it will be a "semi backward"
+            // only under some special conditions
+            if (phalanx && (    !more_than_one(backward) 
+                            || (shift_bb<Up>(phalanx) & neighbours) 
+                            || (backward & e->pawnAttacks[Us])
+                            || (r == RANK_4)))
+                backward = 0;
         }
 
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
@@ -173,19 +190,19 @@ namespace {
             score -= Isolated[opposed][f];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= Backward[opposed][!!phalanx];
 
         else if (!supported)
             score -= Unsupported[more_than_one(neighbours & rank_bb(s + Up))];
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][more_than_one(supported)][r];
 
         if (doubled)
             score -= Doubled[f] / distance<Rank>(s, frontmost_sq(Us, doubled));
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[r];
     }
 
     b = e->semiopenFiles[Us] ^ 0xFF;
