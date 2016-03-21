@@ -281,8 +281,6 @@ namespace {
             if (bb)
                 ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
         }
-        else if (!(b & ei.kingRing[Us]))
-            ei.outOfPlay[Us] += 1;
 
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
@@ -305,6 +303,9 @@ namespace {
                 if (bb)
                    score += ReachableOutpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
             }
+            
+            if (!(b & (ei.kingRing[Us] | ei.kingRing[Them])))
+                ei.outOfPlay[Us] += 1;
 
             // Bonus when behind a pawn
             if (    relative_rank(Us, s) < RANK_5
