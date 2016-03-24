@@ -44,7 +44,7 @@ namespace {
   // if the other member of the duo moves up the pawn will become a real backward
   const Score Backward[2][2] = { 
       { S(56, 33), S(49, 26) },   //non opposed
-      { S(41, 19), S(34, 12) } }; //opposed
+      { S(41, 19), S(21, 12) } }; //opposed
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward,
   // by number of pawns it supports [less than 2 / exactly 2].
