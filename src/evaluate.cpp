@@ -414,7 +414,7 @@ namespace {
                 | ei.attackedBy[Them][KING];
 
             if (b)
-                attackUnits += QueenContactCheck * popcount<Max15>(b);
+                attackUnits += QueenContactCheck, score -= Checked;
         }
 
         // Analyse the enemy's safe distance checks for sliders and knights
