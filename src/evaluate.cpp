@@ -398,7 +398,7 @@ namespace {
         // the pawn shelter (current 'score' value).
         attackUnits =  std::min(72, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
                      +  9 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 27 * popcount<Max15>(undefended)
+                     + 27 * popcount<Max15>(undefended & ~pos.pieces(Them, PAWN))
                      + 11 * !!ei.pinnedPieces[Us]
                      - 64 * !pos.count<QUEEN>(Them)
                      - mg_value(score) / 8;
