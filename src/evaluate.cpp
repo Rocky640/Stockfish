@@ -424,8 +424,8 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq) & safe;
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN])
-            attackUnits += QueenCheck, score -= Checked;
+        if ((b = (b1 | b2) & ei.attackedBy[Them][QUEEN]))
+            attackUnits += QueenCheck * popcount<Max15>(b), score -= Checked;
 
         // Enemy rooks safe checks
         if (b1 & ei.attackedBy[Them][ROOK])
