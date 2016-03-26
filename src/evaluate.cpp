@@ -161,6 +161,10 @@ namespace {
     { S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48) }  // by Rook
   };
 
+  // Hanging[on one/on many] contains bonuses for attacks on
+  // pawns or pieces which are not defended at all.
+  const Score Hanging[2] = { S(48, 28), S(104, 64) };
+  
   // ThreatByKing[on one/on many] contains bonuses for King attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
@@ -185,7 +189,6 @@ namespace {
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
-  const Score Hanging             = S(48, 28);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
 
@@ -275,9 +278,7 @@ namespace {
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            bb = b & ei.attackedBy[Them][KING];
-            if (bb)
-                ei.kingAdjacentZoneAttacksCount[Us] += popcount<Max15>(bb);
+            ei.kingAdjacentZoneAttacksCount[Us] += !!(b & ei.attackedBy[Them][KING]);
         }
 
         if (Pt == QUEEN)
@@ -414,7 +415,7 @@ namespace {
                 | ei.attackedBy[Them][KING];
 
             if (b)
-                attackUnits += QueenContactCheck * popcount<Max15>(b);
+                attackUnits += QueenContactCheck;
         }
 
         // Analyse the enemy's safe distance checks for sliders and knights
@@ -507,7 +508,7 @@ namespace {
 
         b = weak & ~ei.attackedBy[Them][ALL_PIECES];
         if (b)
-            score += Hanging * popcount<Max15>(b);
+            score += Hanging[more_than_one(b)];
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
@@ -527,7 +528,7 @@ namespace {
        & ~ei.attackedBy[Us][PAWN];
 
     if (b)
-        score += ThreatByPawnPush * popcount<Max15>(b);
+        score += ThreatByPawnPush;
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
@@ -651,10 +652,9 @@ namespace {
 
     // ...count safe + (behind & safe) with a single popcount
     int bonus = popcount<Full>((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
-                + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
+    int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us);
 
-    return make_score(bonus * weight * weight * 2 / 11, 0);
+    return make_score(bonus * weight * weight, 0);
   }
 
 
