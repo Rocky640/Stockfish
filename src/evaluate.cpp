@@ -185,7 +185,7 @@ namespace {
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(70, 63);
-  const Score LooseEnemies        = S( 0, 25);
+  const Score LoosePawns          = S( 0, 25);
   const Score Hanging             = S(48, 28);
   const Score ThreatByPawnPush    = S(31, 19);
   const Score Unstoppable         = S( 0, 20);
@@ -470,11 +470,6 @@ namespace {
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
-    // Small bonus if the opponent has loose pawns or pieces
-    if (   (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
-        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]))
-        score += LooseEnemies;
-
     // Non-pawn enemies attacked by a pawn
     weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
 
@@ -519,6 +514,11 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    // Small bonus if the opponent has loose pawns
+    if (   pos.pieces(Them, PAWN)
+        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]))
+        score += LoosePawns;
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
