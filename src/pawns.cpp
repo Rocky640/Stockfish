@@ -100,9 +100,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, doubled, supported, phalanx;
+    Bitboard b, neighbours, doubled, supported, phalanx, backward;
     Square s;
-    bool passed, isolated, opposed, backward, lever, connected;
+    bool passed, isolated, opposed, lever, connected;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -145,19 +145,19 @@ namespace {
         if (   (passed | isolated | lever | connected)
             || (ourPawns & pawn_attack_span(Them, s))
             || (relative_rank(Us, s) >= RANK_5))
-            backward = false;
+            backward = 0;
         else
         {
             // We now know there are no friendly pawns beside or behind this
             // pawn on adjacent files. We now check whether the pawn is
             // backward by looking in the forward direction on the adjacent
-            // files, and picking the closest pawn there.
-            b = pawn_attack_span(Us, s) & (ourPawns | theirPawns);
-            b = pawn_attack_span(Us, s) & rank_bb(backmost_sq(Us, b));
+            // files and the front file, and picking the closest pawn there.
+            b = passed_pawn_mask(Us, s) & rank_bb(backmost_sq(Us, neighbours));
 
             // If we have an enemy pawn in the same or next rank, the pawn is
-            // backward because it cannot advance without being captured.
-            backward = (b | shift_bb<Up>(b)) & theirPawns;
+            // backward because it is stopped or can be captured before 
+            // making a phalanx with closest neighbour.
+            backward = (b | shift_bb<Up>(b & adjacent_files_bb(f))) & theirPawns;
         }
 
         assert(opposed | passed | (pawn_attack_span(Us, s) & theirPawns));
