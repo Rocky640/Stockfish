@@ -103,6 +103,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Score worstMob[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
   };
@@ -223,7 +224,9 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Score bigScore = make_score(300, 0);
 
+    ei.worstMob[Us] = bigScore;
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
@@ -251,6 +254,7 @@ namespace {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
+    Score thismobscore;
 
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
@@ -288,10 +292,13 @@ namespace {
 
         int mob = popcount<Pt == QUEEN ? Full : Max15>(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt][mob];
+        mobility[Us] += thismobscore = MobilityBonus[Pt][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+            if (thismobscore < ei.worstMob[Us])
+                ei.worstMob[Us] = thismobscore;
+
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
             if (bb & s)
@@ -660,7 +667,7 @@ namespace {
     int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
                 + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
 
-    return make_score(bonus * weight * weight * 2 / 11, 0);
+    return make_score(bonus * weight * weight * 2 / 11 + (weight > 4 ? mg_value(ei.worstMob[Us]) / 2 : 0) , 0);
   }
 
 
