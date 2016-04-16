@@ -188,6 +188,7 @@ namespace {
   const Score LooseEnemies        = S( 0, 25);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score KingWalk            = S( 0, 40);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -380,17 +381,17 @@ namespace {
 
     // King shelter and enemy pawns storm
     Score score = ei.pi->king_safety<Us>(pos, ksq);
+    
+    // Find the attacked squares which are defended only by the king...
+    undefended =  ei.attackedBy[Them][ALL_PIECES]
+                & ei.attackedBy[Us][KING]
+                & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
+                    | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
+                    | ei.attackedBy[Us][QUEEN]);
 
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
-        // Find the attacked squares which are defended only by the king...
-        undefended =  ei.attackedBy[Them][ALL_PIECES]
-                    & ei.attackedBy[Us][KING]
-                    & ~(  ei.attackedBy[Us][PAWN]   | ei.attackedBy[Us][KNIGHT]
-                        | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]
-                        | ei.attackedBy[Us][QUEEN]);
-
         // ... and those which are not defended at all in the larger king ring
         b =   ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES] 
             & ei.kingRing[Us] & ~pos.pieces(Them);
@@ -447,6 +448,18 @@ namespace {
         // array and subtract the score from the evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
     }
+
+    // Find squares where their King can move and keep same distance with our king
+    // or move closer
+    int dist = distance(pos.square<KING>(Them), ksq) - 1;
+    b = (DistanceRingBB[ksq][dist] | (dist > 1 ? DistanceRingBB[ksq][dist - 1] : 0))
+        & ei.attackedBy[Them][KING]
+        & ~(pos.pieces(Them) | ei.attackedBy[Us][ALL_PIECES]);
+
+    // Penalize for each such square according to distance, 
+    // and some more if our King has some defensive duties.
+    if (b)
+        score -= KingWalk * (popcount(b) + !!(undefended & pos.pieces(Us))) / dist;
 
     if (DoTrace)
         Trace::add(KING, Us, score);
@@ -826,7 +839,7 @@ Value Eval::evaluate(const Position& pos) {
                       , evaluate_space<BLACK>(pos, ei));
       Trace::add(TOTAL, score);
   }
-
+  
   return (pos.side_to_move() == WHITE ? v : -v) + Eval::Tempo; // Side to move point of view
 }
 
