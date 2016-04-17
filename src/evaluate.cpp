@@ -188,7 +188,6 @@ namespace {
   const Score LooseEnemies        = S( 0, 25);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
-  const Score KingWalk            = S( 0, 20);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -460,7 +459,7 @@ namespace {
 
         // Penalize for each such square according to distance
         if (b)
-            score -= (KingWalk * popcount(b)) / dist;
+            score -= make_score(0, 8 * popcount(b) / dist);
     }
 
     if (DoTrace)
