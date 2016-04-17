@@ -449,17 +449,16 @@ namespace {
         // array and subtract the score from the evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
     }
-    else 
+    else if (!ei.kingRing[Us])
     {
-        // Find squares where enemy King can keep same distance with our king
+        // Find squares where the enemy King can keep same distance with our king
         // or get closer
         int dist = distance(pos.square<KING>(Them), ksq) - 1;
         b = (DistanceRingBB[ksq][dist] | (dist > 1 ? DistanceRingBB[ksq][dist - 1] : 0))
             & ei.attackedBy[Them][KING]
             & ~(pos.pieces(Them) | ei.attackedBy[Us][ALL_PIECES]);
 
-        // Penalize for each such square according to distance, 
-        // and some more if our King has some defensive duties.
+        // Penalize for each such square according to distance
         if (b)
             score -= (KingWalk * popcount(b)) / dist;
     }
@@ -469,7 +468,6 @@ namespace {
 
     return score;
   }
-
 
   // evaluate_threats() assigns bonuses according to the types of the attacking
   // and the attacked pieces.
