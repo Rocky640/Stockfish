@@ -451,10 +451,10 @@ namespace {
     else if (!ei.kingRing[Us])
     {
         // Bonus for closing in against a weak opponent pawn
-        const int PushClose[8] = { 60, 50, 40, 30, 20, 10, 5, 0};
+        const int PushClose[8] = { 30, 25, 20, 15, 10, 5, 2, 0};
         b = pos.pieces(Them, PAWN) & ei.attackedBy[Them][KING] & ~ei.attackedBy[Them][PAWN];
         if (b)
-            score += make_score(0, PushClose[distance<File>(ksq, pos.square<KING>(Them))]
+            score += make_score(0, PushClose[distance(ksq, pos.square<KING>(Them)) - 2]
                                  + PushClose[distance<Rank>(ksq, backmost_sq(Them, b))]);
     }
 
