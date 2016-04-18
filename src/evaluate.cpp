@@ -454,7 +454,7 @@ namespace {
         const int PushClose[8] = { 60, 50, 40, 30, 20, 10, 5, 0};
         b = pos.pieces(Them, PAWN) & ei.attackedBy[Them][KING] & ~ei.attackedBy[Them][PAWN];
         if (b)
-            score += make_score(0, PushClose[distance<File>(ksq, pos.square<KING>(Them)) - 2]
+            score += make_score(0, PushClose[distance<File>(ksq, pos.square<KING>(Them))]
                                  + PushClose[distance<Rank>(ksq, backmost_sq(Them, b))]);
     }
 
