@@ -188,6 +188,7 @@ namespace {
   const Score LooseEnemies        = S( 0, 25);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score MinorControl        = S(10, 10);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -783,6 +784,15 @@ Value Eval::evaluate(const Position& pos) {
   score +=  evaluate_threats<WHITE, DoTrace>(pos, ei)
           - evaluate_threats<BLACK, DoTrace>(pos, ei);
 
+  // Squares which are challenged by minors from both sides
+  Bitboard b =  (ei.attackedBy[WHITE][KNIGHT] | ei.attackedBy[WHITE][BISHOP])
+              & (ei.attackedBy[BLACK][KNIGHT] | ei.attackedBy[BLACK][BISHOP]);
+  if (b) 
+  {
+        score +=  MinorControl
+                * (popcount(b & in_front_bb(WHITE, RANK_4)) - popcount(b & in_front_bb(BLACK, RANK_5)));
+  }
+
   // Evaluate passed pawns, we need full attack information including king
   score +=  evaluate_passed_pawns<WHITE, DoTrace>(pos, ei)
           - evaluate_passed_pawns<BLACK, DoTrace>(pos, ei);
@@ -790,7 +800,6 @@ Value Eval::evaluate(const Position& pos) {
   // If both sides have only pawns, score for potential unstoppable pawns
   if (!pos.non_pawn_material(WHITE) && !pos.non_pawn_material(BLACK))
   {
-      Bitboard b;
       if ((b = ei.pi->passed_pawns(WHITE)) != 0)
           score += Unstoppable * int(relative_rank(WHITE, frontmost_sq(WHITE, b)));
 
