@@ -778,7 +778,7 @@ namespace {
     if (   !PvNode
         &&  depth >= 2 * ONE_PLY
         &&  eval >= beta
-        &&  pos.non_pawn_material(pos.side_to_move()) > BishopValueMg)
+        &&  pos.non_pawn_material(pos.side_to_move()) > RookValueEg)
     {
         ss->currentMove = MOVE_NULL;
         ss->counterMoves = nullptr;
