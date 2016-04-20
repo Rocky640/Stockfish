@@ -790,7 +790,8 @@ Value Eval::evaluate(const Position& pos) {
   if (b) 
   {
         score +=  MinorControl
-                * (popcount(b & in_front_bb(WHITE, RANK_4)) - popcount(b & in_front_bb(BLACK, RANK_5)));
+                * (  popcount(b & in_front_bb(WHITE, RANK_4) & ~ei.attackedBy[BLACK][PAWN]) 
+                   - popcount(b & in_front_bb(BLACK, RANK_5) & ~ei.attackedBy[WHITE][PAWN]));
   }
 
   // Evaluate passed pawns, we need full attack information including king
