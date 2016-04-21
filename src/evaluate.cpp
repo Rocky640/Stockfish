@@ -644,8 +644,7 @@ namespace {
     // pawn, or if it is undefended and attacked by an enemy piece.
     Bitboard safe =   SpaceMask
                    & ~pos.pieces(Us, PAWN)
-                   & ~ei.attackedBy[Them][PAWN]
-                   & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+                   & ~ei.attackedBy[Them][PAWN];
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
