@@ -551,6 +551,7 @@ namespace {
   Score evaluate_passed_pawns(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Rank LastRank = (Us == WHITE ? RANK_8 : RANK_1);
 
     Bitboard b, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
@@ -570,15 +571,12 @@ namespace {
 
         if (rr)
         {
+            Square queenSq = make_square(file_of(s), LastRank );
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
-
-            // If blockSq is not the queening square then consider also a second push
-            if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
+            ebonus +=  distance(pos.square<KING>(Them), queenSq) * 5 * rr
+                     - distance(pos.square<KING>(Us  ), queenSq) * 2 * rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
