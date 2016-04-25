@@ -560,7 +560,7 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
+            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 4 * rr
                      - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
