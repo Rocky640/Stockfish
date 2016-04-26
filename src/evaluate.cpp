@@ -588,6 +588,7 @@ namespace {
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
+                unsafeSquares &= ~ei.attackedBy[Us][PAWN];
                 int k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
 
                 // If the path to the queen is fully defended, assign a big bonus.
