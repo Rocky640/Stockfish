@@ -563,11 +563,13 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
+            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr;
+            
+            if (!(ei.attackedBy[Us][PAWN] & blockSq))
+                ebonus -= distance(pos.square<KING>(Us), blockSq) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
-            if (relative_rank(Us, blockSq) != RANK_8)
+            if ((relative_rank(Us, blockSq) != RANK_8) && !(ei.attackedBy[Us][PAWN] & (blockSq + pawn_push(Us))))
                 ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
 
             // If the pawn is free to advance, then increase the bonus
