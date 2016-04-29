@@ -103,6 +103,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard pinnedSquares[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
   };
@@ -185,6 +186,7 @@ namespace {
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
   const Score ThreatByHangingPawn = S(71, 61);
+  const Score PinnedSquares       = S(10, 30);
   const Score LooseEnemies        = S( 0, 25);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
@@ -223,9 +225,14 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Square Left = (Us == WHITE ? DELTA_NW : DELTA_SE);
+    const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
+    Bitboard b = ei.pinnedPieces[Us] & pos.pieces(Us, PAWN);
+    ei.pinnedSquares[Us] = b ? (shift_bb<Left>(b) | shift_bb<Right>(b)) & ~PseudoAttacks[BISHOP][pos.square<KING>(Us)] : 0;
+
+    b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
@@ -267,8 +274,10 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                          : pos.attacks_from<Pt>(s);
 
-        if (ei.pinnedPieces[Us] & s)
+        if (ei.pinnedPieces[Us] & s) {
+            ei.pinnedSquares[Us] |= b & ~LineBB[pos.square<KING>(Us)][s];
             b &= LineBB[pos.square<KING>(Us)][s];
+        }
 
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
@@ -513,6 +522,9 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+    
+    // Bonus for taking advantage of squares which are pinned
+    score += PinnedSquares * popcount(ei.pinnedSquares[Them] & pos.pieces(Us));
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
