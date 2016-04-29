@@ -541,6 +541,7 @@ namespace {
   Score evaluate_passed_pawns(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
 
     Bitboard b, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
@@ -569,6 +570,9 @@ namespace {
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
                 ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
+            
+            if (pawnAttacksBB[s] & pos.pieces())
+                ebonus += rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
