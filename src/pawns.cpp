@@ -57,6 +57,9 @@ namespace {
   const Score Lever[RANK_NB] = {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
     S(17, 16), S(33, 32), S(0, 0), S(0, 0) };
+    
+  // Bucket bonus
+  const Score Bucket = S(8, 8);
 
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank]
   const Value ShelterWeakness[][RANK_NB] = {
@@ -92,7 +95,7 @@ namespace {
   #undef V
 
   template<Color Us>
-  Score evaluate(const Position& pos, Pawns::Entry* e) {
+  Score evaluate(const Position& pos, Pawns::Entry* e, int* bucket) {
 
     const Color  Them  = (Us == WHITE ? BLACK    : WHITE);
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
@@ -115,6 +118,8 @@ namespace {
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+    
+    bucket[0] = bucket[1] = bucket[2] = 0;
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -122,6 +127,8 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        
+        bucket[f < FILE_D ? 0 : f > FILE_E ? 2 : 1] += 1;
 
         e->semiopenFiles[Us] &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -208,6 +215,9 @@ void init()
   }
 }
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 /// Pawns::probe() looks up the current position's pawns configuration in
 /// the pawns hash table. It returns a pointer to the Entry if the position
@@ -221,9 +231,25 @@ Entry* probe(const Position& pos) {
 
   if (e->key == key)
       return e;
-
+  int bucket[2][3];
+  
+  
+  
   e->key = key;
-  e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
+  e->score = evaluate<WHITE>(pos, e, bucket[WHITE]) - evaluate<BLACK>(pos, e, bucket[BLACK]);
+  
+  int bk = 0;
+  // Bonus for minority attacks on files ABC or FGH
+  if (abs(bucket[WHITE][0]-bucket[BLACK][0])==1) 
+      bk -= sgn(bucket[WHITE][0] - bucket[BLACK][0]);
+  if (abs(bucket[WHITE][2]-bucket[BLACK][2])==1) 
+      bk -= sgn(bucket[WHITE][2] - bucket[BLACK][2]);
+  
+  // Bonus for majority in the center files (DE)
+  bk += sgn(bucket[WHITE][1] - bucket[BLACK][1]);
+  
+  e->score += bk * Bucket;
+  
   e->asymmetry = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
   return e;
 }
