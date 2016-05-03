@@ -184,6 +184,7 @@ namespace {
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
   const Score Checked             = S(20, 20);
+  const Score Exposed             = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score LooseEnemies        = S( 0, 25);
   const Score Hanging             = S(48, 27);
@@ -417,24 +418,31 @@ namespace {
         // Analyse the enemy's safe distance checks for sliders and knights
         safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
 
-        b1 = pos.attacks_from<ROOK  >(ksq) & safe;
-        b2 = pos.attacks_from<BISHOP>(ksq) & safe;
+        b1 = pos.attacks_from<ROOK  >(ksq);
+        b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN])
+        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
             attackUnits += QueenCheck, score -= Checked;
 
-        // Enemy rooks safe checks
-        if (b1 & ei.attackedBy[Them][ROOK])
+        // Enemy rooks safe and unsafe (pawn excluded) checks
+        if (b1 & ei.attackedBy[Them][ROOK] & safe)
             attackUnits += RookCheck, score -= Checked;
+        else if (b1 & ei.attackedBy[Them][ROOK] & ~ei.attackedBy[Them][PAWN])
+            score -= Exposed;
 
-        // Enemy bishops safe checks
+        // Enemy bishops safe and unsafe (pawn excluded) checks
         if (b2 & ei.attackedBy[Them][BISHOP])
             attackUnits += BishopCheck, score -= Checked;
+        else if (b2 & ei.attackedBy[Them][BISHOP] & ~ei.attackedBy[Them][PAWN])
+            score -= Exposed;
 
-        // Enemy knights safe checks
-        if (pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT] & safe)
+        // Enemy knights safe and unsafe checks
+        b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
+        if (b & safe)
             attackUnits += KnightCheck, score -= Checked;
+        else if (b)
+            score -= Exposed;
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from the evaluation.
