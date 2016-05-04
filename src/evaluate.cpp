@@ -368,8 +368,9 @@ namespace {
   Score evaluate_king(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Square Up = (Us == WHITE ? DELTA_N : DELTA_S);
 
-    Bitboard undefended, b, b1, b2, safe;
+    Bitboard undefended, b, b1, b2, safe, pawnsafe;
     int attackUnits;
     const Square ksq = pos.square<KING>(Us);
 
@@ -415,8 +416,10 @@ namespace {
             attackUnits += QueenContactCheck * popcount(b);
         }
 
-        // Analyse the enemy's safe distance checks for sliders and knights
-        safe = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
+        // Analyse the enemy's distance checks by sliders and knights on safe and available squares
+        // and some other checks by rook and minors on pawn-safe and not pawn blocked squares.
+        safe     = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
+        pawnsafe = ~(ei.attackedBy[Us][PAWN]       | (pos.pieces(Them, PAWN) & shift_bb<Up>(pos.pieces(PAWN))));
 
         b1 = pos.attacks_from<ROOK  >(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
@@ -425,23 +428,23 @@ namespace {
         if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
             attackUnits += QueenCheck, score -= Checked;
 
-        // Enemy rooks safe and unsafe (pawn excluded) checks
+        // Enemy rooks safe and pawn-safe checks
         if (b1 & ei.attackedBy[Them][ROOK] & safe)
             attackUnits += RookCheck, score -= Checked;
-        else if (b1 & ei.attackedBy[Them][ROOK] & ~ei.attackedBy[Them][PAWN])
+        else if (b1 & ei.attackedBy[Them][ROOK] & pawnsafe)
             score -= Exposed;
 
-        // Enemy bishops safe and unsafe (pawn excluded) checks
-        if (b2 & ei.attackedBy[Them][BISHOP])
+        // Enemy bishops safe and pawn-safe checks
+        if (b2 & ei.attackedBy[Them][BISHOP] & safe)
             attackUnits += BishopCheck, score -= Checked;
-        else if (b2 & ei.attackedBy[Them][BISHOP] & ~ei.attackedBy[Them][PAWN])
+        else if (b2 & ei.attackedBy[Them][BISHOP] & pawnsafe)
             score -= Exposed;
 
-        // Enemy knights safe and unsafe checks
+        // Enemy knights safe and pawn-safe checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
             attackUnits += KnightCheck, score -= Checked;
-        else if (b)
+        else if (b & pawnsafe)
             score -= Exposed;
 
         // Finally, extract the king danger score from the KingDanger[]
