@@ -368,7 +368,6 @@ namespace {
   Score evaluate_king(const Position& pos, const EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Up = (Us == WHITE ? DELTA_N : DELTA_S);
 
     Bitboard undefended, b, b1, b2, safe, other;
     int attackUnits;
@@ -420,9 +419,8 @@ namespace {
         safe  = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
         
         // ... and some other potential checks, only requiring the square to be 
-        // safe from pawn-attacks, and not being occupied by a blocked pawn.
-        other = ~(ei.attackedBy[Us][PAWN] 
-               | (pos.pieces(Them, PAWN) & shift_bb<Up>(pos.pieces(PAWN))));
+        // safe from pawn-attacks, and not being occupied by a pawn.
+        other = ~(ei.attackedBy[Us][PAWN] | pos.pieces(Them, PAWN));
 
         b1 = pos.attacks_from<ROOK  >(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
