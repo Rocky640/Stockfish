@@ -370,7 +370,7 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up = (Us == WHITE ? DELTA_N : DELTA_S);
 
-    Bitboard undefended, b, b1, b2, safe, pawnsafe;
+    Bitboard undefended, b, b1, b2, safe, other;
     int attackUnits;
     const Square ksq = pos.square<KING>(Us);
 
