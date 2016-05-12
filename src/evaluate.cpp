@@ -103,6 +103,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard outpostSquares[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
   };
@@ -224,7 +225,10 @@ namespace {
 
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
+    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                               : Rank5BB | Rank4BB | Rank3BB);
 
+    ei.outpostSquares[Us] = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
@@ -248,15 +252,13 @@ namespace {
 
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility,
-                        const Bitboard* mobilityArea) {
+                        Bitboard* mobilityArea) {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
 
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
 
     ei.attackedBy[Us][Pt] = 0;
@@ -292,12 +294,11 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus for outpost squares
-            bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
-            if (bb & s)
+            if (ei.outpostSquares[Us] & s)
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
             else
             {
-                bb &= b & ~pos.pieces(Us);
+                bb = b & ~pos.pieces(Us) & ei.outpostSquares[Us];
                 if (bb)
                    score += ReachableOutpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
             }
@@ -349,6 +350,11 @@ namespace {
         }
     }
 
+    // Now that knights and bishops had been processed, make sure mobilityArea 
+    // excludes pawn-protected squares for rooks and queens
+    if (Pt == BISHOP)
+        mobilityArea[Us] &= ~ei.attackedBy[Them][PAWN];
+
     if (DoTrace)
         Trace::add(Pt, Us, score);
 
@@ -357,9 +363,9 @@ namespace {
   }
 
   template<>
-  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*, Bitboard*) { return SCORE_ZERO; }
   template<>
-  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*, const Bitboard*) { return SCORE_ZERO; }
+  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*, Bitboard*) { return SCORE_ZERO; }
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
@@ -772,9 +778,10 @@ Value Eval::evaluate(const Position& pos) {
 
   // Do not include in mobility area squares protected by enemy pawns, or occupied
   // by our blocked pawns or king.
+  // However, for minors we include squares where they can fight an eventual pawn-protected outpost
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
-    ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    ~((ei.attackedBy[BLACK][PAWN] & ~ei.outpostSquares[BLACK]) | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
+    ~((ei.attackedBy[WHITE][PAWN] & ~ei.outpostSquares[WHITE]) | blockedPawns[BLACK] | pos.square<KING>(BLACK))
   };
 
   // Evaluate all pieces but king and pawns
