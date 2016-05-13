@@ -124,6 +124,7 @@ public:
   Bitboard checkers() const;
   Bitboard discovered_check_candidates() const;
   Bitboard pinned_pieces(Color c) const;
+  Bitboard discosnippers_and_pinned(Color c) const;
 
   // Attacks to/from a given square
   Bitboard attackers_to(Square s) const;
@@ -187,6 +188,7 @@ private:
 
   // Other helpers
   Bitboard check_blockers(Color c, Color kingColor) const;
+  Bitboard check_discosnippers_and_pinned(Color kingColor) const;
   void put_piece(Color c, PieceType pt, Square s);
   void remove_piece(Color c, PieceType pt, Square s);
   void move_piece(Color c, PieceType pt, Square from, Square to);
@@ -316,6 +318,10 @@ inline Bitboard Position::discovered_check_candidates() const {
 
 inline Bitboard Position::pinned_pieces(Color c) const {
   return check_blockers(c, c);
+}
+
+inline Bitboard Position::discosnippers_and_pinned(Color c) const {
+  return check_discosnippers_and_pinned(c);
 }
 
 inline bool Position::pawn_passed(Color c, Square s) const {

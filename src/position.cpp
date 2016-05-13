@@ -447,6 +447,30 @@ Bitboard Position::check_blockers(Color c, Color kingColor) const {
 }
 
 
+/// New: check_discosnippers_and_pinned, used by evaluate
+/// returns the "pinners" of color ~kingColor with blocking pieces of color ~kingcolor
+/// (the snipers which would give a dico check if blocking piece moves away)
+/// and the blocking pieces of same color as kingColor (pinned)
+Bitboard Position::check_discosnippers_and_pinned(Color kingColor) const {
+
+  Bitboard b, pinners, result = 0;
+  Square ksq = square<KING>(kingColor);
+
+  // Pinners are sliders that give check when a pinned piece is removed
+  pinners = (  (pieces(  ROOK, QUEEN) & PseudoAttacks[ROOK  ][ksq])
+             | (pieces(BISHOP, QUEEN) & PseudoAttacks[BISHOP][ksq])) & pieces(~kingColor);
+
+  while (pinners)
+  {
+      Square pinner = pop_lsb(&pinners);
+      b = between_bb(ksq, pinner) & pieces();
+
+      if (b && !more_than_one(b))
+          result |= (!!(b & pieces(kingColor)) ? b : pinner);
+  }
+  return result;
+}
+
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
 /// given square. Slider attacks use the occupied bitboard to indicate occupancy.
 
