@@ -466,7 +466,7 @@ Bitboard Position::check_discosnippers_and_pinned(Color kingColor) const {
       b = between_bb(ksq, pinner) & pieces();
 
       if (b && !more_than_one(b))
-          result |= (!!(b & pieces(kingColor)) ? b : !!(b & pieces(PAWN)) ? pinner: 0);
+          result |= (!!(b & pieces(kingColor)) ? b : !(b & pieces(PAWN)) ? pinner: 0);
   }
   return result;
 }
