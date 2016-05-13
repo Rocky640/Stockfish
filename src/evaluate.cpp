@@ -432,21 +432,21 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
+        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe || pos.pieces(QUEEN) & ei.discoSnippers[Them])
             attackUnits += QueenCheck, score -= SafeCheck;
 
         // Enemy rooks safe and other checks
-        if (b1 & ei.attackedBy[Them][ROOK] & safe)
+        if (b1 & ei.attackedBy[Them][ROOK] & safe || pos.pieces(ROOK) & ei.discoSnippers[Them])
             attackUnits += RookCheck, score -= SafeCheck;
 
-        else if ((b1 & ei.attackedBy[Them][ROOK] & other) || (pos.pieces(Them, ROOK) & ei.discoSnippers[Them]))
+        else if (b1 & ei.attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
 
         // Enemy bishops safe and other checks
-        if (b2 & ei.attackedBy[Them][BISHOP] & safe)
+        if (b2 & ei.attackedBy[Them][BISHOP] & safe || pos.pieces(BISHOP) & ei.discoSnippers[Them])
             attackUnits += BishopCheck, score -= SafeCheck;
 
-        else if ((b2 & ei.attackedBy[Them][BISHOP] & other) || (pos.pieces(Them, BISHOP) & ei.discoSnippers[Them]))
+        else if (b2 & ei.attackedBy[Them][BISHOP] & other)
             score -= OtherCheck;
 
         // Enemy knights safe and other checks

@@ -449,7 +449,7 @@ Bitboard Position::check_blockers(Color c, Color kingColor) const {
 
 /// New: check_discosnippers_and_pinned, used by evaluate
 /// returns the "pinners" of color ~kingColor with blocking pieces of color ~kingcolor
-/// (the snipers which would give a dico check if blocking piece moves away)
+/// (the snipers which would give a disco check if blocking piece moves away)
 /// and the blocking pieces of same color as kingColor (pinned)
 Bitboard Position::check_discosnippers_and_pinned(Color kingColor) const {
 
@@ -466,7 +466,7 @@ Bitboard Position::check_discosnippers_and_pinned(Color kingColor) const {
       b = between_bb(ksq, pinner) & pieces();
 
       if (b && !more_than_one(b))
-          result |= (!!(b & pieces(kingColor)) ? b : pinner);
+          result |= (!!(b & pieces(kingColor)) ? b : !!(b & pieces(PAWN)) ? pinner: 0);
   }
   return result;
 }
