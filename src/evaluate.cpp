@@ -103,6 +103,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard discoSnipers[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
   };
@@ -225,8 +226,11 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK   : WHITE);
     const Square Down = (Us == WHITE ? DELTA_S : DELTA_N);
 
-    ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
-    Bitboard b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
+    Bitboard b = pos.discosnipers_and_pinned(Us);
+    ei.pinnedPieces[Us]    = b & pos.pieces(Us);
+    ei.discoSnipers[Them] = b & pos.pieces(Them);
+ 
+    b = ei.attackedBy[Them][KING] = pos.attacks_from<KING>(pos.square<KING>(Them));
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
 
@@ -443,6 +447,10 @@ namespace {
             attackUnits += BishopCheck, score -= SafeCheck;
 
         else if (b2 & ei.attackedBy[Them][BISHOP] & other)
+            score -= OtherCheck;
+        
+        // Some more penalty for safe snipers potential checks
+        if (ei.discoSnipers[Them] & ~ei.attackedBy[Us][ALL_PIECES])
             score -= OtherCheck;
 
         // Enemy knights safe and other checks
