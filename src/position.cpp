@@ -446,6 +446,35 @@ Bitboard Position::check_blockers(Color c, Color kingColor) const {
   return result;
 }
 
+bool Position::ispinnedQ(Color queenColor, Square qsq) const {
+
+    Bitboard b, pinners;
+    
+    // orthogonal pins, by rook
+    pinners =  pieces(ROOK) & PseudoAttacks[ROOK][qsq] & pieces(~queenColor);
+
+    while (pinners)
+    {
+        b = between_bb(qsq, pop_lsb(&pinners)) & pieces();
+
+        if (!more_than_one(b) && (b & pieces(queenColor, BISHOP, KNIGHT)))
+            return true;
+    }
+
+    
+    // diagonal pins, by bishop
+    pinners = pieces(BISHOP) & PseudoAttacks[BISHOP][qsq] & pieces(~queenColor);
+    
+    while (pinners)
+    {
+        b = between_bb(qsq, pop_lsb(&pinners)) & pieces();
+
+        if (!more_than_one(b) && (b & pieces(queenColor, ROOK, KNIGHT)))
+            return true;
+    }
+
+    return false;
+}
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
 /// given square. Slider attacks use the occupied bitboard to indicate occupancy.

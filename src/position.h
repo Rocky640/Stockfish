@@ -179,6 +179,8 @@ public:
   // Position consistency check, for debugging
   bool pos_is_ok(int* failedStep = nullptr) const;
   void flip();
+  bool ispinnedQ(Color qcolor, Square qsq) const;
+  
 
 private:
   // Initialization helpers (used while setting up a position)

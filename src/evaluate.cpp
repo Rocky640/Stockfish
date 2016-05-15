@@ -182,6 +182,7 @@ namespace {
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
+  const Score QueenPin            = S(40,  0);
   const Score TrappedRook         = S(92,  0);
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
@@ -281,9 +282,14 @@ namespace {
         }
 
         if (Pt == QUEEN)
+        {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+
+            if (pos.ispinnedQ(Us, s))
+                score -= QueenPin;
+        }
 
         int mob = popcount(b & mobilityArea[Us]);
 
