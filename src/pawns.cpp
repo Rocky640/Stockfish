@@ -93,6 +93,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
+    const Bitboard CenterMask =  (FileCBB | FileDBB | FileEBB | FileFBB) 
+                               & (Rank3BB | Rank4BB | Rank5BB | Rank6BB);
+
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
     bool opposed, lever, connected, backward;
@@ -107,8 +110,13 @@ namespace {
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
-    e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
-    e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+
+    // Count number of light square pawns with more weight on center pawns using a single popcount
+    e->bishopPenalty[Us][WHITE] =  popcount((ourPawns & ~DarkSquares)
+                                            | shift_bb<Up>(ourPawns & ~DarkSquares & CenterMask));
+    // Same for dark square pawns
+    e->bishopPenalty[Us][BLACK] =  popcount((ourPawns &  DarkSquares)
+                                            | shift_bb<Up>(ourPawns &  DarkSquares & CenterMask));
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
