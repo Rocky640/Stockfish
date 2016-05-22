@@ -314,9 +314,11 @@ namespace {
 
             // Bonus when 2 safe squares for bishop
             if (Pt == BISHOP)
-                bb = b & ~ei.attackedBy[Them][KNIGHT] & ~ei.attackedBy[Them][PAWN] & ~(pos.pieces(Us) | pos.pieces(PAWN));
+            {
+                bb = b & ~(ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][PAWN] | pos.pieces(Us) | pos.pieces(PAWN, KNIGHT));
                 if (more_than_one(bb))
-                    score -= SafeBishop;
+                    score += SafeBishop;
+            }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
