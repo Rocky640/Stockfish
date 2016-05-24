@@ -39,6 +39,7 @@ unsigned  BishopShifts [SQUARE_NB];
 Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
+Bitboard LongDiagBB[SQUARE_NB];
 Bitboard AdjacentFilesBB[FILE_NB];
 Bitboard InFrontBB[COLOR_NB][RANK_NB];
 Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
@@ -211,13 +212,32 @@ void Bitboards::init() {
   init_magics(RookTable, RookAttacks, RookMagics, RookMasks, RookShifts, RookDeltas, magic_index<ROOK>);
   init_magics(BishopTable, BishopAttacks, BishopMagics, BishopMasks, BishopShifts, BishopDeltas, magic_index<BISHOP>);
 
+  const Bitboard InsideA1 = ~(FileBB[FILE_H] | RankBB[RANK_8]);
+  const Bitboard InsideH8 = ~(FileBB[FILE_A] | RankBB[RANK_1]);
+
+  Square s2;
+
   for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
   {
+      Bitboard b = 
       PseudoAttacks[QUEEN][s1]  = PseudoAttacks[BISHOP][s1] = attacks_bb<BISHOP>(s1, 0);
       PseudoAttacks[QUEEN][s1] |= PseudoAttacks[  ROOK][s1] = attacks_bb<  ROOK>(s1, 0);
 
+      // find the longest diagonal which passes through s
+      s2 = s1;
+      Bitboard ray1 = SquareBB[s1];
+      while (InsideA1 & s2)
+          ray1 |= s2 += DELTA_NE;
+
+      s2 = s1;
+      while (InsideH8 & s2)
+          ray1 |= s2 += DELTA_SW;
+
+      Bitboard ray2 = (b ^ ray1) | s1;
+      LongDiagBB[s1] = (popcount(ray1) > popcount(ray2) ? ray1 : ray2);
+
       for (Piece pc = W_BISHOP; pc <= W_ROOK; ++pc)
-          for (Square s2 = SQ_A1; s2 <= SQ_H8; ++s2)
+          for (s2 = SQ_A1; s2 <= SQ_H8; ++s2)
           {
               if (!(PseudoAttacks[pc][s1] & s2))
                   continue;

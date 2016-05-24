@@ -181,7 +181,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
-  const Score SafeBishop          = S(20, 20);
+  const Score SafeBishop          = S(10, 10);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
   const Score SafeCheck           = S(20, 20);
@@ -312,10 +312,11 @@ namespace {
             if (Pt == BISHOP)
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
 
-            // Bonus when 2 safe squares for bishop
+            // Bonus when 2 safe squares for bishop along the longest diagonal through s
             if (Pt == BISHOP)
             {
-                bb = b & ~(ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][PAWN] | pos.pieces(Us) | pos.pieces(PAWN, KNIGHT));
+                bb =    b & LongDiagBB[s] 
+                    & ~(ei.attackedBy[Them][PAWN] | ei.attackedBy[Them][KNIGHT] | pos.pieces(Us) | pos.pieces(PAWN));
                 if (more_than_one(bb))
                     score += SafeBishop;
             }
