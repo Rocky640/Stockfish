@@ -150,7 +150,7 @@ namespace {
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate them. Only the frontmost passed
         // pawn on each file is considered a true passed pawn.
-        if (!(stoppers | doubled))
+        if (!(stoppers | (forward_bb(Us, s) & ourPawns)))
             e->passedPawns[Us] |= s;
 
         // Score this pawn
