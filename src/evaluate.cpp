@@ -617,7 +617,7 @@ namespace {
 
                 mbonus += k * rr, ebonus += k * rr;
             }
-            else if (pos.pieces(Us) & blockSq)
+            else if ((pos.pieces(Us) ^ pos.pieces(Us, PAWN)) & blockSq)
                 mbonus += rr + r * 2, ebonus += rr + r * 2;
         } // rr != 0
 

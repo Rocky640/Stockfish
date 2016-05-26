@@ -44,9 +44,6 @@ namespace {
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
-  // Doubled pawn penalty
-  const Score Doubled = S(18, 38);
-
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
@@ -93,7 +90,7 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard b, neighbours, stoppers, supported, phalanx;
     Square s;
     bool opposed, lever, connected, backward;
     Score score = SCORE_ZERO;
@@ -124,7 +121,6 @@ namespace {
         opposed    = theirPawns & forward_bb(Us, s);
         stoppers   = theirPawns & passed_pawn_mask(Us, s);
         lever      = theirPawns & pawnAttacksBB[s];
-        doubled    = ourPawns   & (s + Up);
         neighbours = ourPawns   & adjacent_files_bb(f);
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
@@ -148,9 +144,8 @@ namespace {
         }
 
         // Passed pawns will be properly scored in evaluation because we need
-        // full attack info to evaluate them. Only the frontmost passed
-        // pawn on each file is considered a true passed pawn.
-        if (!(stoppers | doubled))
+        // full attack info to evaluate them.
+        if (!stoppers)
             e->passedPawns[Us] |= s;
 
         // Score this pawn
@@ -165,9 +160,6 @@ namespace {
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
-
-        if (doubled)
-            score -= Doubled;
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
