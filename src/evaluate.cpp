@@ -617,9 +617,13 @@ namespace {
 
                 mbonus += k * rr, ebonus += k * rr;
             }
-            else if ((pos.pieces(Us) ^ pos.pieces(Us, PAWN)) & blockSq)
+            else if (pos.pieces(Us) & blockSq)
                 mbonus += rr + r * 2, ebonus += rr + r * 2;
         } // rr != 0
+        
+        // If this pawn is not the frontmost on its file, reduce the bonus
+        if (forward_bb(Us, s) &  pos.pieces(PAWN))
+            mbonus /= 2, ebonus /= 2;
 
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
