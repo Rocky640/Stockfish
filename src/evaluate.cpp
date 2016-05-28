@@ -128,6 +128,10 @@ namespace {
       S( 85,133), S( 94,136), S( 99,140), S(108,157), S(112,158), S(113,161),
       S(118,174), S(119,177), S(123,191), S(128,199) }
   };
+  
+  // Weight factor to apply on mobility, based on number of pawns / 2
+  // The weight factor will be divided by 16
+  const int MobilityPawnFactor[] = {19, 18, 17, 16, 15, 14, 13, 12, 11};
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for knights and
   // bishops outposts, bigger if outpost piece is supported by a pawn.
@@ -787,7 +791,8 @@ Value Eval::evaluate(const Position& pos) {
 
   // Evaluate all pieces but king and pawns
   score += evaluate_pieces<DoTrace>(pos, ei, mobility, mobilityArea);
-  score += mobility[WHITE] - mobility[BLACK];
+  score += (mobility[WHITE] - mobility[BLACK])
+          * MobilityPawnFactor[(pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK)) / 2] / 16;
 
   // Evaluate kings after all other pieces because we need full attack
   // information when computing the king safety evaluation.
