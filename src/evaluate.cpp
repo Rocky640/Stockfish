@@ -190,6 +190,7 @@ namespace {
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score PawnCanLever        = S( 8,  8);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -476,12 +477,14 @@ namespace {
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Left       = (Us == WHITE ? DELTA_NW : DELTA_SE);
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
+    const Square OLeft      = (Us == WHITE ? DELTA_SE : DELTA_NW);
+    const Square ORight     = (Us == WHITE ? DELTA_SW : DELTA_NE);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, bb, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -539,19 +542,25 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
+    // Bonus if a pawn can push and attack an enemy pawn, or can safely attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
+    b =   shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()))
+        & ~pos.pieces();
+        
+    bb = pos.pieces(Them, PAWN);
+    
+    // Bonus for potential pawn levers on squares which are not attacked twice by pawns.
+    score += PawnCanLever * popcount(b & ei.attackedBy[Them][PAWN]
+                                       & ~(shift_bb<OLeft>(bb) & shift_bb<ORight>(bb)));
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
+    b &= ~ei.attackedBy[Them][PAWN] 
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
        &  pos.pieces(Them)
        & ~ei.attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush;
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
