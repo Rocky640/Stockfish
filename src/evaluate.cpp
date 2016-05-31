@@ -550,8 +550,7 @@ namespace {
     bb = pos.pieces(Them, PAWN);
     
     // Bonus for potential pawn levers on squares which are not attacked twice by pawns.
-    score += PawnCanLever * popcount(b & ei.attackedBy[Them][PAWN]
-                                       & ~(shift_bb<OLeft>(bb) & shift_bb<ORight>(bb)));
+    score += PawnCanLever * popcount(b & (shift_bb<OLeft>(bb) ^ shift_bb<ORight>(bb)));
 
     b &= ~ei.attackedBy[Them][PAWN] 
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
