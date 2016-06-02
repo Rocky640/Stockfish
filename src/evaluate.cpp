@@ -186,9 +186,9 @@ namespace {
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
-  const Score LooseEnemies        = S( 0, 25);
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
+  const Score Loose               = S( 0, 25);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
 
@@ -484,11 +484,6 @@ namespace {
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
-    // Small bonus if the opponent has loose pawns or pieces
-    if (   (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
-        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]))
-        score += LooseEnemies;
-
     // Bonus for pin or discovered attack on the opponent queen
     if (   pos.count<QUEEN>(Them) == 1
         && pos.slider_blockers(pos.pieces(),
@@ -538,6 +533,11 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+    
+    // Bonus if the opponent has loose pawns or pieces
+    b =    (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
+        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]);
+    score += Loose * popcount(b);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
