@@ -146,8 +146,7 @@ namespace {
 
   // RookOnFile[semiopen-defended / semiopen-weak / open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
-  const Score RookOnFile[3] = { S(15, 2), S(25, 12), S(45, 20) };
-  //{ S(20, 7), S(45, 20) };
+  const Score RookOnFile[3] = { S(16, 5), S(23, 13), S(46, 22) };
 
   // ThreatBySafePawn[PieceType] contains bonuses according to which piece
   // type is attacked by a pawn which is protected or is not attacked.
@@ -340,8 +339,7 @@ namespace {
                 if (ei.pi->semiopen_file(Them, file_of(s)))
                     score += RookOnFile[2];
                 else
-                    score += RookOnFile[!(  ei.attackedBy[Them][PAWN]
-                                          & backmost_sq(Us, pos.pieces(Them, PAWN) & file_bb(s)))];
+                    score += RookOnFile[!(ei.attackedBy[Them][PAWN] & file_bb(s))];
             }
 
             // Penalize when trapped by the king, even more if the king cannot castle
