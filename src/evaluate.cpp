@@ -188,7 +188,6 @@ namespace {
   const Score ThreatByHangingPawn = S(71, 61);
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
-  const Score Loose               = S( 0, 25);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
 
@@ -533,11 +532,6 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
-    
-    // Bonus if the opponent has loose pawns or pieces
-    b =    (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
-        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]);
-    score += Loose * popcount(b);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
@@ -682,19 +676,26 @@ namespace {
   // evaluate_initiative() computes the initiative correction value for the
   // position, i.e., second order bonus/malus based on the known attacking/defending
   // status of the players.
-  Score evaluate_initiative(const Position& pos, int asymmetry, Value eg) {
+  Score evaluate_initiative(const Position& pos, const EvalInfo& ei, Value eg) {
 
     int kingDistance =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK))
                       - distance<Rank>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
     int pawns = pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK);
 
     // Compute the initiative bonus for the attacking side
-    int initiative = 8 * (asymmetry + kingDistance - 15) + 12 * pawns;
+    int initiative = 8 * (ei.pi->pawn_asymmetry() + kingDistance - 15) + 12 * pawns;
 
     // Now apply the bonus: note that we find the attacking side by extracting
     // the sign of the endgame value, and that we carefully cap the bonus so
     // that the endgame score will never be divided by more than two.
     int value = ((eg > 0) - (eg < 0)) * std::max(initiative, -abs(eg / 2));
+    
+    // Allocate a single S(0, 25) penalty for the side which has the most loose pawns or pieces
+    Bitboard b = ~(  pos.pieces(QUEEN, KING)
+                   | ei.attackedBy[WHITE][ALL_PIECES]
+                   | ei.attackedBy[BLACK][ALL_PIECES]);
+    int diff = popcount(b & pos.pieces(WHITE)) - popcount(b & pos.pieces(BLACK));
+    value -= ((diff > 0) - (diff < 0)) * 25;
 
     return make_score(0, value);
   }
@@ -819,7 +820,7 @@ Value Eval::evaluate(const Position& pos) {
               - evaluate_space<BLACK>(pos, ei);
 
   // Evaluate position potential for the winning side
-  score += evaluate_initiative(pos, ei.pi->pawn_asymmetry(), eg_value(score));
+  score += evaluate_initiative(pos, ei, eg_value(score));
 
   // Evaluate scale factor for the winning side
   ScaleFactor sf = evaluate_scale_factor(pos, ei, eg_value(score));
