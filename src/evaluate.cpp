@@ -157,7 +157,7 @@ namespace {
   // bonuses according to which piece type attacks which one.
   // Attacks on lesser pieces which are pawn-defended are not considered.
   const Score Threat[][PIECE_TYPE_NB] = {
-    { S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72,107), S(48,118) }, // by Minor
+    { S(0, 0), S(0, 27), S(45, 43), S(46, 47), S(72,107), S(48,118) }, // by Minor
     { S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48) }  // by Rook
   };
 
@@ -186,6 +186,7 @@ namespace {
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
+  const Score ThreatBlockedPawn   = S( 0, 12);
   const Score LooseEnemies        = S( 0, 25);
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
@@ -474,6 +475,7 @@ namespace {
 
     const Color Them        = (Us == WHITE ? BLACK    : WHITE);
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
+    const Square Down       = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Left       = (Us == WHITE ? DELTA_NW : DELTA_SE);
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
@@ -527,6 +529,9 @@ namespace {
         b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
             score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
+
+        b = shift_bb<Down>(pos.pieces()) & weak & pos.pieces(Them, PAWN);
+        score += ThreatBlockedPawn * popcount(b & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]));
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
