@@ -475,7 +475,6 @@ namespace {
 
     const Color Them        = (Us == WHITE ? BLACK    : WHITE);
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
-    const Square Down       = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Left       = (Us == WHITE ? DELTA_NW : DELTA_SE);
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
@@ -530,7 +529,7 @@ namespace {
         while (b)
             score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = shift_bb<Down>(pos.pieces()) & weak & pos.pieces(Them, PAWN);
+        b = shift_bb<Up>(pos.pieces()) & weak & pos.pieces(Them, PAWN);
         score += ThreatBlockedPawn * popcount(b & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]));
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
