@@ -181,6 +181,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
+  const Score RookDefending       = S(16, 48);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
   const Score SafeCheck           = S(20, 20);
@@ -329,6 +330,16 @@ namespace {
 
         if (Pt == ROOK)
         {
+            // Find weak pieces protected by this rook
+            bb = b & (pos.pieces(Us) ^ pos.pieces(Us, PAWN)) & ~ei.attackedBy[Us][PAWN];
+
+            // Penalize the rook if it has no mobility along the line of defense
+            if ((bb & file_bb(s)) && !(b & file_bb(s) & mobilityArea[Us] & ~pos.pieces(Us)))
+                score -= RookDefending;
+
+            if ((bb & rank_bb(s)) && !(b & rank_bb(s) & mobilityArea[Us] & ~pos.pieces(Us)))
+                score -= RookDefending;
+
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
