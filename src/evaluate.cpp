@@ -183,6 +183,7 @@ namespace {
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
+  const Score KingLuft            = S( 0, 25);
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
@@ -384,6 +385,10 @@ namespace {
 
     // King shelter and enemy pawns storm
     Score score = ei.pi->king_safety<Us>(pos, ksq);
+
+    // Bonus for some free squares forward.
+    if (shift_bb<Up>(rank_bb(ksq)) & ei.attackedBy[Us][KING] & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Us)))
+        score += KingLuft;
 
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
