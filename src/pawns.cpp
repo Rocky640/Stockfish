@@ -103,7 +103,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedWays[Us] = e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
@@ -151,7 +151,10 @@ namespace {
         // full attack info to evaluate them. Only the frontmost passed
         // pawn on each file is considered a true passed pawn.
         if (!(stoppers | doubled)) // FIXME this is just doubled by adjacent pawn
+        {
             e->passedPawns[Us] |= s;
+            e->passedWays[Us] |= forward_bb(Us, s + Up);
+        }
 
         // Score this pawn
         if (!neighbours)
