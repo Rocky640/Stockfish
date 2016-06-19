@@ -314,7 +314,8 @@ namespace {
                 score -= BishopPawns * ei.pi->pawns_on_same_color_squares(Us, s);
 
             // Bonus for active passed pawn stopping.
-            score += PassedStopper * popcount((b | s) & ei.pi->passed_ways(Them));
+            if ((b | s) & ei.pi->passed_ways(Them))
+                score += PassedStopper;
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
