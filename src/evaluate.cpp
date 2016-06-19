@@ -191,6 +191,7 @@ namespace {
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
+  const Score FrontPawnControl    = S( 0, 10);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -289,6 +290,14 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
+        
+        if (Pt == BISHOP || Pt == QUEEN)
+        {
+            if (ei.pi->front_pawns(Us) & s)
+                score += FrontPawnControl;
+            if (ei.pi->front_pawns(Them) & s)
+                score += FrontPawnControl;
+        }
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {

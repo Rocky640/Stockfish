@@ -92,6 +92,8 @@ namespace {
     const Square Up    = (Us == WHITE ? DELTA_N  : DELTA_S);
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
+    const Square DRight = (Us == WHITE ? DELTA_SE : DELTA_NW);
+    const Square DLeft  = (Us == WHITE ? DELTA_SW : DELTA_NE);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
@@ -172,6 +174,9 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+
+    b = shift_bb<Up>(ourPawns) & ~(ourPawns | theirPawns);
+    e->frontPawns[Us] = b | (ourPawns & (shift_bb<DLeft>(b) | shift_bb<DRight>(b)));
 
     b = e->semiopenFiles[Us] ^ 0xFF;
     e->pawnSpan[Us] = b ? int(msb(b) - lsb(b)) : 0;
