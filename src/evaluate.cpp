@@ -537,6 +537,10 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+
+            // King/Piece coordination bonus
+            if (b & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP] | ei.attackedBy[Us][ROOK]))
+                  score += make_score(0, 30);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
