@@ -250,7 +250,7 @@ namespace {
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility,
                         const Bitboard* mobilityArea) {
-    Bitboard b, bb;
+    Bitboard b, bb, bx;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -265,9 +265,12 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
-                         : pos.attacks_from<Pt>(s);
+        bx =  Pt == BISHOP ? pos.pieces(Us, QUEEN)
+            : Pt == ROOK   ? pos.pieces(Us, ROOK, QUEEN)
+            : pos.pieces(Us, Pt);
+
+        b  =   Pt == BISHOP || Pt == ROOK ? attacks_bb<Pt>(s, pos.pieces() ^ bx)
+            :  pos.attacks_from<Pt>(s);
 
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
@@ -286,7 +289,7 @@ namespace {
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
 
-        int mob = popcount(b & mobilityArea[Us] & ~pos.pieces(Us, Pt));
+        int mob = popcount(b & mobilityArea[Us] & ~bx);
 
         mobility[Us] += MobilityBonus[Pt][mob];
 
