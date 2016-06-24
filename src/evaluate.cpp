@@ -490,6 +490,9 @@ namespace {
 
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
+    
+    Bitboard safeForPawn = (ei.attackedBy[Us][PAWN] | ~ei.attackedBy[Them][PAWN])
+                         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     // Small bonus if the opponent has loose pawns or pieces
     if (   (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
@@ -501,8 +504,7 @@ namespace {
 
     if (weak)
     {
-        b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
-                                    | ei.attackedBy[Us][ALL_PIECES]);
+        b = pos.pieces(Us, PAWN) & safeForPawn;
 
         safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
 
@@ -543,12 +545,10 @@ namespace {
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+    b &= ~pos.pieces() & safeForPawn;
 
     b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
-       &  pos.pieces(Them)
+       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
        & ~ei.attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
@@ -771,6 +771,7 @@ Value Eval::evaluate(const Position& pos) {
   ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
   eval_init<WHITE>(pos, ei);
   eval_init<BLACK>(pos, ei);
+  
 
   // Pawns blocked or on ranks 2 and 3 will be excluded from the mobility area
   Bitboard blockedPawns[] = {
