@@ -379,7 +379,7 @@ namespace {
     const Square  Up = (Us == WHITE ? DELTA_N : DELTA_S);
 
     Bitboard undefended, b, b1, b2, safe, other;
-    int attackUnits;
+    int attackUnits = 0;
     const Square ksq = pos.square<KING>(Us);
 
     // King shelter and enemy pawns storm
@@ -423,44 +423,47 @@ namespace {
 
             attackUnits += QueenContactCheck * popcount(b);
         }
+    }
 
-        // Analyse the safe enemy's checks which are possible on next move...
-        safe  = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
+    // Analyse the safe enemy's checks which are possible on next move...
+    safe  = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
 
-        // ... and some other potential checks, only requiring the square to be
-        // safe from pawn-attacks, and not being occupied by a blocked pawn.
-        other = ~(   ei.attackedBy[Us][PAWN]
-                  | (pos.pieces(Them, PAWN) & shift_bb<Up>(pos.pieces(PAWN))));
+    // ... and some other potential checks, only requiring the square to be
+    // safe from pawn-attacks, and not being occupied by a blocked pawn.
+    other = ~(   ei.attackedBy[Us][PAWN]
+              | (pos.pieces(Them, PAWN) & shift_bb<Up>(pos.pieces(PAWN))));
 
-        b1 = pos.attacks_from<ROOK  >(ksq);
-        b2 = pos.attacks_from<BISHOP>(ksq);
+    b1 = pos.attacks_from<ROOK  >(ksq);
+    b2 = pos.attacks_from<BISHOP>(ksq);
 
-        // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
-            attackUnits += QueenCheck, score -= SafeCheck;
+    // Enemy queen safe checks
+    if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
+        attackUnits += QueenCheck, score -= SafeCheck;
 
-        // Enemy rooks safe and other checks
-        if (b1 & ei.attackedBy[Them][ROOK] & safe)
-            attackUnits += RookCheck, score -= SafeCheck;
+    // Enemy rooks safe and other checks
+    if (b1 & ei.attackedBy[Them][ROOK] & safe)
+        attackUnits += RookCheck, score -= SafeCheck;
 
-        else if (b1 & ei.attackedBy[Them][ROOK] & other)
-            score -= OtherCheck;
+    else if (b1 & ei.attackedBy[Them][ROOK] & other)
+        score -= OtherCheck;
 
-        // Enemy bishops safe and other checks
-        if (b2 & ei.attackedBy[Them][BISHOP] & safe)
-            attackUnits += BishopCheck, score -= SafeCheck;
+    // Enemy bishops safe and other checks
+    if (b2 & ei.attackedBy[Them][BISHOP] & safe)
+        attackUnits += BishopCheck, score -= SafeCheck;
 
-        else if (b2 & ei.attackedBy[Them][BISHOP] & other)
-            score -= OtherCheck;
+    else if (b2 & ei.attackedBy[Them][BISHOP] & other)
+        score -= OtherCheck;
 
-        // Enemy knights safe and other checks
-        b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
-        if (b & safe)
-            attackUnits += KnightCheck, score -= SafeCheck;
+    // Enemy knights safe and other checks
+    b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
+    if (b & safe)
+        attackUnits += KnightCheck, score -= SafeCheck;
 
-        else if (b & other)
-            score -= OtherCheck;
+    else if (b & other)
+        score -= OtherCheck;
 
+    if (ei.kingAttackersCount[Them])
+    {
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from the evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
