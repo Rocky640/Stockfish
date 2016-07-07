@@ -77,7 +77,7 @@ namespace {
     // attacked by a given color and piece type (can be also ALL_PIECES).
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
-    // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
+    // attackedBy2[color] are the squares attacked by 2 pieces of given color,
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
@@ -491,6 +491,16 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
+    const Bitboard TheirCamp = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB
+                                            : Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB);
+                                            
+    const Bitboard QueenSide   = TheirCamp & (FileABB | FileBBB | FileCBB | FileDBB);
+    const Bitboard KingSide    = TheirCamp & (FileEBB | FileFBB | FileGBB | FileHBB);
+    const Bitboard CenterFiles = TheirCamp & (FileCBB | FileDBB | FileEBB | FileFBB);
+    
+    const Bitboard KingFlank[FILE_NB] = {QueenSide, QueenSide, QueenSide, CenterFiles,
+                                         CenterFiles, KingSide, KingSide, KingSide};
+                                         
     enum { Minor, Rook };
 
     Bitboard b, weak, defended, safeThreats;
@@ -557,6 +567,19 @@ namespace {
        & ~ei.attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
+
+
+    // King tropism: firstly, find squares that we attack in the ennemy king flank
+    b = ei.attackedBy[Us][ALL_PIECES] & KingFlank[file_of(pos.square<KING>(Them))];
+
+    // Secondly, add to the bitboard the squares that we attack twice in b
+    // but are not protected by a enemy pawn (note the trick to shift away  
+    // the previous attack bits to the empty part of the bitboard)
+    b =  (b & ei.attackedBy2[Us] & ~ei.attackedBy[Them][PAWN])
+       | (Us == WHITE ? b >> 4 : b << 4);
+
+    // Count all these squares with a single popcount
+    score += make_score( 7 * popcount(b) , 0 );
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
