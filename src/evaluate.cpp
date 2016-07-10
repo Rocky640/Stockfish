@@ -100,13 +100,6 @@ namespace {
     // KingAttackWeights array.
     int kingAttackersWeight[COLOR_NB];
 
-    // kingAdjacentZoneAttacksCount[color] is the number of attacks by the given
-    // color to squares directly adjacent to the enemy king. Pieces which attack
-    // more than one square are counted multiple times. For instance, if there is
-    // a white knight on g5 and black's king is on g8, this white knight adds 2
-    // to kingAdjacentZoneAttacksCount[WHITE].
-    int kingAdjacentZoneAttacksCount[COLOR_NB];
-
     Bitboard pinnedPieces[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
@@ -215,7 +208,6 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 7, 5, 4, 1 };
 
   // Penalties for enemy's safe checks
-  const int QueenContactCheck = 89;
   const int QueenCheck        = 62;
   const int RookCheck         = 57;
   const int BishopCheck       = 48;
@@ -243,7 +235,7 @@ namespace {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
         b &= ei.attackedBy[Us][PAWN];
         ei.kingAttackersCount[Us] = popcount(b);
-        ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
+        ei.kingAttackersWeight[Us] = 0;
     }
     else
         ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
@@ -285,7 +277,6 @@ namespace {
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
         if (Pt == QUEEN)
@@ -395,12 +386,7 @@ namespace {
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
-        // Find the attacked squares which are defended only by the king...
-        undefended =   ei.attackedBy[Them][ALL_PIECES]
-                    &  ei.attackedBy[Us][KING]
-                    & ~ei.attackedBy2[Us];
-
-        // ... and those which are not defended at all in the larger king ring
+        // Find squares not defended at all in the larger king ring
         b =  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
            & ei.kingRing[Us] & ~pos.pieces(Them);
 
@@ -410,18 +396,27 @@ namespace {
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
         attackUnits =  std::min(72, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
-                     +  9 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 21 * popcount(undefended)
                      + 12 * (popcount(b) + !!ei.pinnedPieces[Us])
                      - 64 * !pos.count<QUEEN>(Them)
                      - mg_value(score) / 8;
 
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
-        // undefended squares around the king reachable by the enemy queen...
-        b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
-
-        // ...and keep squares supported by another enemy piece
-        attackUnits += QueenContactCheck * popcount(b & ei.attackedBy2[Them]);
+        // Analyse the attacked squares which are only defended by the king
+        undefended =   ei.attackedBy[Them][ALL_PIECES]
+                    &  ei.attackedBy[Us][KING]
+                    & ~ei.attackedBy2[Us];
+        
+        if (undefended)
+        {
+            b1 = undefended & ~ei.attackedBy[Them][PAWN];
+            b2 = undefended & ei.attackedBy2[Them];
+            attackUnits +=  // Base bonus for each undefended square
+                            20 * popcount(undefended)
+                            // For squares attacked by non-pawn, give some more bonus,
+                            // and double if attacked by 2.
+                          +  9 * popcount(b1 | (Us == WHITE ? b2 << 4 : b2 >> 4))
+                            // Add a large bonus for safe queen contact check(s)
+                          + 89 * popcount(b2 & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them));
+        }
 
         // Analyse the safe enemy's checks which are possible on next move...
         safe  = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
