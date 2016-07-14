@@ -188,8 +188,6 @@ namespace {
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
-  const Score SafeCheck           = S(20, 20);
-  const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score LooseEnemies        = S( 0, 25);
   const Score WeakQueen           = S(35,  0);
@@ -386,7 +384,7 @@ namespace {
     const Square  Up = (Us == WHITE ? DELTA_N : DELTA_S);
 
     Bitboard undefended, b, b1, b2, safe, other;
-    int attackUnits;
+    int attackUnits, checkUnits = 0;
     const Square ksq = pos.square<KING>(Us);
 
     // King shelter and enemy pawns storm
@@ -436,39 +434,43 @@ namespace {
 
         // Enemy queen safe checks
         if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
-            attackUnits += QueenCheck, score -= SafeCheck;
+            checkUnits += QueenCheck;
 
         // For other pieces, also consider the square safe if attacked twice,
-        // and only defended by a queen.
+        // but only defended by a queen.
         safe |=  ei.attackedBy2[Them]
                & ~(ei.attackedBy2[Us] | pos.pieces(Them))
                & ei.attackedBy[Us][QUEEN];
 
         // Enemy rooks safe and other checks
         if (b1 & ei.attackedBy[Them][ROOK] & safe)
-            attackUnits += RookCheck, score -= SafeCheck;
+            checkUnits += RookCheck;
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
-            score -= OtherCheck;
+            checkUnits += RookCheck / 3;
 
         // Enemy bishops safe and other checks
         if (b2 & ei.attackedBy[Them][BISHOP] & safe)
-            attackUnits += BishopCheck, score -= SafeCheck;
+            checkUnits += BishopCheck;
 
         else if (b2 & ei.attackedBy[Them][BISHOP] & other)
-            score -= OtherCheck;
+            checkUnits += BishopCheck / 3;
 
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
-            attackUnits += KnightCheck, score -= SafeCheck;
+            checkUnits += KnightCheck;
 
         else if (b & other)
-            score -= OtherCheck;
+            checkUnits += KnightCheck / 3;
+
+        // Decrease the score using checkUnits. This can be viewed as a rough evaluation
+        // of tactical threats which happens when a check can be given.
+        score -= make_score(checkUnits, checkUnits) / 3;
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from the evaluation.
-        score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
+        score -= KingDanger[std::max(std::min(attackUnits + checkUnits, 399), 0)];
     }
 
     if (DoTrace)
