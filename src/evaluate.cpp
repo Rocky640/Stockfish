@@ -493,7 +493,6 @@ namespace {
 
     const Bitboard TheirCamp = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB
                                             : Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB);
-
     const Bitboard QueenSide   = TheirCamp & (FileABB | FileBBB | FileCBB | FileDBB);
     const Bitboard CenterFiles = TheirCamp & (FileCBB | FileDBB | FileEBB | FileFBB);
     const Bitboard KingSide    = TheirCamp & (FileEBB | FileFBB | FileGBB | FileHBB);
@@ -581,6 +580,15 @@ namespace {
 
     // Count all these squares with a single popcount
     score += make_score(7 * popcount(b), 0);
+
+    
+    // King Defense
+    b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[file_of(pos.square<KING>(Them))];
+    b =  (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN])
+       | (Us == WHITE ? b >> 4 : b << 4);
+
+    // Count all these squares with a single popcount
+    score -= make_score(4 * popcount(b), 0);
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
