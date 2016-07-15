@@ -447,14 +447,14 @@ namespace {
             checkUnits += RookCheck;
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
-            checkUnits += RookCheck / 3;
+            checkUnits += RookCheck / 4;
 
         // Enemy bishops safe and other checks
         if (b2 & ei.attackedBy[Them][BISHOP] & safe)
             checkUnits += BishopCheck;
 
         else if (b2 & ei.attackedBy[Them][BISHOP] & other)
-            checkUnits += BishopCheck / 3;
+            checkUnits += BishopCheck / 4;
 
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
@@ -462,11 +462,11 @@ namespace {
             checkUnits += KnightCheck;
 
         else if (b & other)
-            checkUnits += KnightCheck / 3;
+            checkUnits += KnightCheck / 4;
 
         // Decrease the score using checkUnits. This can be viewed as a rough evaluation
         // of tactical threats which happens when a check can be given.
-        score -= make_score(checkUnits, checkUnits) / 3;
+        score -= make_score(checkUnits, checkUnits) / 4;
 
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from the evaluation.
