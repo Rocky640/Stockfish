@@ -384,6 +384,18 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK   : WHITE);
     const Square  Up = (Us == WHITE ? DELTA_N : DELTA_S);
+    
+    const Bitboard OurCamp = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB | Rank5BB
+                                          : Rank8BB | Rank7BB | Rank6BB | Rank5BB | Rank4BB);
+
+    const Bitboard QueenSide   = OurCamp & (FileABB | FileBBB | FileCBB | FileDBB);
+    const Bitboard CenterFiles = OurCamp & (FileCBB | FileDBB | FileEBB | FileFBB);
+    const Bitboard KingSide    = OurCamp & (FileEBB | FileFBB | FileGBB | FileHBB);
+
+    const Bitboard KingFlank[FILE_NB] = {
+      QueenSide, QueenSide, QueenSide, CenterFiles,
+      CenterFiles, KingSide, KingSide, KingSide
+    };
 
     Bitboard undefended, b, b1, b2, safe, other;
     int attackUnits;
@@ -471,6 +483,18 @@ namespace {
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
     }
 
+     // King tropism: firstly, find squares that they attack in our flank
+    b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[file_of(ksq)];
+
+    // Secondly, add to the bitboard the squares which they attack twice in that flank
+    // but which are not protected by our pawns. Note the trick to shift away the
+    // previous attack bits to the empty part of the bitboard.
+    b =  (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN])
+       | (Us == WHITE ? b << 4 : b >> 4);
+
+    // Count all these squares with a single popcount
+    score -= make_score(7 * popcount(b), 0);
+
     if (DoTrace)
         Trace::add(KING, Us, score);
 
@@ -490,18 +514,6 @@ namespace {
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
-
-    const Bitboard TheirCamp = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB
-                                            : Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB);
-
-    const Bitboard QueenSide   = TheirCamp & (FileABB | FileBBB | FileCBB | FileDBB);
-    const Bitboard CenterFiles = TheirCamp & (FileCBB | FileDBB | FileEBB | FileFBB);
-    const Bitboard KingSide    = TheirCamp & (FileEBB | FileFBB | FileGBB | FileHBB);
-
-    const Bitboard KingFlank[FILE_NB] = {
-      QueenSide, QueenSide, QueenSide, CenterFiles,
-      CenterFiles, KingSide, KingSide, KingSide
-    };
 
     enum { Minor, Rook };
 
@@ -569,18 +581,6 @@ namespace {
        & ~ei.attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
-
-    // King tropism: firstly, find squares that we attack in the enemy king flank
-    b = ei.attackedBy[Us][ALL_PIECES] & KingFlank[file_of(pos.square<KING>(Them))];
-
-    // Secondly, add to the bitboard the squares which we attack twice in that flank
-    // but which are not protected by a enemy pawn. Note the trick to shift away the
-    // previous attack bits to the empty part of the bitboard.
-    b =  (b & ei.attackedBy2[Us] & ~ei.attackedBy[Them][PAWN])
-       | (Us == WHITE ? b >> 4 : b << 4);
-
-    // Count all these squares with a single popcount
-    score += make_score(7 * popcount(b), 0);
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
