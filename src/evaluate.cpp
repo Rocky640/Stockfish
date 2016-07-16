@@ -425,7 +425,7 @@ namespace {
                      +  9 * ei.kingAdjacentZoneAttacksCount[Them]
                      + 21 * popcount(undefended)
                      + 12 * (popcount(b) + !!ei.pinnedPieces[Us])
-                     - 64 * !pos.count<QUEEN>(Them)
+                     - 32 * (!pos.count<QUEEN>(Them) + !(ei.attackedBy[Them][QUEEN] & KingFlank[file_of(ksq)]))
                      - mg_value(score) / 8;
 
         // Analyse the enemy's safe queen contact checks. Firstly, find the
