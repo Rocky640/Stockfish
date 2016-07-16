@@ -706,7 +706,11 @@ namespace {
     int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
                 + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
 
-    return make_score(bonus * weight * weight * 2 / 11, 0);
+    // bonus will be smaller if many majors on the board. It is easier to squeeze opponent
+    // when he has no counterplay
+    int majorscale = 6 + 2 * pos.count<QUEEN>(Them) + pos.count<ROOK>(Them);
+
+    return make_score(bonus * weight * weight * 2 / majorscale, 0);
   }
 
 
