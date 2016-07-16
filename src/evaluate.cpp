@@ -481,7 +481,10 @@ namespace {
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from the evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
+    }
 
+    else
+    {
          // King tropism: firstly, find squares that they attack in our flank
         b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[file_of(ksq)];
 
