@@ -481,19 +481,19 @@ namespace {
         // Finally, extract the king danger score from the KingDanger[]
         // array and subtract the score from the evaluation.
         score -= KingDanger[std::max(std::min(attackUnits, 399), 0)];
+
+         // King tropism: firstly, find squares that they attack in our flank
+        b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[file_of(ksq)];
+
+        // Secondly, add to the bitboard the squares which they attack twice in that flank
+        // but which are not protected by our pawns. Note the trick to shift away the
+        // previous attack bits to the empty part of the bitboard.
+        b =  (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN])
+           | (Us == WHITE ? b << 4 : b >> 4);
+
+        // Count all these squares with a single popcount
+        score -= make_score(7 * popcount(b), 0);
     }
-
-     // King tropism: firstly, find squares that they attack in our flank
-    b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[file_of(ksq)];
-
-    // Secondly, add to the bitboard the squares which they attack twice in that flank
-    // but which are not protected by our pawns. Note the trick to shift away the
-    // previous attack bits to the empty part of the bitboard.
-    b =  (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN])
-       | (Us == WHITE ? b << 4 : b >> 4);
-
-    // Count all these squares with a single popcount
-    score -= make_score(7 * popcount(b), 0);
 
     if (DoTrace)
         Trace::add(KING, Us, score);
