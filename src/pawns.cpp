@@ -93,6 +93,8 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
+    const Bitboard CenterFiles = FileDBB | FileEBB;
+
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
     bool opposed, lever, connected, backward;
@@ -118,7 +120,9 @@ namespace {
         File f = file_of(s);
 
         e->semiopenFiles[Us] &= ~(1 << f);
-        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
+        e->pawnAttacksSpan[Us] |= ((CenterFiles & s) && (theirPawns & (s + Up)))
+                                  ? pawnAttacksBB[s]
+                                  : pawn_attack_span(Us, s);
 
         // Flag the pawn
         opposed    = theirPawns & forward_bb(Us, s);
