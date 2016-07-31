@@ -158,13 +158,15 @@ namespace {
   const Score ThreatBySafePawn[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 0), S(176, 139), S(131, 127), S(217, 218), S(203, 215) };
 
-  // Threat[by minor/by rook][attacked PieceType] contains
-  // bonuses according to which piece type attacks which one.
-  // Attacks on lesser pieces which are pawn-defended are not considered.
-  const Score Threat[][PIECE_TYPE_NB] = {
-    { S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72,107), S(48,118) }, // by Minor
-    { S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48) }  // by Rook
-  };
+  // ThreatByMinor[PieceType] contains bonuses for attacking different piece types
+  // by a minor piece.
+  const Score ThreatByMinor[PIECE_TYPE_NB] = {
+    S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118) };
+  
+  // ThreatByRook[PieceType] contains bonuses for attacking different piece types
+  // by a rook, only if target is queen or not defended by 2
+  const Score ThreatByRook[PIECE_TYPE_NB] = {
+    S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48) };
 
   // ThreatByKing[on one/on many] contains bonuses for King attacks on
   // pawns or pieces which are not pawn-defended.
@@ -504,8 +506,6 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB  : Rank2BB);
 
-    enum { Minor, Rook };
-
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
@@ -544,11 +544,11 @@ namespace {
     {
         b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
-            score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
+            score += ThreatByMinor[type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
+        b = (pos.pieces(Them, QUEEN) | (weak & ~ei.attackedBy2[Them])) & ei.attackedBy[Us][ROOK];
         while (b)
-            score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+            score += ThreatByRook [type_of(pos.piece_on(pop_lsb(&b)))];
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
 
