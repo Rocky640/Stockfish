@@ -682,8 +682,8 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard SpaceMask =
-      Us == WHITE ? (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB)
-                  : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
+      Us == WHITE ? (Rank2BB | Rank3BB | Rank4BB)
+                  : (Rank7BB | Rank6BB | Rank5BB);
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
@@ -704,8 +704,8 @@ namespace {
     // ...count safe + (behind & safe) with a single popcount
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     int weight = pos.count<ALL_PIECES>(Us);
- 
-    return make_score((bonus * weight * weight)  / (11 * 2), 0);
+    
+    return make_score((bonus * weight * weight)  / (11 * 4), 0);
   }
 
 
