@@ -196,6 +196,10 @@ namespace {
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
+  
+  int scale = 44;
+  int max = 12222;
+  TUNE(scale, max);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -589,6 +593,7 @@ namespace {
     return score;
   }
 
+ 
 
   // evaluate_passed_pawns() evaluates the passed pawns of the given color
 
@@ -682,8 +687,8 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard SpaceMask =
-      Us == WHITE ? (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB)
-                  : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
+      Us == WHITE ? (Rank2BB | Rank3BB | Rank4BB)
+                  : (Rank7BB | Rank6BB | Rank5BB);
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
@@ -703,10 +708,9 @@ namespace {
 
     // ...count safe + (behind & safe) with a single popcount
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight =  pos.count<KNIGHT>(Us) + pos.count<BISHOP>(Us)
-                + pos.count<KNIGHT>(Them) + pos.count<BISHOP>(Them);
+    int weight =  pos.count<ALL_PIECES>(Us);
 
-    return make_score(bonus * weight * weight * 2 / 11, 0);
+    return make_score(bonus * weight * weight / scale, 0);
   }
 
 
@@ -847,7 +851,7 @@ Value Eval::evaluate(const Position& pos) {
   }
 
   // Evaluate space for both sides, only during opening
-  if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12222)
+  if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= max)
       score +=  evaluate_space<WHITE>(pos, ei)
               - evaluate_space<BLACK>(pos, ei);
 
