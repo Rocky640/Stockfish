@@ -197,9 +197,9 @@ namespace {
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
   
-  int scale = 44;
-  int max = 12222;
-  TUNE(scale, max);
+  int spscale = 44;
+  int spmax = 12222;
+  TUNE(spscale, spmax);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -710,7 +710,7 @@ namespace {
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     int weight =  pos.count<ALL_PIECES>(Us);
 
-    return make_score(bonus * weight * weight / scale, 0);
+    return make_score((bonus * weight * weight) / spscale, 0);
   }
 
 
@@ -851,7 +851,7 @@ Value Eval::evaluate(const Position& pos) {
   }
 
   // Evaluate space for both sides, only during opening
-  if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= max)
+  if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= spmax)
       score +=  evaluate_space<WHITE>(pos, ei)
               - evaluate_space<BLACK>(pos, ei);
 
