@@ -702,9 +702,9 @@ namespace {
 
     // ...count safe + (behind & safe) with a single popcount
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight =  pos.count<ALL_PIECES>(Us);
+    int weight = pos.count<ALL_PIECES>(Us);
 
-    return make_score(bonus * weight * weight / 47, 0);
+    return make_score(bonus * weight * weight / 42, 0);
   }
 
 
@@ -845,7 +845,7 @@ Value Eval::evaluate(const Position& pos) {
   }
 
   // Evaluate space for both sides, only during opening
-  if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12483)
+  if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12222)
       score +=  evaluate_space<WHITE>(pos, ei)
               - evaluate_space<BLACK>(pos, ei);
 
