@@ -481,8 +481,8 @@ namespace {
   // evaluate_threats() assigns bonuses according to the types of the attacking
   // and the attacked pieces.
 
-  const Bitboard WhiteCamp = Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB;
-  const Bitboard BlackCamp = Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB;
+  const Bitboard WhiteCamp = Rank5BB | Rank6BB | Rank7BB | Rank8BB;
+  const Bitboard BlackCamp = Rank4BB | Rank3BB | Rank2BB | Rank1BB;
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
