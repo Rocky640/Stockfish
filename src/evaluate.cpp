@@ -481,8 +481,8 @@ namespace {
   // evaluate_threats() assigns bonuses according to the types of the attacking
   // and the attacked pieces.
 
-  const Bitboard WhiteCamp = Rank5BB | Rank6BB | Rank7BB | Rank8BB;
-  const Bitboard BlackCamp = Rank4BB | Rank3BB | Rank2BB | Rank1BB;
+  const Bitboard WhiteCamp = Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB;
+  const Bitboard BlackCamp = Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB;
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
@@ -578,7 +578,7 @@ namespace {
     // but which are not protected by a enemy pawn. Note the trick to shift away the
     // previous attack bits to the empty part of the bitboard.
     b =  (b & ei.attackedBy2[Us] & ~ei.attackedBy[Them][PAWN])
-       | (Us == WHITE ? b >> 4 : b << 4);
+       | (Us == WHITE ? (b & ~ei.attackedBy[Us][PAWN]) >> 4 : (b & ~ei.attackedBy[Us][PAWN]) << 4);
 
     // Count all these squares with a single popcount
     score += make_score(7 * popcount(b), 0);
