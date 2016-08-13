@@ -874,7 +874,7 @@ Value Eval::evaluate(const Position& pos) {
       Trace::add(TOTAL, score);
   }
 
-  return (pos.side_to_move() == WHITE ? v : -v) + Eval::Tempo; // Side to move point of view
+  return (pos.side_to_move() == WHITE ? v : -v) + pos.count<ALL_PIECES>(pos.side_to_move()); // Side to move point of view
 }
 
 // Explicit template instantiations
