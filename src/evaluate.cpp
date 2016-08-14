@@ -627,7 +627,7 @@ namespace {
                 ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
 
             // If the pawn is free to advance, then increase the bonus
-            if (pos.empty(blockSq))
+            if (!(pos.pieces(Them) & blockSq))
             {
                 // If there is a rook or queen attacking/defending the pawn from behind,
                 // consider all the squaresToQueen. Otherwise consider only the squares
@@ -654,10 +654,11 @@ namespace {
                 else if (defendedSquares & blockSq)
                     k += 4;
 
-                mbonus += k * rr, ebonus += k * rr;
+                else if (pos.pieces(Us) & blockSq)
+                    k += 2;
+
+                mbonus += (k - 1) * rr, ebonus += k * rr;
             }
-            else if (pos.pieces(Us) & blockSq)
-                mbonus += rr + r * 2, ebonus += rr + r * 2;
         } // rr != 0
 
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
