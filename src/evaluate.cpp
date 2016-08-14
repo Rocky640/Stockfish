@@ -483,9 +483,10 @@ namespace {
 
   const Bitboard WhiteCamp = Rank4BB | Rank5BB | Rank6BB | Rank7BB | Rank8BB;
   const Bitboard BlackCamp = Rank5BB | Rank4BB | Rank3BB | Rank2BB | Rank1BB;
-  const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
+  const Bitboard Center      = (Rank4BB | Rank5BB) & (FileDBB | FileEBB);
+  const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB | Center;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
-  const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB | Center;
 
   const Bitboard KingFlank[COLOR_NB][FILE_NB] = {
     { QueenSide   & WhiteCamp, QueenSide & WhiteCamp, QueenSide & WhiteCamp, CenterFiles & WhiteCamp,
