@@ -495,7 +495,7 @@ namespace {
   };
 
   template<Color Us, bool DoTrace>
-  Score evaluate_threats(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_threats(const Position& pos, const EvalInfo& ei, const Bitboard* mobilityArea) {
 
     const Color Them        = (Us == WHITE ? BLACK    : WHITE);
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
@@ -577,7 +577,7 @@ namespace {
     // Secondly, add to the bitboard the squares which we attack twice in that flank
     // but which are not protected by a enemy pawn. Note the trick to shift away the
     // previous attack bits to the empty part of the bitboard.
-    b =  (b & ei.attackedBy2[Us] & ~ei.attackedBy[Them][PAWN])
+    b =  (b & ei.attackedBy2[Us] & mobilityArea[Us])
        | (Us == WHITE ? b >> 4 : b << 4);
 
     // Count all these squares with a single popcount
@@ -828,8 +828,8 @@ Value Eval::evaluate(const Position& pos) {
           - evaluate_king<BLACK, DoTrace>(pos, ei);
 
   // Evaluate tactical threats, we need full attack information including king
-  score +=  evaluate_threats<WHITE, DoTrace>(pos, ei)
-          - evaluate_threats<BLACK, DoTrace>(pos, ei);
+  score +=  evaluate_threats<WHITE, DoTrace>(pos, ei, mobilityArea)
+          - evaluate_threats<BLACK, DoTrace>(pos, ei, mobilityArea);
 
   // Evaluate passed pawns, we need full attack information including king
   score +=  evaluate_passed_pawns<WHITE, DoTrace>(pos, ei)
