@@ -499,6 +499,7 @@ namespace {
 
     const Color Them        = (Us == WHITE ? BLACK    : WHITE);
     const Square Up         = (Us == WHITE ? DELTA_N  : DELTA_S);
+    const Square Down       = (Us == WHITE ? DELTA_S  : DELTA_N);
     const Square Left       = (Us == WHITE ? DELTA_NW : DELTA_SE);
     const Square Right      = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB  : Rank7BB);
@@ -506,7 +507,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, bp, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -571,13 +572,15 @@ namespace {
 
     score += ThreatByPawnPush * popcount(b);
 
+    bp = shift_bb<Down>(pos.pieces(PAWN)) & pos.pieces(Us, PAWN);
+
     // King tropism: firstly, find squares that we attack in the enemy king flank
     b = ei.attackedBy[Us][ALL_PIECES] & KingFlank[Us][file_of(pos.square<KING>(Them))];
 
     // Secondly, add to the bitboard the squares which we attack twice in that flank
     // but which are not protected by a enemy pawn. Note the trick to shift away the
     // previous attack bits to the empty part of the bitboard.
-    b =  (b & ei.attackedBy2[Us] & ~ei.attackedBy[Them][PAWN])
+    b =  (b & ei.attackedBy2[Us] & ~(ei.attackedBy[Them][PAWN] | bp))
        | (Us == WHITE ? b >> 4 : b << 4);
 
     // Count all these squares with a single popcount
