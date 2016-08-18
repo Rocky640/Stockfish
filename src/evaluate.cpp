@@ -555,6 +555,14 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+        
+        if (weak && pos.count<BISHOP>(Them)==1)
+        { 
+            b = weak & ((DarkSquares & pos.pieces(Them, BISHOP)) ? ~DarkSquares : DarkSquares);
+            int weakColorCount = popcount(b);
+            score += make_score(weakColorCount * 5, weakColorCount * 5);
+        }
+
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
