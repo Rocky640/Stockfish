@@ -188,14 +188,16 @@ namespace {
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
+  const Score WeakQueen           = S(35,  0);
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
+  const Score WeakColor           = S( 5,  5);
   const Score LooseEnemies        = S( 0, 25);
-  const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
+  
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -556,13 +558,13 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
         
-        if (weak && pos.count<BISHOP>(Them)==1)
-        { 
-            b = weak & ((DarkSquares & pos.pieces(Them, BISHOP)) ? ~DarkSquares : DarkSquares);
-            int weakColorCount = popcount(b);
-            score += make_score(weakColorCount * 5, weakColorCount * 5);
+        if (pos.count<BISHOP>(Them) == 1)
+        {
+            b =  weak 
+               & pos.pieces(Them, PAWN, KNIGHT)
+               & ((DarkSquares & pos.pieces(Them, BISHOP)) ? ~DarkSquares : DarkSquares);
+            score += WeakColor * popcount(b);
         }
-
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
