@@ -617,9 +617,11 @@ namespace {
         if (rr)
         {
             Square blockSq = s + pawn_push(Us);
-
+            // If opponent king is in the wrong half of the board, penalize more.
+            int k = (InFrontBB[Them][rank_of(s)] & pos.square<KING>(Them)) ? 6 : 4; 
+            
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
+            ebonus +=  distance(pos.square<KING>(Them), blockSq) * k * rr
                      - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
@@ -644,7 +646,7 @@ namespace {
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
-                int k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
+                k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
 
                 // If the path to the queen is fully defended, assign a big bonus.
                 // Otherwise assign a smaller bonus if the block square is defended.
