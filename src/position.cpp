@@ -1037,7 +1037,10 @@ Value Position::see(Move m) const {
 
 bool Position::is_draw() const {
 
-  if (st->rule50 > 99 && (!checkers() || MoveList<LEGAL>(*this).size()))
+  bool mustprogress =   (non_pawn_material(WHITE) <= BishopValueMg)
+                     || (non_pawn_material(BLACK) <= BishopValueMg);
+
+  if (st->rule50 > (mustprogress ? 19 : 99) && (!checkers() || MoveList<LEGAL>(*this).size()))
       return true;
 
   StateInfo* stp = st;
