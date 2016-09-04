@@ -93,19 +93,22 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard b, neighbours, stoppers, doubled, supported, phalanx, computed;
     Square s;
     bool opposed, lever, connected, backward;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
-    const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
+    const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)]; 
+    Bitboard connectedGroups[8];
 
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = computed = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
+    e->connectedGroupsSize[Us] = 0;
+ 
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
@@ -129,6 +132,43 @@ namespace {
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
         connected  = supported | phalanx;
+        
+        if (!(computed & s))
+        { 
+            int sIndex = -1;
+
+            // See if we can join s to an existing connected group
+            for (int g = e->connectedGroupsSize[Us] - 1; g >= 0; --g)
+            {
+                if (connectedGroups[g] & DistanceRingBB[s]) {
+                    assert(DistanceRingBB[s] & s);
+                    
+                    if (sIndex < 0)
+                        // We have found a first cluster in which s can belong.                    
+                        connectedGroups[g] |= DistanceRingBB[s] & ourPawns;
+                    else 
+                    {
+                        // s have surrounders in 2 connected groups, at index sIndex and g
+                        // merge the first cluster into the second...
+                        connectedGroups[g] |= connectedGroups[sIndex];
+                        
+                        // and compress the cluster array
+                        for (int h = e->connectedGroupsSize[Us] - 1; h > sIndex; --h)                        
+                            connectedGroups[h - 1] = connectedGroups[h];                        
+                        e->connectedGroupsSize[Us]--;                        
+                    }
+                    
+                    sIndex = g;                    
+                }
+            }
+                    
+            if (sIndex < 0)
+                // s does not belongs to any existing connected group, so create a new one
+                connectedGroups[e->connectedGroupsSize[Us]++] = DistanceRingBB[s] & ourPawns;
+            
+            // no need to visit this area again
+            computed |= DistanceRingBB[s];
+        }
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
