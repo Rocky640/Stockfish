@@ -564,7 +564,7 @@ namespace {
         while (b)
             score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        weak &= ~(pos.pieces(PAWN) & (ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP]));
+        weak &= ~(pos.pieces(PAWN) & ei.attackedBy2[Them]);
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
             score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
