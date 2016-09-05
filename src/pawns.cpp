@@ -25,6 +25,7 @@
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
+#include "uci.h"
 
 namespace {
 
@@ -135,7 +136,8 @@ namespace {
 
         // As we are looking at each Pawn s, construct the connected pawn groups which will be stored
         // in the bitboard array connectedGroups. The goal is to evaluate exactly the number of such groups,
-        // e->connectedGroupsSize[Us], and we explicitly construct the connected groups, if this has any value.
+        // which is isoGroups + multiGroups.
+        // We also explicitly construct the connected groups, if this has any value
 
         if (!(computed & s))
         {
@@ -228,7 +230,9 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
-
+    
+    score -= make_score(0, multiGroups * Options["multi"]);
+    score -= make_score(0, isoGroups * Options["iso"]);
     return score;
   }
 
