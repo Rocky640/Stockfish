@@ -98,8 +98,9 @@ namespace {
     bool opposed, lever, connected, backward;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
-    const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)]; 
+    const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
     Bitboard connectedGroups[8];
+    int multiGroups = 0, isoGroups = 0;
 
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
@@ -107,8 +108,7 @@ namespace {
     e->passedPawns[Us] = e->pawnAttacksSpan[Us] = computed = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->semiopenFiles[Us] = 0xFF;
-    e->connectedGroupsSize[Us] = 0;
- 
+
     e->pawnAttacks[Us] = shift_bb<Right>(ourPawns) | shift_bb<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
@@ -132,44 +132,61 @@ namespace {
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
         connected  = supported | phalanx;
-        
+
+        // As we are looking at each Pawn s, construct the connected pawn groups which will be stored
+        // in the bitboard array connectedGroups. The goal is to evaluate exactly the number of such groups,
+        // e->connectedGroupsSize[Us], and we explicitly construct the connected groups, if this has any value.
+
         if (!(computed & s))
-        { 
-            int sIndex = -1;
+        {
+            // Consider the pawn and surrounding friendly pawns
+            b = (DistanceRingBB[s][0] | s) & ourPawns;
 
-            // See if we can join s to an existing connected group
-            for (int g = e->connectedGroupsSize[Us] - 1; g >= 0; --g)
+            // If the pawn is locally isolated, add one to the isoGroups
+            if (b == SquareBB[s])
             {
-                if (connectedGroups[g] & DistanceRingBB[s]) {
-                    assert(DistanceRingBB[s] & s);
-                    
-                    if (sIndex < 0)
-                        // We have found a first cluster in which s can belong.                    
-                        connectedGroups[g] |= DistanceRingBB[s] & ourPawns;
-                    else 
-                    {
-                        // s have surrounders in 2 connected groups, at index sIndex and g
-                        // merge the first cluster into the second...
-                        connectedGroups[g] |= connectedGroups[sIndex];
-                        
-                        // and compress the cluster array
-                        for (int h = e->connectedGroupsSize[Us] - 1; h > sIndex; --h)                        
-                            connectedGroups[h - 1] = connectedGroups[h];                        
-                        e->connectedGroupsSize[Us]--;                        
-                    }
-                    
-                    sIndex = g;                    
-                }
+                isoGroups++;
+                // or only if we need an explicit contruction, 
+                // we can use instead this to add to the end of the array
+                // connectedGroups[8 - isoGroups++] = SquareBB[s];
             }
-                    
-            if (sIndex < 0)
-                // s does not belongs to any existing connected group, so create a new one
-                connectedGroups[e->connectedGroupsSize[Us]++] = DistanceRingBB[s] & ourPawns;
-            
-            // no need to visit this area again
-            computed |= DistanceRingBB[s];
-        }
+            else
+            {
+                // See if we can join this b to an existing connected group
+                int sIndex = -1;
+                for (int g = multiGroups - 1; g >= 0; --g)
+                {
+                    if (connectedGroups[g] & b) {
+                        if (sIndex < 0)
+                            // We have found a first group to which b is connected
+                            connectedGroups[g] |= b;
+                        else
+                        {
+                            // Pawn s have surrounders in 2 connected groups, at index sIndex and g
+                            // So we merge the first group into the second...
+                            connectedGroups[g] |= connectedGroups[sIndex];
 
+                            // ...and compress the array, erasing the element at sIndex
+                            for (int h = multiGroups - 1; h > sIndex; --h)
+                                connectedGroups[h - 1] = connectedGroups[h];
+
+                            // ...and decrease the number of groups.
+                            multiGroups--;
+                        }
+
+                        sIndex = g;
+                    }
+                }
+
+                if (sIndex < 0)
+                    // Pawn s does not belongs to any existing connected group, so create a new one
+                    connectedGroups[multiGroups++] = b;
+
+                // Remember not to visit this area again
+                computed |= b;
+            }
+        }
+        
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
         if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
