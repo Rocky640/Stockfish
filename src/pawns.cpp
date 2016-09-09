@@ -93,9 +93,9 @@ namespace {
     const Square Right = (Us == WHITE ? DELTA_NE : DELTA_SW);
     const Square Left  = (Us == WHITE ? DELTA_NW : DELTA_SE);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard b, neighbours, stoppers, doubled, supported, phalanx, backward;
     Square s;
-    bool opposed, lever, connected, backward;
+    bool opposed, lever, connected;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -133,7 +133,7 @@ namespace {
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
         if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
-            backward = false;
+            backward = 0;
         else
         {
             // Find the backmost rank with neighbours or stoppers
@@ -143,6 +143,13 @@ namespace {
             // either there is a stopper in the way on this rank, or there is a
             // stopper on adjacent file which controls the way to that rank.
             backward = (b | shift_bb<Up>(b & adjacent_files_bb(f))) & stoppers;
+
+            // If this pawn is for example b3 in a configuration such as a4 b3 c4 
+            // against a5 b6 c5, than consider that b file locked for White.
+            if (Us == WHITE)
+            if (opposed && more_than_one(neighbours & pawnAttacksBB[s]) 
+                        && more_than_one(stoppers   & pawnAttacksBB[s + Up]))
+                e->lockedFiles += 1;
 
             assert(!backward || !(pawn_attack_span(Them, s + Up) & neighbours));
         }
@@ -170,6 +177,8 @@ namespace {
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+        else if (Us == WHITE)
+            e->lockedFiles += !!(theirPawns & (s + Up));
     }
 
     return score;
@@ -213,12 +222,11 @@ Entry* probe(const Position& pos) {
       return e;
 
   e->key = key;
+  e->lockedFiles = 0;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
 
   e->asymmetry   = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
   e->openFiles   = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
-  e->lockedFiles = popcount(  shift_bb<DELTA_N>(pos.pieces(WHITE, PAWN))
-                            & pos.pieces(BLACK, PAWN));
 
   return e;
 }
