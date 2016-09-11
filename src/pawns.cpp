@@ -47,8 +47,8 @@ namespace {
   // Doubled pawn penalty
   const Score Doubled = S(18, 38);
   
-  // Bonus for healthy pawns on both flanks
-  const Score BothFlanks = S(8, 8);
+  // Bonus for having group some connected pawns on both flanks
+  const Score ConnectedBothFlanks = S(4, 4);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -98,7 +98,7 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
-    int healthyFlank[2] = {0, 0};
+    int connectedFlank[2] = {0, 0};
     bool opposed, lever, connected, backward;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
@@ -168,7 +168,7 @@ namespace {
 
         if (connected)
         {
-            healthyFlank[f > FILE_D] += 1;
+            connectedFlank[f > FILE_D] += 1;
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
         }
 
@@ -179,8 +179,8 @@ namespace {
             score += Lever[relative_rank(Us, s)];
     }
 
-    // Allocate the BothFlanks bonus only once if some connected pawns on both flanks.
-    score += BothFlanks * !!(healthyFlank[0] * healthyFlank[1]);
+    // Allocate the ConnectedBothFlanks bonus only once if some connected pawns on both flanks.
+    score += ConnectedBothFlanks * !!(connectedFlank[0] * connectedFlank[1]);
 
     return score;
   }
