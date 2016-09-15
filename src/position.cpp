@@ -291,8 +291,8 @@ void Position::set_castling_right(Color c, Square rfrom) {
 
 void Position::set_check_info(StateInfo* si) const {
 
-  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->pinnersForKing[WHITE]);
-  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->pinnersForKing[BLACK]);
+  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE));
+  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK));
 
   Square ksq = square<KING>(~sideToMove);
 
@@ -420,15 +420,14 @@ Phase Position::game_phase() const {
 /// slider if removing that piece from the board would result in a position where
 /// square 's' is attacked. For example, a king-attack blocking piece can be either
 /// a pinned or a discovered check piece, according if its color is the opposite
-/// or the same of the color of the slider. The pinners bitboard get filled with
-/// real and potential pinners.
+/// or the same of the color of the slider.
 
-Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const {
+Bitboard Position::slider_blockers(Bitboard sliders, Square s) const {
 
   Bitboard b, p, result = 0;
 
   // Pinners are sliders that attack 's' when a pinned piece is removed
-  pinners = p = (  (PseudoAttacks[ROOK  ][s] & pieces(QUEEN, ROOK))
+  p = (  (PseudoAttacks[ROOK  ][s] & pieces(QUEEN, ROOK))
                  | (PseudoAttacks[BISHOP][s] & pieces(QUEEN, BISHOP))) & sliders;
 
   while (p)
@@ -1026,10 +1025,7 @@ Value Position::see(Move m) const {
       // Locate and remove the next least valuable attacker
       captured = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers);
       stm = ~stm;
-      stmAttackers = attackers & pieces(stm);
-      if (   (stmAttackers & pinned_pieces(stm))
-          && (st->pinnersForKing[stm] & occupied) == st->pinnersForKing[stm])
-          stmAttackers &= ~pinned_pieces(stm);
+      stmAttackers = attackers & pieces(stm) & ~pinned_pieces(stm);
 
       ++slIndex;
 
