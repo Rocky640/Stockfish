@@ -995,15 +995,7 @@ Value Position::see(Move m) const {
 
   // If the opponent has no attackers we are finished
   stm = ~stm;
-  stmAttackers = attackers & pieces(stm);
-  occupied ^= to; // For the case when captured piece is a pinner
-
-  // Don't allow pinned pieces to attack as long all pinners (this includes also
-  // potential ones) are on their original square. When a pinner moves to the
-  // exchange-square or get captured on it, we fall back to standard SEE behaviour.
-  if (   (stmAttackers & pinned_pieces(stm))
-      && (st->pinnersForKing[stm] & occupied) == st->pinnersForKing[stm])
-      stmAttackers &= ~pinned_pieces(stm);
+  stmAttackers = attackers & pieces(stm) & ~pinned_pieces(stm);
 
   if (!stmAttackers)
         return swapList[0];
