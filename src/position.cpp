@@ -291,8 +291,8 @@ void Position::set_castling_right(Color c, Square rfrom) {
 
 void Position::set_check_info(StateInfo* si) const {
 
-  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->pinnersForKing[WHITE]);
-  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->pinnersForKing[BLACK]);
+  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->pinnedMobility[WHITE]);
+  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->pinnedMobility[BLACK]);
 
   Square ksq = square<KING>(~sideToMove);
 
@@ -420,24 +420,44 @@ Phase Position::game_phase() const {
 /// slider if removing that piece from the board would result in a position where
 /// square 's' is attacked. For example, a king-attack blocking piece can be either
 /// a pinned or a discovered check piece, according if its color is the opposite
-/// or the same of the color of the slider. The pinners bitboard get filled with
-/// real and potential pinners.
+/// or the same of the color of the slider. The blockerMobility bitboard get filled with
+/// squares where pinned pieces can move despite the pin.
 
-Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const {
+Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& blockerMobility) const {
 
-  Bitboard b, p, result = 0;
+  Bitboard b, snipers, result = 0;
+  blockerMobility = 0;
 
   // Pinners are sliders that attack 's' when a pinned piece is removed
-  pinners = p = (  (PseudoAttacks[ROOK  ][s] & pieces(QUEEN, ROOK))
-                 | (PseudoAttacks[BISHOP][s] & pieces(QUEEN, BISHOP))) & sliders;
+  snipers = (PseudoAttacks[ROOK][s] & pieces(QUEEN, ROOK)) & sliders;
 
-  while (p)
+  while (snipers)
   {
-      b = between_bb(s, pop_lsb(&p)) & pieces();
-
+      Square sniper = pop_lsb(&snipers);
+      b = between_bb(s, sniper) & pieces();
+      
       if (!more_than_one(b))
+      {
           result |= b;
+          if (b & pieces(QUEEN, ROOK))
+              blockerMobility |= LineBB[s][sniper];
+      }
   }
+
+  snipers  = (PseudoAttacks[BISHOP][s] & pieces(QUEEN, BISHOP)) & sliders;
+  while (snipers)
+  {
+      Square sniper = pop_lsb(&snipers);
+      b = between_bb(s, sniper) & pieces();
+      
+      if (!more_than_one(b))
+      {
+          result |= b;
+          if (b & ~pieces(ROOK, KNIGHT))
+              blockerMobility |= LineBB[s][sniper];
+      }
+  }
+
   return result;
 }
 
@@ -997,13 +1017,10 @@ Value Position::see(Move m) const {
   // If the opponent has no attackers we are finished
   stm = ~stm;
   stmAttackers = attackers & pieces(stm);
-  occupied ^= to; // For the case when captured piece is a pinner
 
-  // Don't allow pinned pieces to attack as long all pinners (this includes also
-  // potential ones) are on their original square. When a pinner moves to the
-  // exchange-square or get captured on it, we fall back to standard SEE behaviour.
-  if (   (stmAttackers & pinned_pieces(stm))
-      && (st->pinnersForKing[stm] & occupied) == st->pinnersForKing[stm])
+  // Exclude pinned pieces from the stmAttackers if none can legally move 
+  // to the "to" square in the starting position.
+  if (!(st->pinnedMobility[stm] & to))
       stmAttackers &= ~pinned_pieces(stm);
 
   if (!stmAttackers)
@@ -1027,10 +1044,11 @@ Value Position::see(Move m) const {
       captured = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers);
       stm = ~stm;
       stmAttackers = attackers & pieces(stm);
-      if (   (stmAttackers & pinned_pieces(stm))
-          && (st->pinnersForKing[stm] & occupied) == st->pinnersForKing[stm])
-          stmAttackers &= ~pinned_pieces(stm);
 
+      // Exclude pinned pieces from the stmAttackers if none can legally move 
+      // to the "to" square in the starting position.
+      if (!(st->pinnedMobility[stm] & to))
+          stmAttackers &= ~pinned_pieces(stm);
       ++slIndex;
 
   } while (stmAttackers && (captured != KING || (--slIndex, false))); // Stop before a king capture
