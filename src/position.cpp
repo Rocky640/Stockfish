@@ -291,8 +291,9 @@ void Position::set_castling_right(Color c, Square rfrom) {
 
 void Position::set_check_info(StateInfo* si) const {
 
-  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->pinnedMobility[WHITE]);
-  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->pinnedMobility[BLACK]);
+  si->pinnedMobility = 0;
+  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->pinnedMobility);
+  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->pinnedMobility);
 
   Square ksq = square<KING>(~sideToMove);
 
@@ -420,16 +421,18 @@ Phase Position::game_phase() const {
 /// slider if removing that piece from the board would result in a position where
 /// square 's' is attacked. For example, a king-attack blocking piece can be either
 /// a pinned or a discovered check piece, according if its color is the opposite
-/// or the same of the color of the slider. The blockerMobility bitboard get filled with
-/// squares where pinned pieces can move despite the pin.
+/// or the same of the color of the slider. The pinnedMobility bitboard must be initialized by the caller, 
+/// and gets filled with squares where pinned pieces can move despite the pin.
 
-Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& blockerMobility) const {
+Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinnedMobility) const {
 
   Bitboard b, snipers, result = 0;
-  blockerMobility = 0;
 
-  // Pinners are sliders that attack 's' when a pinned piece is removed
+  // Snipers are sliders that attack 's' when some blocking pieces are removed
   snipers = (PseudoAttacks[ROOK][s] & pieces(QUEEN, ROOK)) & sliders;
+
+
+  Color pinnedColor = color_of(piece_on(s));
 
   while (snipers)
   {
@@ -439,8 +442,8 @@ Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& blocker
       if (!more_than_one(b))
       {
           result |= b;
-          if (b & pieces(QUEEN, ROOK))
-              blockerMobility |= LineBB[s][sniper];
+          if (b & pieces(pinnedColor, QUEEN, ROOK))
+              pinnedMobility |= LineBB[s][sniper];
       }
   }
 
@@ -453,8 +456,8 @@ Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& blocker
       if (!more_than_one(b))
       {
           result |= b;
-          if (b & ~pieces(ROOK, KNIGHT))
-              blockerMobility |= LineBB[s][sniper];
+          if (b & pieces(pinnedColor) & ~pieces(pinnedColor, ROOK, KNIGHT))
+              pinnedMobility |= LineBB[s][sniper];
       }
   }
 
@@ -1013,16 +1016,17 @@ Value Position::see(Move m) const {
   // Find all attackers to the destination square, with the moving piece
   // removed, but possibly an X-ray attacker added behind it.
   attackers = attackers_to(to, occupied) & occupied;
+  
+  // Exclude all the pinned pieces from the attackers if none can legally move 
+  // to the "to" square in the starting position.
+  if (!(st->pinnedMobility & to))
+      attackers &= ~(pinned_pieces(WHITE)|pinned_pieces(BLACK));
 
   // If the opponent has no attackers we are finished
   stm = ~stm;
   stmAttackers = attackers & pieces(stm);
 
-  // Exclude pinned pieces from the stmAttackers if none can legally move 
-  // to the "to" square in the starting position.
-  if (!(st->pinnedMobility[stm] & to))
-      stmAttackers &= ~pinned_pieces(stm);
-
+ 
   if (!stmAttackers)
         return swapList[0];
 
@@ -1045,10 +1049,6 @@ Value Position::see(Move m) const {
       stm = ~stm;
       stmAttackers = attackers & pieces(stm);
 
-      // Exclude pinned pieces from the stmAttackers if none can legally move 
-      // to the "to" square in the starting position.
-      if (!(st->pinnedMobility[stm] & to))
-          stmAttackers &= ~pinned_pieces(stm);
       ++slIndex;
 
   } while (stmAttackers && (captured != KING || (--slIndex, false))); // Stop before a king capture

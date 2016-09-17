@@ -64,7 +64,7 @@ struct StateInfo {
   Piece      capturedPiece;
   StateInfo* previous;
   Bitboard   blockersForKing[COLOR_NB];
-  Bitboard   pinnedMobility[COLOR_NB];
+  Bitboard   pinnedMobility;
   Bitboard   checkSquares[PIECE_TYPE_NB];
 };
 
@@ -122,7 +122,7 @@ public:
   Bitboard attacks_from(Piece pc, Square s) const;
   template<PieceType> Bitboard attacks_from(Square s) const;
   template<PieceType> Bitboard attacks_from(Square s, Color c) const;
-  Bitboard slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const;
+  Bitboard slider_blockers(Bitboard sliders, Square s, Bitboard& pinnedMobility) const;
 
   // Properties of moves
   bool legal(Move m) const;
