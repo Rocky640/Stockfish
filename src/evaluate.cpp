@@ -90,9 +90,8 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     Bitboard kingRing[COLOR_NB];
 
-    // kingAttackersCount[color] is the number of pieces of the given color
-    // which attack a square in the kingRing of the enemy king.
-    int kingAttackersCount[COLOR_NB];
+    // kingAttackers are pieces attacking the opponent king ring.
+    Bitboard kingAttackers[COLOR_NB];
 
     // kingAttackersWeight[color] is the sum of the "weights" of the pieces of the
     // given color which attack a square in the kingRing of the enemy king. The
@@ -210,7 +209,6 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
   // Penalties for enemy's safe checks
-  const int QueenContactCheck = 997;
   const int QueenCheck        = 695;
   const int RookCheck         = 638;
   const int BishopCheck       = 538;
@@ -237,11 +235,11 @@ namespace {
     {
         ei.kingRing[Them] = b | shift_bb<Down>(b);
         b &= ei.attackedBy[Us][PAWN];
-        ei.kingAttackersCount[Us] = popcount(b);
+        ei.kingAttackers[Us] = b;
         ei.kingAdjacentZoneAttacksCount[Us] = ei.kingAttackersWeight[Us] = 0;
     }
     else
-        ei.kingRing[Them] = ei.kingAttackersCount[Us] = 0;
+        ei.kingRing[Them] = ei.kingAttackers[Us] = 0;
   }
 
 
@@ -278,7 +276,7 @@ namespace {
 
         if (b & ei.kingRing[Them])
         {
-            ei.kingAttackersCount[Us]++;
+            ei.kingAttackers[Us] |= s;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
@@ -389,7 +387,7 @@ namespace {
   };
 
   template<Color Us, bool DoTrace>
-  Score evaluate_king(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_king(const Position& pos, EvalInfo& ei) {
 
     const Color Them = (Us == WHITE ? BLACK   : WHITE);
     const Square  Up = (Us == WHITE ? DELTA_N : DELTA_S);
@@ -402,37 +400,12 @@ namespace {
     Score score = ei.pi->king_safety<Us>(pos, ksq);
 
     // Main king safety evaluation
-    if (ei.kingAttackersCount[Them])
+    if (ei.kingAttackers[Them])
     {
-        // Find the attacked squares which are defended only by the king...
-        undefended =   ei.attackedBy[Them][ALL_PIECES]
-                    &  ei.attackedBy[Us][KING]
-                    & ~ei.attackedBy2[Us];
-
-        // ... and those which are not defended at all in the larger king ring
-        b =  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
-           & ei.kingRing[Us] & ~pos.pieces(Them);
-
-        // Initialize the 'kingDanger' variable, which will be transformed
-        // later into a king danger score. The initial value is based on the
-        // number and types of the enemy's attacking pieces, the number of
-        // attacked and undefended squares around our king and the quality of
-        // the pawn shelter (current 'score' value).
-        kingDanger =  std::min(807, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
-                     + 101 * ei.kingAdjacentZoneAttacksCount[Them]
-                     + 235 * popcount(undefended)
-                     + 134 * (popcount(b) + !!ei.pinnedPieces[Us])
-                     - 717 * !pos.count<QUEEN>(Them)
-                     -   7 * mg_value(score) / 5 - 5;
-
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
-        // undefended squares around the king reachable by the enemy queen...
-        b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
-
-        // ...and keep squares supported by another enemy piece
-        kingDanger += QueenContactCheck * popcount(b & ei.attackedBy2[Them]);
-
-        // Analyse the safe enemy's checks which are possible on next move...
+        // Initialize the kingDanger with the above safety score.
+        kingDanger = - 7 * mg_value(score) / 5;
+          
+        // Analyse the safe enemy's checks which are possible from a distance on next move...
         safe  = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
 
         // ... and some other potential checks, only requiring the square to be
@@ -445,7 +418,16 @@ namespace {
 
         // Enemy queen safe checks
         if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
+        {
             kingDanger += QueenCheck, score -= SafeCheck;
+
+            // If no queen was already amongst the attackers, add one of them
+            if (!(pos.pieces(QUEEN) & ei.kingAttackers[Them]))
+            {
+                ei.kingAttackers[Them] |= pos.squares<QUEEN>(Them)[0];
+                ei.kingAttackersWeight[Them] += KingAttackWeights[QUEEN];
+            }
+        }
 
         // For other pieces, also consider the square safe if attacked twice,
         // and only defended by a queen.
@@ -455,14 +437,32 @@ namespace {
 
         // Enemy rooks safe and other checks
         if (b1 & ei.attackedBy[Them][ROOK] & safe)
+        {
             kingDanger += RookCheck, score -= SafeCheck;
+            
+            // If no rook was already amongst the attackers, add one of them
+            if (!(pos.pieces(ROOK) & ei.kingAttackers[Them]))
+            {
+                ei.kingAttackers[Them] |= pos.squares<ROOK>(Them)[0];
+                ei.kingAttackersWeight[Them] += KingAttackWeights[ROOK];
+            }
+        }
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
 
         // Enemy bishops safe and other checks
         if (b2 & ei.attackedBy[Them][BISHOP] & safe)
+        {
             kingDanger += BishopCheck, score -= SafeCheck;
+
+            // If no bishop was already amongst the attackers, add one of them
+            if (!(pos.pieces(BISHOP) & ei.kingAttackers[Them]))
+            {
+                ei.kingAttackers[Them] |= pos.squares<BISHOP>(Them)[0];
+                ei.kingAttackersWeight[Them] += KingAttackWeights[BISHOP];
+            }
+        }
 
         else if (b2 & ei.attackedBy[Them][BISHOP] & other)
             score -= OtherCheck;
@@ -470,12 +470,47 @@ namespace {
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
+        {
             kingDanger += KnightCheck, score -= SafeCheck;
+
+            // If no knight was already amongst the attackers, add one of them
+            if (!(pos.pieces(KNIGHT) & ei.kingAttackers[Them]))
+            {
+                ei.kingAttackers[Them] |= pos.squares<KNIGHT>(Them)[0];
+                ei.kingAttackersWeight[Them] += KingAttackWeights[KNIGHT];
+            }
+        }
 
         else if (b & other)
             score -= OtherCheck;
 
-        // Compute the king danger score and subtract it from the evaluation
+        // Now proceed to calculate the remaining of the kingDanger
+        
+        // Find the attacked squares which are defended only by the king...
+        undefended =   ei.attackedBy[Them][ALL_PIECES]
+                    &  ei.attackedBy[Us][KING]
+                    & ~ei.attackedBy2[Us];
+        
+        // ...the squares where a queen can give a safe contact check, supported by another piece.
+        b1 = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them) & ei.attackedBy2[Them];
+
+        // ... and those which are not defended at all in the larger king ring
+        b2 =  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
+           & ei.kingRing[Us] & ~pos.pieces(Them);
+
+        // Initialize the 'kingDanger' variable, which will be transformed
+        // later into a king danger score. The initial value is based on the number of
+        // attacked and undefended squares around our king, the presence of pinned pieces or queen,
+        // and the quality of the pawn shelter (current 'score' value).
+        kingDanger += std::min(807, popcount(ei.kingAttackers[Them]) * ei.kingAttackersWeight[Them])
+                     + 101 * ei.kingAdjacentZoneAttacksCount[Them]
+                     + 235 * popcount(undefended)
+                     + 997 * popcount(b1)
+                     + 134 * (popcount(b2) + !!ei.pinnedPieces[Us])
+                     - 717 * !pos.count<QUEEN>(Them)
+                     - 5;
+
+        // Transform kingDanger into a score and subtract it from the evaluation
         if (kingDanger > 0)
             score -= make_score(std::min(kingDanger * kingDanger / 4096,  2 * int(BishopValueMg)), 0);
     }
