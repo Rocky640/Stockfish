@@ -57,13 +57,26 @@ const string PieceToChar(" PNBRQK  pnbrqk");
 
 template<int Pt>
 PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
-                       Bitboard& occupied, Bitboard& attackers) {
+                       Bitboard& occupied, Bitboard& attackers, const Bitboard snipers, Square ksq) {
 
   Bitboard b = stmAttackers & bb[Pt];
   if (!b)
-      return min_attacker<Pt+1>(bb, to, stmAttackers, occupied, attackers);
+      return min_attacker<Pt + 1>(bb, to, stmAttackers, occupied, attackers, snipers, ksq);
 
-  occupied ^= b & ~(b - 1);
+  Bitboard a = b & ~(b - 1);
+
+  // Can this attacker legally move from "a" to "to"
+
+  Bitboard _snipers = snipers & (occupied ^ to);
+  // If this move leaves the stm King in check by a slider, remove from stmAttackers, 
+  // and continue with next piece
+  while (_snipers)
+  {
+     if (!(BetweenBB[pop_lsb(& _snipers)][ksq] & ((occupied ^ a) | to)))
+         return min_attacker<Pt>(bb, to, stmAttackers ^ a, occupied, attackers, snipers, ksq);
+  }
+
+  occupied ^= a;
 
   if (Pt == PAWN || Pt == BISHOP || Pt == QUEEN)
       attackers |= attacks_bb<BISHOP>(to, occupied) & (bb[BISHOP] | bb[QUEEN]);
@@ -76,7 +89,7 @@ PieceType min_attacker(const Bitboard* bb, Square to, Bitboard stmAttackers,
 }
 
 template<>
-PieceType min_attacker<KING>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&) {
+PieceType min_attacker<KING>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&, const Bitboard, Square) {
   return KING; // No need to update bitboards: it is the last cycle
 }
 
@@ -296,8 +309,8 @@ void Position::set_castling_right(Color c, Square rfrom) {
 
 void Position::set_check_info(StateInfo* si) const {
 
-  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->pinnersForKing[WHITE]);
-  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->pinnersForKing[BLACK]);
+  si->blockersForKing[WHITE] = slider_blockers(pieces(BLACK), square<KING>(WHITE), si->snipersOnKing[WHITE]);
+  si->blockersForKing[BLACK] = slider_blockers(pieces(WHITE), square<KING>(BLACK), si->snipersOnKing[BLACK]);
 
   Square ksq = square<KING>(~sideToMove);
 
@@ -425,26 +438,25 @@ Phase Position::game_phase() const {
 /// slider if removing that piece from the board would result in a position where
 /// square 's' is attacked. For example, a king-attack blocking piece can be either
 /// a pinned or a discovered check piece, according if its color is the opposite
-/// or the same of the color of the slider. The pinners bitboard get filled with
-/// real and potential pinners.
+/// or the same of the color of the slider.
 
-Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& pinners) const {
+Bitboard Position::slider_blockers(Bitboard sliders, Square s, Bitboard& all_snipers) const {
 
-  Bitboard b, p, result = 0;
+  Bitboard snipers, b, result = 0;
 
-  // Pinners are sliders that attack 's' when a pinned piece is removed
-  pinners = p = (  (PseudoAttacks[ROOK  ][s] & pieces(QUEEN, ROOK))
-                 | (PseudoAttacks[BISHOP][s] & pieces(QUEEN, BISHOP))) & sliders;
+  // Snipers are 'sliders' that are aligned on target 's'
+  all_snipers = snipers = ((PseudoAttacks[ROOK  ][s] & pieces(QUEEN, ROOK))
+                           | (PseudoAttacks[BISHOP][s] & pieces(QUEEN, BISHOP))) & sliders;
 
-  while (p)
+  while (snipers)
   {
-      b = between_bb(s, pop_lsb(&p)) & pieces();
-
+      b = between_bb(s, pop_lsb(&snipers)) & pieces();
       if (!more_than_one(b))
           result |= b;
   }
   return result;
 }
+
 
 
 /// Position::attackers_to() computes a bitboard of all pieces which attack a
@@ -995,6 +1007,17 @@ Value Position::see(Move m) const {
       swapList[0] = PieceValue[MG][PAWN];
   }
 
+  // If this move leaves the stm King in check by a slider, return a big negative value.
+  captured = type_of(piece_on(from));
+  if (captured != KING)
+  {
+      Bitboard _snipers = st->snipersOnKing[stm] & (occupied ^ to);
+      while (_snipers)
+      {
+          if (!(BetweenBB[pop_lsb(&_snipers)][square<KING>(stm)] & (occupied | to)))
+              return VALUE_INVALID;
+      }
+  }
   // Find all attackers to the destination square, with the moving piece
   // removed, but possibly an X-ray attacker added behind it.
   attackers = attackers_to(to, occupied) & occupied;
@@ -1002,17 +1025,13 @@ Value Position::see(Move m) const {
   // If the opponent has no attackers we are finished
   stm = ~stm;
   stmAttackers = attackers & pieces(stm);
-  occupied ^= to; // For the case when captured piece is a pinner
-
-  // Don't allow pinned pieces to attack as long all pinners (this includes also
-  // potential ones) are on their original square. When a pinner moves to the
-  // exchange-square or get captured on it, we fall back to standard SEE behaviour.
-  if (   (stmAttackers & pinned_pieces(stm))
-      && (st->pinnersForKing[stm] & occupied) == st->pinnersForKing[stm])
-      stmAttackers &= ~pinned_pieces(stm);
 
   if (!stmAttackers)
-        return swapList[0];
+      return swapList[0];
+
+  // Since there is some stmAttackers, if our last move was by a king, it was illegal
+  if (captured == KING)
+      return VALUE_INVALID;
 
   // The destination square is defended, which makes things rather more
   // difficult to compute. We proceed by building up a "swap list" containing
@@ -1020,7 +1039,6 @@ Value Position::see(Move m) const {
   // destination square, where the sides alternately capture, and always
   // capture with the least valuable piece. After each capture, we look for
   // new X-ray attacks from behind the capturing piece.
-  captured = type_of(piece_on(from));
 
   do {
       assert(slIndex < 32);
@@ -1028,13 +1046,17 @@ Value Position::see(Move m) const {
       // Add the new entry to the swap list
       swapList[slIndex] = -swapList[slIndex - 1] + PieceValue[MG][captured];
 
-      // Locate and remove the next least valuable attacker
-      captured = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers);
+      // Locate and remove the next least valuable attacker which is not pinned
+      captured = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers, 
+                                    st->snipersOnKing[stm], square<KING>(stm));
+
+       // If the last moved piece is not really a king, stop here
+       // (because moving any of the stmAttackers toward "to" were illegal)
+      if (captured == KING && !(stmAttackers & square<KING>(stm)))
+          break;
+
       stm = ~stm;
       stmAttackers = attackers & pieces(stm);
-      if (   (stmAttackers & pinned_pieces(stm))
-          && (st->pinnersForKing[stm] & occupied) == st->pinnersForKing[stm])
-          stmAttackers &= ~pinned_pieces(stm);
 
       ++slIndex;
 
