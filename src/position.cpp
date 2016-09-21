@@ -1042,10 +1042,13 @@ Value Position::see(Move m) const {
 
   // Having built the swap list, we negamax through it to find the best
   // achievable score from the point of view of the side to move.
+  
+  int factor = 32 - slIndex;
+
   while (--slIndex)
       swapList[slIndex - 1] = std::min(-swapList[slIndex], swapList[slIndex - 1]);
 
-  return swapList[0];
+  return swapList[0] * factor / 32;
 }
 
 
