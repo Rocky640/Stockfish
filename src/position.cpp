@@ -1043,15 +1043,13 @@ Value Position::see(Move m) const {
   // Having built the swap list, we negamax through it to find the best
   // achievable score from the point of view of the side to move.
   
-  // The longer the sequence, the more interesting it could be to look closely at it,
-  // so return a higher value.
-  
-  int bonus = slIndex * 4;
+  // Penalize long swap lists. They might be unreliable. 
+  int penalty = slIndex * 4;
 
   while (--slIndex)
       swapList[slIndex - 1] = std::min(-swapList[slIndex], swapList[slIndex - 1]);
 
-  return swapList[0] + bonus;
+  return swapList[0] - penalty;
 }
 
 
