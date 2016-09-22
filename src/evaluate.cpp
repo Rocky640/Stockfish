@@ -196,7 +196,7 @@ namespace {
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
-  const Score PawnCanSupport      = S(14,  6);
+  const Score PawnCanProtect      = S(14,  6);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -516,7 +516,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, weak, defended, safe;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -532,13 +532,13 @@ namespace {
         b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
                                     | ei.attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
+        safe = (shift_bb<Right>(b) | shift_bb<Left>(b)) & weak;
 
-        if (weak ^ safeThreats)
+        if (weak ^ safe)
             score += ThreatByHangingPawn;
 
-        while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        while (safe)
+            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safe)))];
     }
 
     // Non-pawn enemies defended by a pawn
@@ -567,21 +567,23 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Find our pawns which can safely push
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
+    // Find squares where our pawns can safely push
+    safe = pos.pieces(Us, PAWN) & ~(ei.pinnedPieces[Us] | TRank7BB);
+    safe = shift_bb<Up>(safe | (shift_bb<Up>(safe & TRank2BB) & ~pos.pieces()));
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+    safe &=  ~pos.pieces()
+           & ~ei.attackedBy[Them][PAWN]
+           & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    // Find the new squares that could be attacked by a safe push
-    b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
+    // Find the new squares that can be attacked from those safe squares
+    b =  (shift_bb<Left>(safe) | shift_bb<Right>(safe))
        & ~ei.attackedBy[Us][PAWN];
 
-    // Bonus if they can attack an enemy piece or protect an unprotected friendly pawn
+    // Bonus for potential to attack an enemy piece
+    // or protect a friendly piece, or get some protection.
     score +=  ThreatByPawnPush * popcount(b & pos.pieces(Them))
-            + PawnCanSupport   * popcount(b & pos.pieces(Us, PAWN));
+            + PawnCanProtect   * popcount(  (b & (pos.pieces(Us) ^ pos.pieces(Us, KING)))
+                                          | (safe & ei.attackedBy[Us][PAWN]));
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
