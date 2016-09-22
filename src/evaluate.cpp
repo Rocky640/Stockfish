@@ -196,6 +196,7 @@ namespace {
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score PawnCanSupport      = S(14,  6);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -566,7 +567,7 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
+    // Find our pawns which can safely push
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift_bb<Up>(b | (shift_bb<Up>(b & TRank2BB) & ~pos.pieces()));
 
@@ -574,11 +575,13 @@ namespace {
         & ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
+    // Find the new squares that could be attacked by a safe push
     b =  (shift_bb<Left>(b) | shift_bb<Right>(b))
-       &  pos.pieces(Them)
        & ~ei.attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    // Bonus if they can attack an enemy piece or protect an unprotected friendly pawn
+    score +=  ThreatByPawnPush * popcount(b & pos.pieces(Them))
+            + PawnCanSupport   * popcount(b & pos.pieces(Us, PAWN));
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
