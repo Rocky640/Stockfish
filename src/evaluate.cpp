@@ -194,6 +194,7 @@ namespace {
   const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score LooseEnemies        = S( 0, 25);
+  const Score WeakRook            = S(20,  0);
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
@@ -350,6 +351,10 @@ namespace {
                     && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
+            
+            // Penalty if any relative pin or discovered attack against the rook
+            if (pos.slider_blockers(pos.pieces(Them, BISHOP), s, b))
+                score -= WeakRook;
         }
 
         if (Pt == QUEEN)
