@@ -569,7 +569,9 @@ namespace {
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
+
+    // Consider also moves by 2 squares by pawn on rank 2 if they cannot be taken en passant
+    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces() & ~ei.attackedBy[Them][PAWN]));
 
     b &=  ~pos.pieces()
         & ~ei.attackedBy[Them][PAWN]
