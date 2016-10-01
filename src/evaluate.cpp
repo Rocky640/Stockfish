@@ -376,8 +376,8 @@ namespace {
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
-  const Bitboard WhiteCamp = Rank1BB | Rank2BB | Rank3BB | Rank4BB | Rank5BB;
-  const Bitboard BlackCamp = Rank8BB | Rank7BB | Rank6BB | Rank5BB | Rank4BB;
+  const Bitboard WhiteCamp   = Rank1BB | Rank2BB | Rank3BB | Rank4BB | Rank5BB;
+  const Bitboard BlackCamp   = Rank8BB | Rank7BB | Rank6BB | Rank5BB | Rank4BB;
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
@@ -386,7 +386,7 @@ namespace {
     { QueenSide   & WhiteCamp, QueenSide & WhiteCamp, QueenSide & WhiteCamp, CenterFiles & WhiteCamp,
       CenterFiles & WhiteCamp, KingSide  & WhiteCamp, KingSide  & WhiteCamp, KingSide    & WhiteCamp },
     { QueenSide   & BlackCamp, QueenSide & BlackCamp, QueenSide & BlackCamp, CenterFiles & BlackCamp,
-      CenterFiles & BlackCamp, KingSide  & BlackCamp, KingSide  & BlackCamp, KingSide    & BlackCamp },
+      CenterFiles & BlackCamp, KingSide  & BlackCamp, KingSide  & BlackCamp, KingSide    & BlackCamp }
   };
 
   template<Color Us, bool DoTrace>
@@ -540,6 +540,7 @@ namespace {
         while (safeThreats)
             score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
     }
+    
 
     // Non-pawn enemies defended by a pawn
     defended = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Them][PAWN];
@@ -680,8 +681,8 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard SpaceMask =
-      Us == WHITE ? (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank2BB | Rank3BB | Rank4BB)
-                  : (FileCBB | FileDBB | FileEBB | FileFBB) & (Rank7BB | Rank6BB | Rank5BB);
+      Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
+                  : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
@@ -711,14 +712,19 @@ namespace {
   // evaluate_initiative() computes the initiative correction value for the
   // position, i.e., second order bonus/malus based on the known attacking/defending
   // status of the players.
-  Score evaluate_initiative(const Position& pos, int asymmetry, Value eg) {
+  Score evaluate_initiative(const Position& pos, EvalInfo& ei, Value eg) {
+
+    // Minor battle: bonus for challenged squares in the enemy territory.
+    Bitboard b =  (ei.attackedBy[WHITE][KNIGHT] | ei.attackedBy[WHITE][BISHOP])
+                & (ei.attackedBy[BLACK][KNIGHT] | ei.attackedBy[BLACK][BISHOP]);
+    eg += 12 * (popcount(b & BlackCamp) - popcount(b & WhiteCamp));
 
     int kingDistance =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK))
                       - distance<Rank>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
     int pawns = pos.count<PAWN>(WHITE) + pos.count<PAWN>(BLACK);
 
     // Compute the initiative bonus for the attacking side
-    int initiative = 8 * (asymmetry + kingDistance - 15) + 12 * pawns;
+    int initiative = 8 * (ei.pi->pawn_asymmetry() + kingDistance - 15) + 12 * pawns;
 
     // Now apply the bonus: note that we find the attacking side by extracting
     // the sign of the endgame value, and that we carefully cap the bonus so
@@ -849,7 +855,7 @@ Value Eval::evaluate(const Position& pos) {
               - evaluate_space<BLACK>(pos, ei);
 
   // Evaluate position potential for the winning side
-  score += evaluate_initiative(pos, ei.pi->pawn_asymmetry(), eg_value(score));
+  score += evaluate_initiative(pos, ei , eg_value(score));
 
   // Evaluate scale factor for the winning side
   ScaleFactor sf = evaluate_scale_factor(pos, ei, eg_value(score));
