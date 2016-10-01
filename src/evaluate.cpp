@@ -516,7 +516,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, weak, defended, safe;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -532,13 +532,13 @@ namespace {
         b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
                                     | ei.attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        safe = (shift<Right>(b) | shift<Left>(b)) & weak;
 
-        if (weak ^ safeThreats)
+        if (weak ^ safe)
             score += ThreatByHangingPawn;
 
-        while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        while (safe)
+            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safe)))];
     }
 
     // Non-pawn enemies defended by a pawn
@@ -571,11 +571,14 @@ namespace {
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+    b &= safe = ~pos.pieces()
+               & ~ei.attackedBy[Them][PAWN]
+               & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b =  (shift<Left>(b) | shift<Right>(b))
+    // Consider also one extra push.
+    b |= shift<Up>(b & ~TRank7BB) & safe;
+
+    b = (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
        & ~ei.attackedBy[Us][PAWN];
 
