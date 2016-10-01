@@ -274,19 +274,19 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
-
-        if (Pt == ROOK)
-            b &= attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
-
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
-
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
+
+        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+
+        if (Pt == ROOK)
+            b &= attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
+
+        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (Pt == QUEEN)
             b &= ~(  ei.attackedBy[Them][KNIGHT]
