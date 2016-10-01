@@ -275,6 +275,10 @@ namespace {
             b &= LineBB[pos.square<KING>(Us)][s];
 
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+
+        if (Pt == ROOK)
+            b &= attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
+
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
