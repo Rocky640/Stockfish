@@ -572,11 +572,10 @@ namespace {
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift<Left>(b) | shift<Right>(b))
-       &  pos.pieces(Them)
+       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
        & ~ei.attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
