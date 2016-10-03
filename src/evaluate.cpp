@@ -284,10 +284,12 @@ namespace {
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
+        // For the mobility calculation, of the queen, remove somes squares controlled by the enemy,
+        // unless the queen is defending some other piece.
         if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][KNIGHT]
-                   | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]);
+            b &= pos.pieces(Us) | ~(  ei.attackedBy[Them][KNIGHT]
+                                    | ei.attackedBy[Them][BISHOP]
+                                    | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount(b & mobilityArea[Us]);
 
