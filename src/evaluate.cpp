@@ -197,6 +197,7 @@ namespace {
   const Score WeakQueen           = S(35,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score Threat2WeakPawn     = S( 0, 12);
   const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -516,7 +517,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, weak, defended, safe;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -529,16 +530,16 @@ namespace {
 
     if (weak)
     {
-        b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
+        safe = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
                                     | ei.attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        b = (shift<Right>(safe) | shift<Left>(safe)) & weak;
 
-        if (weak ^ safeThreats)
+        if (weak ^ b)
             score += ThreatByHangingPawn;
 
-        while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        while (b)
+            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&b)))];
     }
 
     // Non-pawn enemies defended by a pawn
@@ -567,13 +568,23 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
+    
+    // Bonus for safe moves by Knight which would create a new attack on a weak pawn.
+    // For sliders, it might also be a move which simply keeps the attack from a distance.
+    safe =  ~pos.pieces()
+          & ~ei.attackedBy[Them][PAWN]
+          & (ei.attackedBy2[Us] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+    b =  (ei.pi->knight_attacks(Us) & ei.attackedBy[Us][KNIGHT]);
+    score += Threat2WeakPawn * popcount(b & safe);
+
+    // Bonus if some pawns can safely push and attack an enemy piece
+    safe =  ~pos.pieces()
+          & ~ei.attackedBy[Them][PAWN]
+          & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+
+    b = pos.pieces(Us, PAWN) & ~TRank7BB;
+    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces())) & safe;
 
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
