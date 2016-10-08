@@ -189,9 +189,10 @@ namespace {
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
-  const Score CloseEnemies        = S( 7,  0);
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
+  const Score CloseEnemies        = S( 7,  0);
+  const Score FarEnemies          = S( 3,  0);  
   const Score ThreatByHangingPawn = S(71, 61);
   const Score LooseEnemies        = S( 0, 25);
   const Score WeakQueen           = S(35,  0);
@@ -394,6 +395,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square  Up = (Us == WHITE ? NORTH : SOUTH);
+    const Bitboard Camp = (Us == WHITE ? WhiteCamp : BlackCamp);
 
     Bitboard undefended, b, b1, b2, safe, other;
     int kingDanger;
@@ -493,6 +495,16 @@ namespace {
        | (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN]);
 
     score -= CloseEnemies * popcount(b);
+    
+    // Do the same for general attacks in our camp, with smaller penalty
+    
+    b = ei.attackedBy[Them][ALL_PIECES] & Camp & ~KingFlank[Us][file_of(ksq)];
+
+    b =  (Us == WHITE ? b << 4 : b >> 4)
+       | (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN]);
+
+    score -= FarEnemies * popcount(b);
+    
 
     if (DoTrace)
         Trace::add(KING, Us, score);
