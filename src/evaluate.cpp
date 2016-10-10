@@ -444,8 +444,8 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if (bQ = ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe))
-            kingDanger += QueenCheck[!!(DistanceRingBB[ksq][1] & bQ)], score -= SafeCheck;
+        if ((bQ = (b1 | b2) & ei.attackedBy[Them][QUEEN] & safe))
+            kingDanger += QueenCheck[!(DistanceRingBB[ksq][1] & bQ)], score -= SafeCheck;
 
         // For other pieces, also consider the square safe if attacked twice,
         // and only defended by a queen.
