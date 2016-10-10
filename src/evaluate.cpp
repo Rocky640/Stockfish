@@ -212,11 +212,10 @@ namespace {
 
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 997;
-  const int QueenCheck        = 695;
+  const int QueenCheck[2]     = {800, 638}; // at distance 2, or further away
   const int RookCheck         = 638;
   const int BishopCheck       = 538;
   const int KnightCheck       = 874;
-
 
   // eval_init() initializes king and attack bitboards for a given color
   // adding pawn attacks. To be done at the beginning of the evaluation.
@@ -395,7 +394,7 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square  Up = (Us == WHITE ? NORTH : SOUTH);
 
-    Bitboard undefended, b, b1, b2, safe, other;
+    Bitboard undefended, b, b1, b2, bQ, safe, other;
     int kingDanger;
     const Square ksq = pos.square<KING>(Us);
 
@@ -445,8 +444,8 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
-            kingDanger += QueenCheck, score -= SafeCheck;
+        if (bQ = ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe))
+            kingDanger += QueenCheck[!!(DistanceRingBB[ksq][1] & bQ)], score -= SafeCheck;
 
         // For other pieces, also consider the square safe if attacked twice,
         // and only defended by a queen.
