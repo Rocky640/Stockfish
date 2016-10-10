@@ -444,15 +444,15 @@ namespace {
         b1 = pos.attacks_from<ROOK  >(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
 
-        // Enemy queen safe checks
+        // Enemy queen safe distant checks
         if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
             kingDanger += QueenCheck, score -= SafeCheck;
 
         // For other pieces, also consider the square safe if attacked twice,
-        // and only defended by a queen.
+        // and only defended by a queen or king
         safe |=  ei.attackedBy2[Them]
-               & ~(ei.attackedBy2[Us] | pos.pieces(Them))
-               & ei.attackedBy[Us][QUEEN];
+               & ~(ei.attackedBy2[Us] | pos.pieces(Them) | b)
+               & (ei.attackedBy[Us][QUEEN] | ei.attackedBy[Us][KING]);
 
         // Enemy rooks safe and other checks
         if (b1 & ei.attackedBy[Them][ROOK] & safe)
