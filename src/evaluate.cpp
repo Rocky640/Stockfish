@@ -492,7 +492,10 @@ namespace {
     b =  (Us == WHITE ? b << 4 : b >> 4)
        | (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN]);
 
-    score -= CloseEnemies * popcount(b);
+    // Adjust penalty according to number of defenders.
+    b1 = KingFlank[Us][file_of(ksq)] & pos.pieces(Us) & ~pos.pieces(Us, PAWN);
+
+    score -= (CloseEnemies + make_score(4 - popcount(b1), 0)) * popcount(b);
 
     if (DoTrace)
         Trace::add(KING, Us, score);
