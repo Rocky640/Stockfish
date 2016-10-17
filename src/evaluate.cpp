@@ -82,6 +82,9 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    // Rook of given color attacking same color pawn from behind.
+    Bitboard pawnAttackedBehind[COLOR_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -232,6 +235,7 @@ namespace {
     ei.attackedBy[Them][ALL_PIECES] |= b;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
     ei.attackedBy2[Us] = ei.attackedBy[Us][PAWN] & ei.attackedBy[Us][KING];
+    ei.pawnAttackedBehind[Us] = 0;
 
     // Init king safety tables only if we are going to use them
     if (pos.non_pawn_material(Us) >= QueenValueMg)
@@ -339,16 +343,20 @@ namespace {
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pi->semiopen_file(Them, file_of(s))];
-
-            // Penalize when trapped by the king, even more if the king cannot castle
-            else if (mob <= 3)
+            else
             {
-                Square ksq = pos.square<KING>(Us);
+                ei.pawnAttackedBehind[Us] |= b & forward_bb(Us, s) & pos.pieces(Us, PAWN);
 
-                if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
-                    && (rank_of(ksq) == rank_of(s) || relative_rank(Us, ksq) == RANK_1)
-                    && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                // Penalize when trapped by the king, even more if the king cannot castle
+                if (mob <= 3)
+                {
+                    Square ksq = pos.square<KING>(Us);
+
+                    if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
+                        && (rank_of(ksq) == rank_of(s) || relative_rank(Us, ksq) == RANK_1)
+                        && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
+                        score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                }
             }
         }
 
@@ -556,9 +564,12 @@ namespace {
         while (b)
             score += Threat[Minor][type_of(pos.piece_on(pop_lsb(&b)))];
 
-        b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
+        // Find rook pressure on weak piece in front of own pawn which can exchange...
+        b =  shift<Up>(ei.pi->pawn_attacks(Them) & ei.pawnAttackedBehind[Us]) & weak;
+        // ...and direct attacks on opponent queen or weak pieces
+        b |= (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
-            score += Threat[Rook ][type_of(pos.piece_on(pop_lsb(&b)))];
+            score += Threat[Rook][type_of(pos.piece_on(pop_lsb(&b)))];
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
 
