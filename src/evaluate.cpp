@@ -377,6 +377,8 @@ namespace {
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
+  const Bitboard Center = (Rank4BB | Rank5BB) & (FileDBB | FileEBB);
+
   const Bitboard WhiteCamp = Rank1BB | Rank2BB | Rank3BB | Rank4BB | Rank5BB;
   const Bitboard BlackCamp = Rank8BB | Rank7BB | Rank6BB | Rank5BB | Rank4BB;
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
@@ -815,10 +817,12 @@ Value Eval::evaluate(const Position& pos) {
   };
 
   // Do not include in mobility area squares protected by enemy pawns, or occupied
-  // by our blocked pawns or king.
+  // by our blocked pawns or king, but alway include the 4 center squares
   Bitboard mobilityArea[] = {
-    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)),
+    ~(ei.attackedBy[BLACK][PAWN] | blockedPawns[WHITE] | pos.square<KING>(WHITE)) 
+    | (Center & ~pos.pieces()),
     ~(ei.attackedBy[WHITE][PAWN] | blockedPawns[BLACK] | pos.square<KING>(BLACK))
+    | (Center & ~pos.pieces())
   };
 
   // Evaluate all pieces but king and pawns
