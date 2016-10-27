@@ -293,12 +293,9 @@ namespace {
             bb =  attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, BISHOP, QUEEN))
                 | attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us,   ROOK, QUEEN));
 
-            // ... and update the attackedBy2
-            ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & bb & ~b;
-
             // Activate the following line if we want to change also the queen mobility.
             // but will most likely need to recalibrate the mg-values in MobilityBonus[QUEEN] 
-            // b |= bb;
+            b |= bb;
 
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
