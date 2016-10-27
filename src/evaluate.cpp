@@ -287,15 +287,16 @@ namespace {
 
         if (Pt == QUEEN)
         {
-            // Compute the Queen x-ray attacks through other sliders
-            // Remark that we don't want to add this to ei.attackedBy[QUEEN] to simplify the
+            // Compute the queen x-ray attacks through other bishops
+            // Remark that we do not add these squares to ei.attackedBy[QUEEN] to simplify the
             // queen contact check and queen safe check calculations.
-            bb =  attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, BISHOP, QUEEN))
-                | attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us,   ROOK, QUEEN));
+            bb = attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, BISHOP, QUEEN));
 
-            // Activate the following line if we want to change also the queen mobility.
+            ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & bb & ~b;
+
+            // Activate also the following line if we want to change also the queen mobility.
             // but will most likely need to recalibrate the mg-values in MobilityBonus[QUEEN] 
-            b |= bb;
+            // b |= bb;
 
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
