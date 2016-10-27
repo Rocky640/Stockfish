@@ -287,10 +287,10 @@ namespace {
 
         if (Pt == QUEEN)
         {
-            // Compute the queen x-ray attacks through other bishops
+            // Compute the queen x-ray attacks through other rooks
             // Remark that we do not add these squares to ei.attackedBy[QUEEN] to simplify the
             // queen contact check and queen safe check calculations.
-            bb = attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, BISHOP, QUEEN));
+            bb = attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN));
 
             ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & bb & ~b;
 
