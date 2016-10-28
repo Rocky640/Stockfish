@@ -490,9 +490,9 @@ namespace {
     assert(popcount(Us == WHITE ? b << 4 : b >> 4) == popcount(b));
 
     // Secondly, add the squares which are attacked twice in that flank,
-    // but exclude squares which are pawn defended, or which are behind some of his pawns
+    // but exclude squares occupied or behind blocked pawns
     b =  (Us == WHITE ? b << 4 : b >> 4)
-       | (b & ei.attackedBy2[Them] & ~(ei.attackedBy[Us][PAWN] | ei.pi->pawn_rear(Them)));
+       | (b & ei.attackedBy2[Them] & ~(ei.attackedBy[Us][PAWN] | ei.pi->blocked_rear_span(Them)));
 
     score -= CloseEnemies * popcount(b);
 
