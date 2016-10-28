@@ -62,10 +62,10 @@ namespace {
 
   // Danger of enemy pawns moving toward our king by [type][distance from edge][rank]
   const Value StormDanger[][4][RANK_NB] = {
-    { { V( 0),  V(  67), V( 134), V(38), V(32) },
-      { V( 0),  V(  57), V( 139), V(37), V(22) },
-      { V( 0),  V(  43), V( 115), V(43), V(27) },
-      { V( 0),  V(  68), V( 124), V(57), V(32) } },
+    { { V(20),  V(  67), V( 134), V(38), V(32) },
+      { V(20),  V(  57), V( 139), V(37), V(22) },
+      { V(20),  V(  43), V( 115), V(43), V(27) },
+      { V(20),  V(  68), V( 124), V(57), V(32) } },
     { { V(20),  V(  43), V( 100), V(56), V(20) },
       { V(23),  V(  20), V(  98), V(40), V(15) },
       { V(23),  V(  39), V( 103), V(36), V(18) },
