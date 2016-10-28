@@ -122,6 +122,7 @@ namespace {
 
         e->semiopenFiles[Us]   &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
+        e->pawnRear[Us] |= forward_bb(Them, s);
 
         // Flag the pawn
         opposed    = theirPawns & forward_bb(Us, s);
@@ -152,12 +153,8 @@ namespace {
 
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate them.
-        if (!(ourPawns & forward_bb(Us, s)))
-        {
-            e->pawnRear[Us] |= forward_bb(Them, s);
-            if (!stoppers)
-                e->passedPawns[Us] |= s;
-        }
+        if (!stoppers && !(ourPawns & forward_bb(Us, s)))
+            e->passedPawns[Us] |= s;
 
         // Score this pawn
         if (!neighbours)
