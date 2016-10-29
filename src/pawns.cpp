@@ -42,6 +42,12 @@ namespace {
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
+  
+  // Unconnected penalty by file
+  const Score Unconnected[FILE_NB] = {
+    S( 0,  0), S( 6,  6), S(12, 12), S(13, 13),
+    S(13, 13), S(12, 12), S( 6,  6), S( 0,  0)
+  };
 
   // Doubled pawn penalty
   const Score Doubled = S(18,38);
@@ -166,6 +172,8 @@ namespace {
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+        else
+            score -= Unconnected[f];
 
         if (doubled)
             score -= Doubled;
