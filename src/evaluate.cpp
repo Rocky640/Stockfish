@@ -614,6 +614,7 @@ namespace {
         assert(pos.pawn_passed(Us, s));
         assert(!(pos.pieces(PAWN) & forward_bb(Us, s)));
 
+        bb = forward_bb(Us, s) & pos.pieces(Them);
         score -= BlockedPassedPawn * popcount(bb);
 
         int r = relative_rank(Us, s) - RANK_2;
