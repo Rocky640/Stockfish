@@ -199,7 +199,6 @@ namespace {
   const Score ThreatByPawnPush    = S(38, 22);
   const Score Unstoppable         = S( 0, 20);
   const Score PawnlessFlank       = S(20, 80);
-  const Score HinderPassedPawn    = S( 7,  0);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -614,16 +613,17 @@ namespace {
         assert(pos.pawn_passed(Us, s));
         assert(!(pos.pieces(PAWN) & forward_bb(Us, s)));
 
-        bb = forward_bb(Us, s) & (ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them));
-        score -= HinderPassedPawn * popcount(bb);
-
         int r = relative_rank(Us, s) - RANK_2;
         int rr = r * (r - 1);
 
-        Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
-
+        
         if (rr)
         {
+            Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
+
+            bb = forward_bb(Us, s) & (ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them));
+            mbonus -= 7 * popcount(bb);
+
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
@@ -666,9 +666,9 @@ namespace {
             }
             else if (pos.pieces(Us) & blockSq)
                 mbonus += rr + r * 2, ebonus += rr + r * 2;
-        } // rr != 0
 
-        score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+            score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+        } // rr != 0
     }
 
     if (DoTrace)
