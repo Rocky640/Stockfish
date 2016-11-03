@@ -45,7 +45,10 @@ namespace {
 
   // Doubled pawn penalty
   const Score Doubled = S(18,38);
-
+  
+  int PawnScale[9] = {0, 32, 32, 32, 32, 32, 32, 32, 32};
+  TUNE (SetRange(22, 42), PawnScale);
+  
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
@@ -174,7 +177,7 @@ namespace {
             score += Lever[relative_rank(Us, s)];
     }
 
-    return score;
+    return PawnScale[pos.count<PAWN>(Us)] * score / 32;
   }
 
 } // namespace
