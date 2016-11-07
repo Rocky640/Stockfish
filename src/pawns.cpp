@@ -81,7 +81,8 @@ namespace {
       { V( 0),  V(  60), V( 126), V(51), V(19) } }
   };
   
-  TUNE (SetRange(0, 200), StormDanger[1]);
+  TUNE (SetRange(0, 200), StormDanger[2]);
+  TUNE (SetRange(-400, 200), StormDanger[3]);
 
 
   // Max bonus for king safety. Corresponds to start position with all the pawns
