@@ -37,8 +37,9 @@ namespace {
   // Backward pawn penalty by opposed flag
   const Score Backward[2] = { S(56, 33), S(41, 19) };
 
-  // Unsupported pawn penalty for pawns which are neither isolated or backward
-  const Score Unsupported = S(17, 8);
+  // Unsupported pawn penalty by trailer flag 
+  // (applies only for pawns which are neither isolated or backward)
+  const Score Unsupported[2] = { S(17, 8), S(25, 16) };
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
@@ -97,7 +98,7 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
-    bool opposed, lever, connected, backward;
+    bool opposed, lever, connected, backward, trailer;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -134,8 +135,9 @@ namespace {
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
+        
         if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
-            backward = false;
+            trailer = backward = false;
         else
         {
             // Find the backmost rank with neighbours or stoppers
@@ -145,6 +147,9 @@ namespace {
             // either there is a stopper in the way on this rank, or there is a
             // stopper on adjacent file which controls the way to that rank.
             backward = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
+            
+            // A pawn is a trailer if next neighbour is more than 2 ranks away
+            trailer = (relative_rank(Us, lsb(b)) - relative_rank(Us, s) > 2);
 
             assert(!backward || !(pawn_attack_span(Them, s + Up) & neighbours));
         }
@@ -162,7 +167,7 @@ namespace {
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= Unsupported;
+            score -= Unsupported[trailer];
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
