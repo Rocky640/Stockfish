@@ -485,15 +485,14 @@ namespace {
 
     // King tropism: firstly, find squares that opponent attacks in our king flank
     File kf = file_of(ksq);
-    b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[Us][kf];
+    b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[Us][kf] & mobilityArea[Them];
 
     assert(((Us == WHITE ? b << 4 : b >> 4) & b) == 0);
     assert(popcount(Us == WHITE ? b << 4 : b >> 4) == popcount(b));
 
-    // Secondly, add the squares which are attacked twice in that flank and
-    // belongs to the mobility area
+    // Secondly, add the squares which are attacked twice in that flank
     b =  (Us == WHITE ? b << 4 : b >> 4)
-       | (b & ei.attackedBy2[Them] & mobilityArea[Them]);
+       | (b & ei.attackedBy2[Them]);
 
     score -= CloseEnemies * popcount(b);
 
