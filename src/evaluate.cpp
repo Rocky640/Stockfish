@@ -392,7 +392,7 @@ namespace {
   };
 
   template<Color Us, bool DoTrace>
-  Score evaluate_king(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_king(const Position& pos, const EvalInfo& ei, const Bitboard* mobilityArea) {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square  Up = (Us == WHITE ? NORTH : SOUTH);
@@ -487,16 +487,13 @@ namespace {
     File kf = file_of(ksq);
     b = ei.attackedBy[Them][ALL_PIECES] & KingFlank[Us][kf];
 
-    // ...excluding squares occupied by blocked pawns
-    b &= ~(pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN)));
-
     assert(((Us == WHITE ? b << 4 : b >> 4) & b) == 0);
     assert(popcount(Us == WHITE ? b << 4 : b >> 4) == popcount(b));
 
-    // Secondly, add the squares which are attacked twice in that flank and  
-    // which are not defended by our pawns. 
+    // Secondly, add the squares which are attacked twice in that flank and
+    // belongs to the mobility area
     b =  (Us == WHITE ? b << 4 : b >> 4)
-       | (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN]);
+       | (b & ei.attackedBy2[Them] & mobilityArea[Them]);
 
     score -= CloseEnemies * popcount(b);
 
@@ -834,8 +831,8 @@ Value Eval::evaluate(const Position& pos) {
 
   // Evaluate kings after all other pieces because we need full attack
   // information when computing the king safety evaluation.
-  score +=  evaluate_king<WHITE, DoTrace>(pos, ei)
-          - evaluate_king<BLACK, DoTrace>(pos, ei);
+  score +=  evaluate_king<WHITE, DoTrace>(pos, ei, mobilityArea)
+          - evaluate_king<BLACK, DoTrace>(pos, ei, mobilityArea);
 
   // Evaluate tactical threats, we need full attack information including king
   score +=  evaluate_threats<WHITE, DoTrace>(pos, ei)
