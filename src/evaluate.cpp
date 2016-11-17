@@ -722,7 +722,7 @@ namespace {
   int i2 = 8;
   int i3 = 12;
   int i4 = 120;
-  TUNE(SetRange(0,  32), i1, i2, i3, i4, imax);
+  TUNE(SetRange(0,  32), i1, i2, i3, imax);
   TUNE(SetRange(0, 200), i4);
   
   // evaluate_initiative() computes the initiative correction value for the
