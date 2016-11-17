@@ -403,10 +403,10 @@ namespace {
                     &  ei.attackedBy[Us][KING]
                     & ~ei.attackedBy2[Us];
 
-        // An extra bonus will be given to squares attacked by 2 pieces
+        // An extra bonus is given to squares adjacent to the king and attacked by 2 pieces...
         b = ei.attackedBy2[Them] & ei.attackedBy[Us][KING];
 
-        // ... and to those which are not defended at all in the larger king ring.
+        // ... and to squares which are not defended at all in the larger king ring.
         b |=  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
            & ei.kingRing[Us] & ~pos.pieces(Them);
 
@@ -416,10 +416,10 @@ namespace {
         // attacked and undefended squares around our king and the quality of
         // the pawn shelter (current 'score' value).
         kingDanger =  std::min(807, ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them])
-                    + 269 * popcount(undefended)
-                    + 134 * (popcount(b) + !!ei.pinnedPieces[Us])
-                    - 717 * !pos.count<QUEEN>(Them)
-                    -   7 * mg_value(score) / 5 - 5;
+                    + 148 * (popcount(b) + 2 * popcount(undefended))
+                    + 135 * !!ei.pinnedPieces[Us]
+                    - 736 * !pos.count<QUEEN>(Them)
+                    -   7 * mg_value(score) / 5;
 
         // Analyse the enemy's safe queen contact checks. Firstly, find the
         // undefended squares around the king reachable by the enemy queen...
