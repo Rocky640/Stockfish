@@ -34,8 +34,12 @@ namespace {
   // Isolated pawn penalty by opposed flag
   const Score Isolated[2] = { S(45, 40), S(30, 27) };
 
-  // Backward pawn penalty by opposed flag
+  // Backward pawn penalty by opposed
   const Score Backward[2] = { S(56, 33), S(41, 19) };
+  
+  // Extra penalty on backward pawn when only one opponent is holding 2 pawns
+  // for example White b2 a3 and Black a4. a4 is holding 2 pawns.
+  const Score Backward2 = S(7, 7); 
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward
   const Score Unsupported = S(17, 8);
@@ -96,9 +100,10 @@ namespace {
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
-    bool opposed, lever, connected, backward;
+    Bitboard b, neighbours, stoppers, doubled, phalanx, supported, backward;
+    bool opposed, lever, connected;
+
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -160,7 +165,11 @@ namespace {
             score -= Isolated[opposed];
 
         else if (backward)
+        {
             score -= Backward[opposed];
+            if (!more_than_one(stoppers) && (shift<Up>(neighbours) & stoppers))
+                score -= Backward2;
+        }
 
         else if (!supported)
             score -= Unsupported;
