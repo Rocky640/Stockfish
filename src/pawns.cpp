@@ -35,7 +35,7 @@ namespace {
   const Score Isolated[2] = { S(45, 40), S(30, 27) };
 
   // Backward pawn penalty by opposed
-  const Score Backward[2] = { S(56, 33), S(41, 19) };
+  const Score Backward[2] = { S(52, 29), S(41, 19) };
   
   // Extra penalty on backward pawn when only one opponent is holding 2 pawns
   // for example White b2 a3 and Black a4. a4 is holding 2 pawns.
