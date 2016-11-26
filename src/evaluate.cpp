@@ -449,7 +449,7 @@ namespace {
         // Enemy queen safe checks
         if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
             kingDanger += QueenCheck, score -= SafeCheck;
-        else if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & other)
+        else if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & ~ei.attackedBy2[Us] & other)
             score -= OtherCheck;
 
         // For other pieces, also consider the square safe if attacked twice,
