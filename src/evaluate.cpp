@@ -162,10 +162,20 @@ namespace {
   // Threat[by minor/by rook][attacked PieceType] contains
   // bonuses according to which piece type attacks which one.
   // Attacks on lesser pieces which are pawn-defended are not considered.
-  const Score Threat[][PIECE_TYPE_NB] = {
+  Score Threat[][PIECE_TYPE_NB] = {
     { S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72,107), S(48,118) }, // by Minor
     { S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48) }  // by Rook
   };
+  
+  // ThreatByRank[attacked PieceType] contains the
+  // relative rank factor bonus which is applied according to attacked piece type
+  // Attacks on piece closest to our camp will have bigger bonus
+  Score ThreatByRank[PIECE_TYPE_NB] = {
+    S(0, 0), S(0, 0), S(16, 3), S(16, 3), S(16, 3), S(16, 3)
+  };
+  
+  TUNE(SetRange(0, 150), Threat);
+  TUNE(SetRange(0,  50), ThreatByRank);
 
   // ThreatByKing[on one/on many] contains bonuses for King attacks on
   // pawns or pieces which are not pawn-defended.
@@ -200,7 +210,6 @@ namespace {
   const Score Unstoppable         = S( 0, 20);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
-  const Score ThreatByRank        = S(16,  3);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -564,8 +573,7 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += Threat[Minor][type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            score += ThreatByRank[type_of(pos.piece_on(s))] * (int)relative_rank(Them, s);
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
@@ -573,8 +581,7 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += Threat[Rook][type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            score += ThreatByRank[type_of(pos.piece_on(s))] * (int)relative_rank(Them, s);
         }
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
