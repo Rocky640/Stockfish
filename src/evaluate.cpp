@@ -568,7 +568,7 @@ namespace {
         while (b)
             score += Threat[Rook][type_of(pos.piece_on(pop_lsb(&b)))];
         
-        score += ThreatOnCloseEnemy * popcount(bb & Home);
+        score += ThreatOnCloseEnemy * popcount(bb & Home & ~pos.pieces(PAWN));
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
 
