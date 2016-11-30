@@ -200,7 +200,7 @@ namespace {
   const Score Unstoppable         = S( 0, 20);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
-  const Score ThreatOnCloseEnemy  = S(32, 12);
+  const Score ThreatOnCloseEnemy  = S(48, 12);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
