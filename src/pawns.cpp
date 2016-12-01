@@ -38,7 +38,8 @@ namespace {
   const Score Backward[2] = { S(56, 33), S(41, 19) };
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward
-  const Score Unsupported = S(17, 8);
+  // by supportable flag
+  const Score Unsupported[2] = { S(24, 8), S(10, 2) }; 
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
@@ -98,13 +99,14 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Square s;
-    bool opposed, lever, connected, backward;
+    bool opposed, lever, connected, backward, supportable;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
 
-    Bitboard ourPawns   = pos.pieces(Us  , PAWN);
-    Bitboard theirPawns = pos.pieces(Them, PAWN);
+    Bitboard ourPawns    =  pos.pieces(Us  , PAWN);
+    Bitboard theirPawns  =  pos.pieces(Them, PAWN);
+    Bitboard freeSquares = ~pos.pieces(PAWN);
 
     e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
@@ -163,7 +165,12 @@ namespace {
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= Unsupported;
+        {
+            b  = shift<Up>(neighbours) & freeSquares;
+            b |= shift<Up>(b) & freeSquares;
+            supportable = b & rank_bb(s - Up);
+            score -= Unsupported[supportable];
+        }
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
