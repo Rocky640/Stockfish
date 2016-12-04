@@ -77,6 +77,10 @@ namespace {
     // attacked by a given color and piece type (can be also ALL_PIECES).
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
+    // attackedByMinor[square] is a bitboard representing all squares
+    // attacked by a minor standing on square. Undefined for other squares.
+    Bitboard attackedByMinor[SQUARE_NB];
+
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
@@ -119,9 +123,9 @@ namespace {
   // game, indexed by piece type and number of attacked squares in the MobilityArea.
   const Score MobilityBonus[][32] = {
     {}, {},
-    { S(-75,-76), S(-56,-54), S( -9,-26), S( -2,-10), S(  6,  5), S( 15, 11), // Knights
+    { S(-75,-56), S(-56,-54), S( -9,-26), S( -2,-10), S(  6,  5), S( 15, 11), // Knights
       S( 22, 26), S( 30, 28), S( 36, 29) },
-    { S(-48,-58), S(-21,-19), S( 16, -2), S( 26, 12), S( 37, 22), S( 51, 42), // Bishops
+    { S(-48,-38), S(-21,-19), S( 16, -2), S( 26, 12), S( 37, 22), S( 51, 42), // Bishops
       S( 54, 54), S( 63, 58), S( 65, 63), S( 71, 70), S( 79, 74), S( 81, 86),
       S( 92, 90), S( 97, 94) },
     { S(-56,-78), S(-25,-18), S(-11, 26), S( -5, 55), S( -4, 70), S( -1, 81), // Rooks
@@ -189,18 +193,20 @@ namespace {
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
+  const Score WeakQueen           = S(50, 10);
   const Score CloseEnemies        = S( 7,  0);
+  const Score PawnlessFlank       = S(20, 80);
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score LooseEnemies        = S( 0, 25);
-  const Score WeakQueen           = S(50, 10);
+  const Score ThreatByRank        = S(16,  3);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score NoSafeMoveMinor     = S( 0, 20);
   const Score Unstoppable         = S( 0, 20);
-  const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
-  const Score ThreatByRank        = S(16,  3);
+  
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -298,6 +304,8 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+            ei.attackedByMinor[s] = b;
+
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
             if (bb & s)
@@ -523,7 +531,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, safe, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -597,6 +605,16 @@ namespace {
        & ~ei.attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
+
+    // Evaluate enemy low mobility knights or bishops
+    b = pos.pieces(Them, KNIGHT, BISHOP);
+
+    safe  =  (~pos.pieces(Them) & (ei.attackedBy2[Them] | ~ei.attackedBy[Us][ALL_PIECES]))
+            | (pos.pieces(Us) ^ pos.pieces(Us, PAWN));
+
+    // Bonus for each enemy minor with no safe square
+    while (b)
+        score += NoSafeMoveMinor * !(ei.attackedByMinor[pop_lsb(&b)] & safe);
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
