@@ -189,9 +189,10 @@ namespace {
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
-  const Score CloseEnemies        = S( 7,  0);
   const Score SafeCheck           = S(20, 20);
   const Score OtherCheck          = S(10, 10);
+  const Score CloseEnemies        = S( 7,  0);
+  const Score LowMobKing          = S( 0, 30);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score LooseEnemies        = S( 0, 25);
   const Score WeakQueen           = S(50, 10);
@@ -500,6 +501,10 @@ namespace {
     // Penalty when our king is on a pawnless flank
     if (!(pos.pieces(PAWN) & (KingFlank[WHITE][kf] | KingFlank[BLACK][kf])))
         score -= PawnlessFlank;
+
+    b = ei.attackedBy[Us][KING] & ~(pos.pieces(Us) | ei.attackedBy[Them][ALL_PIECES]);
+    if (!more_than_one(b))
+        score -= LowMobKing;
 
     if (DoTrace)
         Trace::add(KING, Us, score);
