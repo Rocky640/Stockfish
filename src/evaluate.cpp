@@ -188,7 +188,7 @@ namespace {
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
   const Score RookOnPawn          = S( 8, 24);
-  const Score RookPasser          = S( 8, 24);
+  const Score RookPasser          = S( 8, 34);
   const Score TrappedRook         = S(92,  0);
   const Score CloseEnemies        = S( 7,  0);
   const Score SafeCheck           = S(20, 20);
@@ -269,7 +269,6 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard MinorOutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                     : Rank5BB | Rank4BB | Rank3BB);
-    const Bitboard RookOutpostRanks =  (Us == WHITE ? BlackCamp : WhiteCamp);
                                                     
     const Square* pl = pos.squares<Pt>(Us);
 
@@ -343,15 +342,18 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Bonus for aligning with enemy pawns on the same rank/file
+            
             if (relative_rank(Us, s) >= RANK_5)
+            {
+                // Bonus for aligning with enemy pawns on the same rank/file
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
 
-            // Bonus for pawn-protected outpost with no pawns in front.
-            // Capturing that rook would create or improve a passed pawn.
-            if (  !(forward_bb(Us, s) & pos.pieces(PAWN))
-                && (ei.attackedBy[Us][PAWN] & ~ei.pi->pawn_attacks_span(Them) & RookOutpostRanks & s))
-                score += RookPasser;
+                // Bonus for pawn-protected rook outpost with no pawns in front.
+                // Capturing that rook would create or improve a passed pawn.
+                if (  !(forward_bb(Us, s) & pos.pieces(PAWN))
+                    && (ei.attackedBy[Us][PAWN] & ~ei.pi->pawn_attacks_span(Them) & s))
+                    score += RookPasser;
+            }
 
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
