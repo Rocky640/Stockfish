@@ -200,8 +200,14 @@ namespace {
   const Score Unstoppable         = S( 0, 20);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
-  const Score ThreatByRank        = S(16,  3);
-
+  
+  Score ThreatByRank[RANK_NB] = {
+     S(16,  3) * 0, S(16,  3) * 1, S(16,  3) * 2, S(16,  3) * 3,
+     S(16,  3) * 4, S(16,  3) * 5, S(16,  3) * 6, S(16,  3) * 7
+  };
+  
+  TUNE(SetRange(0, 130), ThreatByRank);
+  
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
   // happen in Chess960 games.
@@ -565,7 +571,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += Threat[Minor][type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank[relative_rank(Them, s)];
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
@@ -574,7 +580,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += Threat[Rook][type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank[relative_rank(Them, s)];
         }
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
