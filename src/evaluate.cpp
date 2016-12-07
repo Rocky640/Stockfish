@@ -136,10 +136,17 @@ namespace {
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for knights and
   // bishops outposts, bigger if outpost piece is supported by a pawn.
-  const Score Outpost[][2] = {
+  // An outpost is blocked if there is a pawn in front.
+  Score OutpostBlocked[][2] = {
     { S(43,11), S(65,20) }, // Knights
     { S(20, 3), S(29, 8) }  // Bishops
   };
+  Score OutpostOpen[][2] = {
+    { S(43,11), S(65,20) }, // Knights
+    { S(20, 3), S(29, 8) }  // Bishops
+  };
+  
+  TUNE(SetRange(-10, 90), OutpostBlocked, OutpostOpen);
 
   // ReachableOutpost[knight/bishop][supported by pawn] contains bonuses for
   // knights and bishops which can reach an outpost square in one move, bigger
@@ -301,7 +308,12 @@ namespace {
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+            {
+                if (forward_bb(Us, s) & pos.pieces(PAWN))
+                    score += OutpostBlocked[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+                else
+                    score += OutpostOpen   [Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+            }
             else
             {
                 bb &= b & ~pos.pieces(Us);
