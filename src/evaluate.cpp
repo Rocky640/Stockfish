@@ -167,6 +167,13 @@ namespace {
     { S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48) }  // by Rook
   };
 
+  // ThreatByRank[by relative rank] contains bonuses according to 
+  // the relative rank of the threatened non-pawn (from the attacker's point of view).
+  // Attacks on pieces close to the attacker's first rank have a higher bonus.
+  const Score ThreatByRank[RANK_NB] = {
+    S(119,  19), S(87,  22), S(87,  9), S(44, 16), S(58,  1), S(32,  1), S(16,  1), S(0,  0)
+  };
+  
   // ThreatByKing[on one/on many] contains bonuses for King attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
@@ -200,7 +207,6 @@ namespace {
   const Score Unstoppable         = S( 0, 20);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
-  const Score ThreatByRank        = S(16,  3);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -565,7 +571,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += Threat[Minor][type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank[relative_rank(Us, s)];
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
@@ -574,7 +580,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += Threat[Rook][type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank[relative_rank(Us, s)];
         }
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
