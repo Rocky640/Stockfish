@@ -157,7 +157,7 @@ namespace {
   };
   
   const Score OutpostOpen[][2] = {
-    { S(40,12), S(73,15) }, // Knights
+    { S(40,12), S(73,14) }, // Knights
     { S(18,-3), S(28, 5) }  // Bishops
   };
 
