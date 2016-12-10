@@ -577,14 +577,9 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
         
-        b = pos.pieces(Them) & ~ei.attackedBy2[Them] & ei.attackedBy[Them][QUEEN] & ei.attackedBy[Us][QUEEN];
+        b = weak & ~ei.attackedBy2[Them] & ei.attackedBy[Us][QUEEN];
         while (b)
-        {
-            //Square s = pop_lsb(&b);
             score += Threat[Rook][type_of(pos.piece_on(pop_lsb(&b)))];
-            //if (type_of(pos.piece_on(s)) != PAWN)
-            //    score += ThreatByRank * (int)relative_rank(Them, s);
-        }
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
 
