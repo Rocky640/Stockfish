@@ -288,9 +288,19 @@ namespace {
         }
 
         if (Pt == QUEEN)
+        {
+            // In view of the queen mobility calculation, exclude all squares
+            // controlled or x-rayed by opponent sliders attacking the queen...
+            bb = b & (  (pos.pieces(Them, BISHOP) & PseudoAttacks[BISHOP][s])
+                      | (pos.pieces(Them, ROOK  ) & PseudoAttacks[ROOK]  [s]));
+            while (bb)
+                b &= ~LineBB[s][pop_lsb(&bb)];
+            
+            // ...and all remaining squares controlled by other pieces.
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
                    | ei.attackedBy[Them][ROOK]);
+        }
 
         int mob = popcount(b & mobilityArea[Us]);
 
