@@ -197,6 +197,7 @@ namespace {
   const Score WeakQueen           = S(50, 10);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score PassedPawnCreation  = S(20, 20);
   const Score Unstoppable         = S( 0, 45);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
@@ -523,7 +524,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, bb, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -545,7 +546,12 @@ namespace {
             score += ThreatByHangingPawn;
 
         while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        {
+            Square s = pop_lsb(&safeThreats);
+            score += ThreatBySafePawn[type_of(pos.piece_on(s))];
+            if (pos.pawn_passed(Us, s))
+                score += PassedPawnCreation;
+        }
     }
 
     // Non-pawn enemies defended by a pawn
@@ -584,7 +590,7 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
+    // Find which pawns can safely push...
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
@@ -592,11 +598,20 @@ namespace {
         & ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b =  (shift<Left>(b) | shift<Right>(b))
-       &  pos.pieces(Them)
-       & ~ei.attackedBy[Us][PAWN];
+    //...and attack an enemy piece
+    bb =  (shift<Left>(b) | shift<Right>(b))
+        &  pos.pieces(Them)
+        & ~ei.attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush * popcount(bb);
+
+    //...or become or progress as a passed pawn after the safe push
+    b &= ~ei.pi->pawn_attacks_span(Them);
+    while (b)
+    {
+        if (pos.pawn_passed(Us, pop_lsb(&b)))
+            score += PassedPawnCreation;
+    }
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
