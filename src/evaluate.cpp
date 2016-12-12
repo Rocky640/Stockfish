@@ -524,7 +524,7 @@ namespace {
 
     enum { Minor, Rook };
 
-    Bitboard b, bb, weak, defended, safeThreats;
+    Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -546,7 +546,12 @@ namespace {
             score += ThreatByHangingPawn;
 
         while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        {
+            Square s = pop_lsb(&safeThreats);
+            score += ThreatBySafePawn[type_of(pos.piece_on(s))];
+            if (pos.pawn_passed(Us, s))
+                score += PassedPawnCreation;
+        }
     }
 
     // Non-pawn enemies defended by a pawn
@@ -594,19 +599,11 @@ namespace {
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     //...and attack an enemy piece
-    bb =  (shift<Left>(b) | shift<Right>(b))
+    b =  (shift<Left>(b) | shift<Right>(b))
         &  pos.pieces(Them)
         & ~ei.attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(bb);
-
-    //...or become or progress as a passed pawn after the safe push
-    b &= ~ei.pi->pawn_attacks_span(Them);
-    while (b)
-    {
-        if (pos.pawn_passed(Us, pop_lsb(&b)))
-            score += PassedPawnCreation;
-    }
+    score += ThreatByPawnPush * popcount(b);
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
