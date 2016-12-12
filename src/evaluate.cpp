@@ -546,12 +546,7 @@ namespace {
             score += ThreatByHangingPawn;
 
         while (safeThreats)
-        {
-            Square s = pop_lsb(&safeThreats);
-            score += ThreatBySafePawn[type_of(pos.piece_on(s))];
-            if (pos.pawn_passed(Us, s))
-                score += PassedPawnCreation;
-        }
+            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
     }
 
     // Non-pawn enemies defended by a pawn
