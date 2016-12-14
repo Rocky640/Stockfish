@@ -171,6 +171,8 @@ namespace {
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
 
+  const Score Unstoppable[2] = { S(0, 55), S(0, 90) };
+
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
   const Value Passed[][RANK_NB] = {
@@ -197,7 +199,6 @@ namespace {
   const Score WeakQueen           = S(50, 10);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
-  const Score Unstoppable         = S( 0, 45);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
   const Score ThreatByRank        = S(16,  3);
@@ -616,6 +617,10 @@ namespace {
     Score score = SCORE_ZERO;
 
     b = ei.pi->passed_pawns(Us);
+    
+    // In pawn endgames, bonus for possessing at least a passed pawn, more if protected.
+    if (b && !pos.non_pawn_material(WHITE) && !pos.non_pawn_material(BLACK))
+        score += Unstoppable[!!(b & ei.attackedBy[Us][PAWN])];
 
     while (b)
     {
@@ -851,16 +856,6 @@ Value Eval::evaluate(const Position& pos) {
   // Evaluate passed pawns, we need full attack information including king
   score +=  evaluate_passed_pawns<WHITE, DoTrace>(pos, ei)
           - evaluate_passed_pawns<BLACK, DoTrace>(pos, ei);
-
-  // If both sides have only pawns, score for potential unstoppable pawns
-  if (!pos.non_pawn_material(WHITE) && !pos.non_pawn_material(BLACK))
-  {
-      if (ei.pi->passed_pawns(WHITE))
-          score += Unstoppable;
-
-      if (ei.pi->passed_pawns(BLACK))
-          score -= Unstoppable;
-  }
 
   // Evaluate space for both sides, only during opening
   if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12222)
