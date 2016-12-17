@@ -277,9 +277,6 @@ namespace {
         if (ei.pinnedPieces[Us] & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
-
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
@@ -288,9 +285,15 @@ namespace {
         }
 
         if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][KNIGHT]
-                   | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]);
+        {
+            // exclude from the queen mobility calculation squares controlled by 2 pieces
+            b &= ~ei.attackedBy2[Them];
+        }
+        else
+        {
+            ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+            ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
+        }
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -838,6 +841,12 @@ Value Eval::evaluate(const Position& pos) {
   // Evaluate all pieces but king and pawns
   score += evaluate_pieces<DoTrace>(pos, ei, mobility, mobilityArea);
   score += mobility[WHITE] - mobility[BLACK];
+  
+  // Complete the gathering of the attack information.
+  ei.attackedBy2[WHITE] |= ei.attackedBy[WHITE][ALL_PIECES] & ei.attackedBy[WHITE][QUEEN];
+  ei.attackedBy[WHITE][ALL_PIECES] |= ei.attackedBy[WHITE][QUEEN];
+  ei.attackedBy2[BLACK] |= ei.attackedBy[BLACK][ALL_PIECES] & ei.attackedBy[BLACK][QUEEN];
+  ei.attackedBy[BLACK][ALL_PIECES] |= ei.attackedBy[BLACK][QUEEN];
 
   // Evaluate kings after all other pieces because we need full attack
   // information when computing the king safety evaluation.
