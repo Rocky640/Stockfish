@@ -215,7 +215,8 @@ namespace {
 
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 997;
-  const int QueenCheck        = 695;
+  const int QueenRCheck       = 695 + 50;
+  const int QueenBCheck       = 695 - 70;
   const int RookCheck         = 638;
   const int BishopCheck       = 538;
   const int KnightCheck       = 874;
@@ -447,8 +448,11 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
-            kingDanger += QueenCheck, score -= SafeCheck;
+        if (b1 & ei.attackedBy[Them][QUEEN] & safe)
+            kingDanger += QueenRCheck, score -= SafeCheck;
+
+        if (b2 & ei.attackedBy[Them][QUEEN] & safe)
+            kingDanger += QueenBCheck, score -= SafeCheck;
 
         // For other pieces, also consider the square safe if attacked twice,
         // and only defended by a queen.
