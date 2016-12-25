@@ -106,7 +106,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = e->isoForward[Us];
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
@@ -120,7 +120,7 @@ namespace {
 
         File f = file_of(s);
 
-        e->semiopenFiles[Us]   &= ~(1 << f);
+        e->semiopenFiles[Us] &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
 
         // Flag the pawn
@@ -157,7 +157,10 @@ namespace {
 
         // Score this pawn
         if (!neighbours)
+        {
+            e->isoForward[Us] |= forward_bb(Us, s);
             score -= Isolated[opposed];
+        }
 
         else if (backward)
             score -= Backward[opposed];
