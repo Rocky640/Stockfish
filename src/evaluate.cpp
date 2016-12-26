@@ -636,12 +636,12 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            if (!(forward_bb(Us, s) & pos.square<KING>(Them)))
-                ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr;
+            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr;
+
             if (!(passed_pawn_mask(Us, s) & pos.square<KING>(Us)))
             {
                 ebonus -=  distance(pos.square<KING>(Us), blockSq) * 2 * rr;
-                
+
                 // If blockSq is not the queening square then consider also a second push
                 if (relative_rank(Us, blockSq) != RANK_8)
                     ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
