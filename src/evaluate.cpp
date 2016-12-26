@@ -639,7 +639,7 @@ namespace {
             if (!(passed_pawn_mask(Us, s) & pos.square<KING>(Them)))
                 ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr;
             if (!(passed_pawn_mask(Us, s) & pos.square<KING>(Us)))
-                ebonus -=  distance(pos.square<KING>(Them), blockSq) * 2 * rr;
+                ebonus -=  distance(pos.square<KING>(Us), blockSq) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
