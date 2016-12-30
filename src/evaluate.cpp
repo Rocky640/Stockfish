@@ -581,6 +581,18 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+        else if (!ei.kingRing[Us])
+        {
+            // Find targets which can safely be attacked by king in one move
+            Square ksq = pos.square<KING>(Us);
+            b = weak & DistanceRingBB[ksq][1];
+            safeThreats = DistanceRingBB[ksq][0] & ~ei.attackedBy[Them][ALL_PIECES];
+            while (b)
+            {
+                if (DistanceRingBB[pop_lsb(&b)][0] & safeThreats)
+                    score += ThreatByKing[0] / 2;
+            }
+        }
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
