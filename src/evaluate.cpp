@@ -196,6 +196,7 @@ namespace {
   const Score LooseEnemies        = S( 0, 25);
   const Score WeakQueen           = S(50, 10);
   const Score Hanging             = S(48, 27);
+  const Score BishopPairPawns     = S( 6,  0);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score PawnlessFlank       = S(20, 80);
   const Score HinderPassedPawn    = S( 7,  0);
@@ -517,7 +518,7 @@ namespace {
     const Square Up         = (Us == WHITE ? NORTH      : SOUTH);
     const Square Left       = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
-    const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
+    const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
     enum { Minor, Rook };
@@ -583,14 +584,22 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
+    // Find out squares where pawns can land after a 1-square push
+    b = shift<Up>(pos.pieces(Us, PAWN) & ~TRank7BB) & ~pos.pieces();
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
+    // Compensate for low bishop mobility in slow but flexible openings.
+    // Use a factor equal to number of mobile pawns minus number of blocked pawns.
+    if (pos.count<BISHOP>(Us) > 1)
+        score += BishopPairPawns * (2 * popcount(b) - pos.count<PAWN>(Us));
+
+    // Consider also squares where pawn can land after a 2-squares push in one go
+    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
+
+    // Now only consider the safe squares...
+    b &=  ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
+    // ...and the new attacks which can be made from there
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
        & ~ei.attackedBy[Us][PAWN];
