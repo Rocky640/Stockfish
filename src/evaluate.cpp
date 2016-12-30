@@ -585,7 +585,7 @@ namespace {
         {
             // Find targets which can safely be attacked by king in one move
             Square ksq = pos.square<KING>(Us);
-            b = weak & DistanceRingBB[ksq][1];
+            b = pos.pieces(Them, PAWN) & weak & DistanceRingBB[ksq][1];
             safeThreats = DistanceRingBB[ksq][0] & ~ei.attackedBy[Them][ALL_PIECES];
             while (b)
             {
