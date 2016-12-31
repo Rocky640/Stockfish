@@ -449,21 +449,21 @@ namespace {
 
         // ... and some other potential checks, only requiring the square to be
         // safe from pawn-attacks, and not being occupied by a blocked pawn.
-        other = ~(   safe | ei.attackedBy[Us][PAWN]
+        other = ~(  ei.attackedBy[Us][PAWN]
                   | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
 
         // Enemy rooks safe and other checks
         if (b1 & ei.attackedBy[Them][ROOK] & safe)
             kingDanger += RookCheck;
 
-        if (b1 & ei.attackedBy[Them][ROOK] & other)
+        else if (b1 & ei.attackedBy[Them][ROOK] & other)
             kingDanger += OtherCheck;
 
         // Enemy bishops safe and other checks
         if (b2 & ei.attackedBy[Them][BISHOP] & safe)
             kingDanger += BishopCheck;
 
-        if (b2 & ei.attackedBy[Them][BISHOP] & other)
+        else if (b2 & ei.attackedBy[Them][BISHOP] & other)
             kingDanger += OtherCheck;
 
         // Enemy knights safe and other checks
@@ -471,7 +471,7 @@ namespace {
         if (b & safe)
             kingDanger += KnightCheck;
 
-        if (b & other)
+        else if (b & other)
             kingDanger += OtherCheck;
 
         // Compute the king danger score and subtract it from the evaluation
