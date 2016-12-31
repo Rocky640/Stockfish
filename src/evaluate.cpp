@@ -677,7 +677,7 @@ namespace {
         {
             if (   (in_front_bb(Them, rank_of(s)) & pos.square<KING>(Them))
                 || (distance(pos.square<KING>(Them), s) > 7 - r))
-                ebonus += 40;
+                ebonus += 30;
             else
                 ebonus += 20;
         }
