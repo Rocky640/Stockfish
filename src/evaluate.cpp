@@ -170,9 +170,12 @@ namespace {
     S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48)
   };
 
-  // ThreatByKing[on one/on many] contains bonuses for king attacks on
+  // ThreatByKing[on one/on many][alone/supported] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
-  const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
+  const Score ThreatByKing[][2] = {
+    { S(3, 56), S(3, 70) }, //on one
+    { S(9,132), S(9,150) }  //on many
+  };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
@@ -575,7 +578,7 @@ namespace {
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
-            score += ThreatByKing[more_than_one(b)];
+            score += ThreatByKing[more_than_one(b)][!!(b & ei.attackedBy2[Us])];
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
