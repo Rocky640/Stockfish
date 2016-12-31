@@ -672,10 +672,15 @@ namespace {
                 mbonus += rr + r * 2, ebonus += rr + r * 2;
         } // rr != 0
 
-        // Assign a small bonus when no pieces left (unstoppable)
-        if (!pos.non_pawn_material(Us) && !pos.non_pawn_material(Them))
-            ebonus += 20;
-
+        // Bonus if opponent king is alone to defend and even more if not in the pawn square
+        if (!pos.non_pawn_material(Them))
+        {
+            if (   (in_front_bb(Them, rank_of(s)) & pos.square<KING>(Them))
+                || (distance(pos.square<KING>(Them), s) > 7 - r))
+                ebonus += 40;
+            else
+                ebonus += 20;
+        }
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
 
