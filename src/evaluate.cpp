@@ -677,9 +677,9 @@ namespace {
         {
             if (   (in_front_bb(Them, rank_of(s)) & pos.square<KING>(Them))
                 || (distance(pos.square<KING>(Them), s) > 7 - r))
-                ebonus += 30;
+                ebonus += 24;
             else
-                ebonus += 20;
+                ebonus += 16;
         }
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
