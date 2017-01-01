@@ -219,7 +219,7 @@ namespace {
   const int RookCheck         = 688;
   const int BishopCheck       = 588;
   const int KnightCheck       = 924;
-  const int OtherCheck        =  50;
+  const int OtherCheck        =  75;
 
 
   // eval_init() initializes king and attack bitboards for a given color
