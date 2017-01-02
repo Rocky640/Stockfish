@@ -293,7 +293,8 @@ namespace {
         {
             b &= ~(  ei.attackedBy[Them][KNIGHT]
                    | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]);
+                   | ei.attackedBy[Them][ROOK]
+                   | pos.pieces(Us));
             mob = (popcount(b & mobilityArea[Us]) + mob) / 2;
         }
 
