@@ -114,6 +114,7 @@ namespace {
 
   #define V(v) Value(v)
   #define S(mg, eg) make_score(mg, eg)
+  #define SS(mg, eg) make_score(mg-6, eg-9)
 
   // MobilityBonus[PieceType][attacked] contains bonuses for middle and end
   // game, indexed by piece type and number of attacked squares in the MobilityArea.
@@ -127,11 +128,11 @@ namespace {
     { S(-56,-78), S(-25,-18), S(-11, 26), S( -5, 55), S( -4, 70), S( -1, 81), // Rooks
       S(  8,109), S( 14,120), S( 21,128), S( 23,143), S( 31,154), S( 32,160),
       S( 43,165), S( 49,168), S( 59,169) },
-    { S(-40,-35), S(-25,-12), S(  2,  7), S(  4, 19), S( 14, 37), S( 24, 55), // Queens
-      S( 25, 62), S( 40, 76), S( 43, 79), S( 47, 87), S( 54, 94), S( 56,102),
-      S( 60,111), S( 70,116), S( 72,118), S( 73,122), S( 75,128), S( 77,130),
-      S( 85,133), S( 94,136), S( 99,140), S(108,157), S(112,158), S(113,161),
-      S(118,174), S(119,177), S(123,191), S(128,199) }
+    { SS(-40,-35), SS(-25,-12), SS(  2,  7), SS(  4, 19), SS( 14, 37), SS( 24, 55), // Queens
+      SS( 25, 62), SS( 40, 76), SS( 43, 79), SS( 47, 87), SS( 54, 94), SS( 56,102),
+      SS( 60,111), SS( 70,116), SS( 72,118), SS( 73,122), SS( 75,128), SS( 77,130),
+      SS( 85,133), SS( 94,136), SS( 99,140), SS(108,157), SS(112,158), SS(113,161),
+      SS(118,174), SS(119,177), SS(123,191), SS(128,199) }
   };
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for knights and
@@ -163,11 +164,11 @@ namespace {
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
   const Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118)
+    S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72, 107), S(52, 122)
   };
 
   const Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48)
+    S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(38, 52)
   };
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
@@ -207,7 +208,8 @@ namespace {
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
   // happen in Chess960 games.
   const Score TrappedBishopA1H1 = S(50, 50);
-
+  
+  #undef SS
   #undef S
   #undef V
 
