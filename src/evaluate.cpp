@@ -211,8 +211,12 @@ namespace {
   #undef S
   #undef V
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
-  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
+  // KingAttackWeights[PieceType][more_than_one] contains king attack weights by piece type
+  // and higher weight for squares attacked more than one.
+  const int KingAttackWeights[2][PIECE_TYPE_NB] = {
+      { 0, 0, 78, 56, 45, 11 },
+      { 0, 0, 88, 66, 55, 21 }
+  };
 
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 997;
@@ -283,7 +287,7 @@ namespace {
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
-            ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
+            ei.kingAttackersWeight[Us] += KingAttackWeights[!!(b & ei.kingRing[Them] & ei.attackedBy2[Us])][Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
