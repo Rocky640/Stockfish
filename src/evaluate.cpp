@@ -215,7 +215,7 @@ namespace {
   // and higher weight for squares attacked more than one.
   const int KingAttackWeights[2][PIECE_TYPE_NB] = {
       { 0, 0, 78, 56, 45, 11 },
-      { 0, 0, 88, 66, 55, 21 }
+      { 0, 0, 108, 86, 75, 41 }
   };
 
   // Penalties for enemy's safe checks
