@@ -544,7 +544,7 @@ namespace {
         {
             Square s = pop_lsb(&safeThreats);
             score += ThreatBySafePawn[type_of(pos.piece_on(s))];
-            if (pawnAttacksBB[s] & pos.pieces()) 
+            if (pawnAttacksBB[s] & (pos.pieces(Them)^pos.pieces(Them, PAWN))) 
                 score += ThreatFollowUp;
         }
     }
