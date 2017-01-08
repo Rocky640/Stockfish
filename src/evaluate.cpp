@@ -470,7 +470,7 @@ namespace {
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
-            kingDanger += KnightCheck[b & safe & ei.attackedBy2[Us]];
+            kingDanger += KnightCheck[!!(b & safe & ei.attackedBy2[Us])];
 
         else if (b & other)
             score -= OtherCheck;
