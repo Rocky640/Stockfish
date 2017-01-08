@@ -455,7 +455,7 @@ namespace {
 
         // Enemy rooks safe and other checks
         if ((b = b1 & ei.attackedBy[Them][ROOK] & safe))
-            kingDanger += RookCheck[!!(b & ei.attackedBy2[Us])];
+            kingDanger += RookCheck[!!(b & ei.attackedBy2[Them])];
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
@@ -470,7 +470,7 @@ namespace {
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
-            kingDanger += KnightCheck[!!(b & safe & ei.attackedBy2[Us])];
+            kingDanger += KnightCheck[!!(b & safe & ei.attackedBy2[Them])];
 
         else if (b & other)
             score -= OtherCheck;
