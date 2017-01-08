@@ -217,9 +217,10 @@ namespace {
   // Penalties for enemy's safe checks
   const int QueenContactCheck = 997;
   const int QueenCheck        = 745;
-  const int RookCheck         = 688;
   const int BishopCheck       = 588;
-  const int KnightCheck       = 924;
+  // For rook and knights, the safe check is even stronger if given from a protected square
+  const int RookCheck[2]      = {658 , 718};
+  const int KnightCheck[2]    = {894 , 954};
 
 
   // eval_init() initializes king and attack bitboards for a given color
@@ -453,8 +454,8 @@ namespace {
                & ei.attackedBy[Us][QUEEN];
 
         // Enemy rooks safe and other checks
-        if (b1 & ei.attackedBy[Them][ROOK] & safe)
-            kingDanger += RookCheck;
+        if ((b = b1 & ei.attackedBy[Them][ROOK] & safe))
+            kingDanger += RookCheck[!!(b & ei.attackedBy2[Us])];
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
@@ -469,7 +470,7 @@ namespace {
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
-            kingDanger += KnightCheck;
+            kingDanger += KnightCheck[b & safe & ei.attackedBy2[Us]];
 
         else if (b & other)
             score -= OtherCheck;
