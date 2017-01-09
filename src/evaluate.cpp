@@ -553,13 +553,16 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (defended | weak)
     {
-        b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
-        while (b)
+        for (PieceType Pt = KNIGHT; Pt <= BISHOP; ++Pt)
         {
-            Square s = pop_lsb(&b);
-            score += ThreatByMinor[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            b = (defended | weak) & ei.attackedBy[Us][Pt];
+            while (b)
+            {
+                Square s = pop_lsb(&b);
+                score += ThreatByMinor[type_of(pos.piece_on(s))];
+                if (type_of(pos.piece_on(s)) != PAWN)
+                    score += ThreatByRank * (int)relative_rank(Them, s);
+            }
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
