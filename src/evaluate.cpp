@@ -199,7 +199,7 @@ namespace {
   const Score LooseEnemies        = S( 0, 25);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score ThreatByRank        = S(16,  3);
-  const Score ThreatFollowUp      = S(10, 10);
+  const Score ThreatFollowUp      = S(15,  0);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score HinderPassedPawn    = S( 7,  0);
