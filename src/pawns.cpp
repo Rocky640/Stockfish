@@ -234,13 +234,15 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
   const Color Them = (Us == WHITE ? BLACK : WHITE);
 
   enum { BlockedByKing, Unopposed, BlockedByPawn, Unblocked };
-  static const File FromFile[FILE_NB] = { FILE_A, FILE_A, FILE_A, FILE_C, FILE_C, FILE_E, FILE_E, FILE_E };
+  static const File FromFile[FILE_NB]  = { FILE_A, FILE_A, FILE_A, FILE_C, FILE_C, FILE_E, FILE_E, FILE_E };
+  static const File ExtraFile[FILE_NB] = { FILE_D, FILE_D, FILE_A, FILE_F, FILE_C, FILE_H, FILE_E, FILE_E };
 
   Bitboard b = pos.pieces(PAWN) & (in_front_bb(Us, rank_of(ksq)) | rank_bb(ksq));
   Bitboard ourPawns = b & pos.pieces(Us);
   Bitboard theirPawns = b & pos.pieces(Them);
   Value safety = MaxSafetyBonus;
   File fromFile = FromFile[file_of(ksq)];
+  File extraFile = ExtraFile[file_of(ksq)];
 
   for (File f = fromFile; f <= fromFile + File(3); ++f)
   {
@@ -249,13 +251,17 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
 
       b  = theirPawns & file_bb(f);
       Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
+      
+      Value fileValue =
+          ShelterWeakness[std::min(f, FILE_H - f)][rkUs]
+        + StormDanger
+            [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
+             rkUs   == RANK_1                                          ? Unopposed :
+             rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked]
+            [std::min(f, FILE_H - f)][rkThem];
 
-      safety -=  ShelterWeakness[std::min(f, FILE_H - f)][rkUs]
-               + StormDanger
-                 [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
-                  rkUs   == RANK_1                                          ? Unopposed :
-                  rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked]
-                 [std::min(f, FILE_H - f)][rkThem];
+      
+      safety -= fileValue >> (fromFile == extraFile);
   }
 
   return safety;
