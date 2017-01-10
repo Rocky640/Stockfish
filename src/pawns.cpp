@@ -226,7 +226,7 @@ Entry* probe(const Position& pos) {
 
 
 /// Entry::shelter_storm() calculates shelter and storm penalties for the file
-/// the king is on, as well as the two closest files.
+/// the king is on, as well as the three closest files.
 
 template<Color Us>
 Value Entry::shelter_storm(const Position& pos, Square ksq) {
@@ -234,14 +234,15 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
   const Color Them = (Us == WHITE ? BLACK : WHITE);
 
   enum { BlockedByKing, Unopposed, BlockedByPawn, Unblocked };
+  static const File FromFile[FILE_NB] = { FILE_A, FILE_A, FILE_A, FILE_C, FILE_C, FILE_E, FILE_E, FILE_E };
 
   Bitboard b = pos.pieces(PAWN) & (in_front_bb(Us, rank_of(ksq)) | rank_bb(ksq));
   Bitboard ourPawns = b & pos.pieces(Us);
   Bitboard theirPawns = b & pos.pieces(Them);
   Value safety = MaxSafetyBonus;
-  File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
+  File fromFile = FromFile[file_of(ksq)];
 
-  for (File f = center - File(1); f <= center + File(1); ++f)
+  for (File f = fromFile; f <= fromFile + File(3); ++f)
   {
       b = ourPawns & file_bb(f);
       Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
