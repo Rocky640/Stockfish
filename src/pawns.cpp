@@ -261,7 +261,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
             [std::min(f, FILE_H - f)][rkThem];
 
       
-      safety -= fileValue >> (fromFile == extraFile);
+      safety -= fileValue >> (f == extraFile);
   }
 
   return safety;
