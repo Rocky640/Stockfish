@@ -381,8 +381,8 @@ namespace {
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
 
   const Bitboard KingFlank[FILE_NB] = {
-    CenterFiles >> 2, CenterFiles >> 2, CenterFiles >> 2, CenterFiles, CenterFiles,
-    CenterFiles << 2, CenterFiles << 2, CenterFiles << 2
+    CenterFiles >> 2 & ~FileDBB, CenterFiles >> 2, CenterFiles >> 2, CenterFiles, CenterFiles,
+    CenterFiles << 2, CenterFiles << 2, CenterFiles << 2 & ~FileEBB
   };
 
   template<Color Us, bool DoTrace>
