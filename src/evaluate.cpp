@@ -562,6 +562,13 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
+        b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] & ei.attackedBy[Us][BISHOP]);
+        while (b)
+        {
+            Square s = pop_lsb(&b);
+            score += ThreatByMinor[type_of(pos.piece_on(s))];
+        }
+
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
         while (b)
         {
