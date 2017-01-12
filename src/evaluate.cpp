@@ -784,6 +784,19 @@ namespace {
 
 } // namespace
 
+Value lazy_eval(Score score) {
+    const Value lazyThreshold = Value(1500);
+    Value signedThreshold;
+
+    if (mg_value(score) > lazyThreshold && eg_value(score) > lazyThreshold)
+        signedThreshold = lazyThreshold;
+    else if (mg_value(score) < -lazyThreshold && eg_value(score) < -lazyThreshold)
+        signedThreshold = -lazyThreshold;
+    else return VALUE_ZERO;
+      
+    Value v = (mg_value(score) + eg_value(score)) / 2;
+    return signedThreshold + (v - signedThreshold) / 4;
+  }
 
 /// evaluate() is the main evaluation function. It returns a static evaluation
 /// of the position from the point of view of the side to move.
@@ -812,6 +825,12 @@ Value Eval::evaluate(const Position& pos) {
   // Probe the pawn hash table
   ei.pi = Pawns::probe(pos);
   score += ei.pi->pawns_score();
+
+  // We have taken into account all cheap evaluation terms.
+  // If score exceeds a threshold return a lazy evaluation 
+  Value lazy_value = lazy_eval(score);
+  if(lazy_value != VALUE_ZERO)
+      return pos.side_to_move() == WHITE? lazy_value : -lazy_value;
 
   // Initialize attack and king safety bitboards
   ei.attackedBy[WHITE][ALL_PIECES] = ei.attackedBy[BLACK][ALL_PIECES] = 0;
