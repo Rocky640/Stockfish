@@ -174,19 +174,6 @@ namespace {
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
 
-  // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
-  // We don't use a Score because we process the two components independently.
-  const Value Passed[][RANK_NB] = {
-    { V(5), V( 5), V(31), V(73), V(166), V(252) },
-    { V(7), V(14), V(38), V(73), V(166), V(252) }
-  };
-
-  // PassedFile[File] contains a bonus according to the file of a passed pawn
-  const Score PassedFile[FILE_NB] = {
-    S(  9, 10), S( 2, 10), S( 1, -8), S(-20,-12),
-    S(-20,-12), S( 1, -8), S( 2, 10), S(  9, 10)
-  };
-
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
   const Score BishopPawns         = S( 8, 12);
@@ -626,7 +613,7 @@ namespace {
         int r = relative_rank(Us, s) - RANK_2;
         int rr = r * (r - 1);
 
-        Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
+        Value mbonus = VALUE_ZERO, ebonus = VALUE_ZERO;
 
         if (rr)
         {
@@ -678,7 +665,7 @@ namespace {
         if (!pos.non_pawn_material(Them))
             ebonus += 20;
 
-        score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+        score += make_score(mbonus, ebonus);
     }
 
     if (DoTrace)

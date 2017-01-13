@@ -44,7 +44,7 @@ namespace {
   Score Connected[2][2][2][RANK_NB];
 
   // Doubled pawn penalty
-  const Score Doubled = S(18,38);
+  const Score Doubled = S(18, 38);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -52,8 +52,20 @@ namespace {
     S(17, 16), S(33, 32), S(0, 0), S(0, 0)
   };
 
+  // Passed pawn bonus by rank
+  const Score PassedRank[RANK_NB] = {
+     S( 0,  0), S(  5,  7), S(  5, 14), S(31, 38),
+     S(73, 73), S(166,166), S(252,252), S( 0,  0)
+  };
+    
+  // Passed pawn bonus by file
+  const Score PassedFile[FILE_NB] = {
+    S(  9, 10), S( 2, 10), S( 1, -8), S(-20,-12),
+    S(-20,-12), S( 1, -8), S( 2, 10), S(  9, 10)
+  };
+
   // Weakness of our pawn shelter in front of the king by [distance from edge][rank].
-  // RANK_1 = 0 is used for files where we have no pawns, or where our pawn is behind our king.
+  // RANK_1 = 0 is used for files where we have no pawns, or our pawn is behind our king.
   const Value ShelterWeakness[][RANK_NB] = {
     { V(100), V(20), V(10), V(46), V(82), V( 86), V( 98) },
     { V(116), V( 4), V(28), V(87), V(94), V(108), V(104) },
@@ -63,7 +75,7 @@ namespace {
 
   // Danger of enemy pawns moving toward our king by [type][distance from edge][rank].
   // For the unopposed and unblocked cases, RANK_1 = 0 is used when opponent has no pawn
-  // on the given file, or his pawn his behind our king.
+  // on the given file, or his pawn is behind our king.
   const Value StormDanger[][4][RANK_NB] = {
     { { V( 0),  V(-290), V(-274), V(57), V(41) },  //BlockedByKing
       { V( 0),  V(  60), V( 144), V(39), V(13) },
@@ -121,6 +133,7 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank r = relative_rank(Us, s);
 
         e->semiopenFiles[Us]   &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -137,7 +150,7 @@ namespace {
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
-        if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
+        if (!neighbours || lever || r >= RANK_5)
             backward = false;
         else
         {
@@ -155,7 +168,14 @@ namespace {
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate them.
         if (!stoppers && !(ourPawns & forward_bb(Us, s)))
+        {
+            // In evaluate.cpp, we will look at interactions with king and other pieces
             e->passedPawns[Us] |= s;
+
+            // In pawns.cpp, we can only make a primitive evaluation which might improve
+            // the early lazy evaluations.
+            score += PassedRank[r] + PassedFile[f];
+        }
 
         // Score this pawn
         if (!neighbours)
@@ -168,13 +188,13 @@ namespace {
             score -= Unsupported;
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][more_than_one(supported)][r];
 
         if (doubled)
             score -= Doubled;
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[r];
     }
 
     return score;
