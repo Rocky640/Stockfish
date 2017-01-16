@@ -134,6 +134,8 @@ namespace {
       S(118,174), S(119,177), S(123,191), S(128,199) }
   };
 
+  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
+
   // Outpost[knight/bishop][supported by pawn] contains bonuses for knights and
   // bishops outposts, bigger if outpost piece is supported by a pawn.
   const Score Outpost[][2] = {
@@ -262,8 +264,6 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
-	const Square hUp = (Us == WHITE ? NORTH_EAST : SOUTH_EAST);
-	const Square aUp = (Us == WHITE ? NORTH_WEST : SOUTH_WEST);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb, bbb;
@@ -319,22 +319,14 @@ namespace {
                     {
                         // Smart outposts: for example White Ne5 against Black f7 g7 h6.
                         // Ne5 is not an outpost because f7-f6 can eventually kick it.
-                        // But by doing so, the square g6 would become an outpost.
-                        bbb = bb 
-                            = b & rank_bb(s + pawn_push(Us)) & OutpostRanks
+                        // But after f7-f6, the square g6 would becomes an outpost.
+                        bbb = bb
+                            = b & rank_bb(s + pawn_push(Us)) & OutpostRanks & CenterFiles
                                 & ~pos.pieces(Us);
-                        if (   !bbb
-                            || (file_of(s) == FILE_B && ei.pi->pawn_attacks_span(Them) & aUp)
-                            || (file_of(s) == FILE_G && ei.pi->pawn_attacks_span(Them) & hUp))
+                        if (bbb && !(bbb & ei.pi->pawn_attacks_span2(Them)))
                         {
-                            // if no reachable squares on the next rank (Ne5-g6 or Ne5-c6)
-                            // or if kickable by a h pawn or a pawn, there is nowhere to go,
-                            // so forget it !
-                        }
-                        else if (!(bbb & ei.pi->pawn_attacks_span2(Them)))
-                        {
-                            // Some potential outposts squares are controlled only once.
-                            // Find out if they are controlled by outpost kickers.
+                            // All new potential outposts squares on the next rank are controlled only once.
+                            // Find out if they are controlled only by outpost kickers.
                             bb &= ei.pi->pawn_attacks_span(Them);
                             bool ok = true;
                             while (bb)
@@ -418,8 +410,6 @@ namespace {
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
-
-  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
 
   const Bitboard KingFlank[FILE_NB] = {
     CenterFiles >> 2, CenterFiles >> 2, CenterFiles >> 2, CenterFiles, CenterFiles,
