@@ -257,13 +257,16 @@ namespace {
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility,
                         const Bitboard* mobilityArea) {
+
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
+	const Square hUp = (Us == WHITE ? NORTH_EAST : SOUTH_EAST);
+	const Square aUp = (Us == WHITE ? NORTH_WEST : SOUTH_WEST);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, bb, bbb;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -302,13 +305,49 @@ namespace {
         {
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
+           
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+               score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
             else
             {
                 bb &= b & ~pos.pieces(Us);
                 if (bb)
                    score += ReachableOutpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
+                else if (Pt == KNIGHT)
+                {
+                    if (OutpostRanks & s)
+                    {
+                        // Smart outposts: for example White Ne5 against Black f7 g7 h6.
+                        // Ne5 is not an outpost because f7-f6 can eventually kick it.
+                        // But by doing so, the square g6 would become an outpost.
+                        bbb = bb 
+                            = b & rank_bb(s + pawn_push(Us)) & OutpostRanks
+                                & ~pos.pieces(Us);
+                        if (   !bbb
+                            || (file_of(s) == FILE_B && ei.pi->pawn_attacks_span(Them) & aUp)
+                            || (file_of(s) == FILE_G && ei.pi->pawn_attacks_span(Them) & hUp))
+                        {
+                            // if no reachable squares on the next rank (Ne5-g6 or Ne5-c6)
+                            // or if kickable by a h pawn or a pawn, there is nowhere to go,
+                            // so forget it !
+                        }
+                        else if (!(bbb & ei.pi->pawn_attacks_span2(Them)))
+                        {
+                            // Some potential outposts squares are controlled only once.
+                            // Find out if they are controlled by outpost kickers.
+                            bb &= ei.pi->pawn_attacks_span(Them);
+                            bool ok = true;
+                            while (bb)
+                            {
+                                Square s2 = pop_lsb(&bb);
+                                ok &= !!(pawn_attack_span(Us, s2) & pos.pieces(Them, PAWN) & adjacent_files_bb(file_of(s)));
+                            }
+                            // If all of them are fine, allocate the ReachableOutpost bonus
+                            if (ok)
+                               score += ReachableOutpost[Pt == KNIGHT][!!(ei.attackedBy[Us][PAWN] & bbb)];
+                        }
+                    }
+                }
             }
 
             // Bonus when behind a pawn
