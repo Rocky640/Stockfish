@@ -257,6 +257,7 @@ namespace {
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility,
                         const Bitboard* mobilityArea) {
+
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
@@ -302,13 +303,41 @@ namespace {
         {
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
+           
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
+               score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
             else
             {
                 bb &= b & ~pos.pieces(Us);
                 if (bb)
                    score += ReachableOutpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
+                else if (Pt == KNIGHT)
+                {
+					if (b && ((Rank4BB | Rank5BB) & s) && !(ei.attackedBy[Them][PAWN] & s))
+                    {
+                        // The piece is not pinned, is on rank 4 or 5, and is not attacked by a pawn.
+						
+                        // Smart outposts: for example White Ne5 against Black f7 g7 h6.
+                        // Ne5 is not an outpost because f7-f6 can eventually kick it.
+                        // But by doing so, the square g6 would become an outpost.
+                        
+                        Bitboard kickers = pawn_attack_span(Us, s) & pos.pieces(Them, PAWN);
+
+                        // Look at squares reachable by the knight on the next rank.
+                        bb = b & rank_bb(s + pawn_push(Us));
+                        if (    !(bb & (pos.pieces(Us) | ei.pi->pawn_attacks_span2(Them)))
+                             && !(kickers & (FileABB | FileHBB)))
+                        {
+							// All those squares are controlled only once, are available, 
+                            // Find out if they are all controlled by outpost kickers.
+                            // If so, a move by any kickers will free a good square for our knight.
+							
+                            if (    !!(pawn_attack_span(Us, lsb(bb)) & kickers)
+                                &&  !!(pawn_attack_span(Us, msb(bb)) & kickers))
+                               score += ReachableOutpost[Pt == KNIGHT][!!(ei.attackedBy[Us][PAWN] & bb)];
+                        }
+                    }
+                }
             }
 
             // Bonus when behind a pawn
