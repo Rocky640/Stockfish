@@ -263,7 +263,7 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostMask = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                               : Rank5BB | Rank4BB | Rank3BB)
-                                & CenterFiles;
+                                & ~(FileABB | FileHBB);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
