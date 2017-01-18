@@ -595,11 +595,11 @@ namespace {
     // Bonus for new attacks on pieces which are created after a pawn push
     score += ThreatByPawnPush * popcount(safeThreats & ~ei.attackedBy[Us][PAWN]);
 
-    // Bonus for opponent if he has pieces which are safe from our pawn attack
+    // Bonus for opponent if he has pieces which are safe from any pawn attack
     b ^= b1;
     b =  (shift<Left>(b) | shift<Right>(b))
         &  pos.pieces(Them);
-    score -= SafeFromPawnPush * popcount(b & ~ei.attackedBy[Us][PAWN]);
+    score -= SafeFromPawnPush * popcount(b & ~(ei.attackedBy[Us][PAWN]|safeThreats));
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
