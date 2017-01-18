@@ -208,6 +208,8 @@ namespace {
   // happen in Chess960 games.
   const Score TrappedBishopA1H1 = S(50, 50);
 
+  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
+
   #undef S
   #undef V
 
@@ -259,8 +261,9 @@ namespace {
                         const Bitboard* mobilityArea) {
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard OutpostMask = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                              : Rank5BB | Rank4BB | Rank3BB)
+                                & CenterFiles;
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -301,7 +304,7 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus for outpost squares
-            bb = OutpostRanks & ~ei.pi->pawn_attacks_span(Them);
+            bb = OutpostMask & ~ei.pi->pawn_attacks_span(Them);
             if (bb & s)
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
             else
@@ -379,8 +382,6 @@ namespace {
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
-
-  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
 
   const Bitboard KingFlank[FILE_NB] = {
     CenterFiles >> 2, CenterFiles >> 2, CenterFiles >> 2, CenterFiles, CenterFiles,
