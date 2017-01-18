@@ -582,8 +582,8 @@ namespace {
     }
 
     // Squares that can be reached by pawns on the next move
-    b = shift<Up>(pos.pieces(Us, PAWN) & ~TRank7BB)  & ~pos.pieces();
-    b = shift<Up>(b & TRank3BB) & ~pos.pieces();
+    b  = shift<Up>(pos.pieces(Us, PAWN) & ~TRank7BB)  & ~pos.pieces();
+    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     b1 = b & ~ei.attackedBy[Them][PAWN]
            & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
