@@ -77,6 +77,7 @@ namespace {
     Pawns::Entry* pe;
     Bitboard pinnedPieces[COLOR_NB];
     Bitboard mobilityArea[COLOR_NB];
+    Bitboard rookSupport[COLOR_NB];
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type (can be also ALL_PIECES).
@@ -231,6 +232,7 @@ namespace {
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
+    ei.rookSupport[Us] = 0;
 
     // Find our pawns on the first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
@@ -351,15 +353,19 @@ namespace {
             // Bonus when on an open or semi-open file
             if (ei.pe->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pe->semiopen_file(Them, file_of(s))];
-
-            // Penalty when trapped by the king, even more if the king cannot castle
-            else if (mob <= 3)
+            else 
             {
-                Square ksq = pos.square<KING>(Us);
+                ei.rookSupport[Us] |= b & pos.pieces(Us, PAWN) & forward_bb(Us, s);
 
-                if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
-                    && !ei.pe->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                // Penalty when trapped by the king, even more if the king cannot castle
+                if (mob <= 3)
+                {
+                    Square ksq = pos.square<KING>(Us);
+
+                    if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
+                        && !ei.pe->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
+                        score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                }
             }
         }
 
@@ -527,7 +533,7 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, weak, defended, safeThreats;
+    Bitboard b, bR, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
@@ -591,10 +597,13 @@ namespace {
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
+    
+    bR = ei.rookSupport[Us] & ~TRank7BB;
+    bR = shift<Up>(bR | (shift<Up>(bR & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
         & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+        & (ei.attackedBy[Us][ALL_PIECES] | bR | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
