@@ -108,6 +108,7 @@ namespace {
     int kingAdjacentZoneAttacksCount[COLOR_NB];
 
     Bitboard pinnedPieces[COLOR_NB];
+    Bitboard rookSupport[COLOR_NB];
     Material::Entry* me;
     Pawns::Entry* pi;
   };
@@ -236,6 +237,7 @@ namespace {
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
     Bitboard b = ei.attackedBy[Them][KING];
     ei.attackedBy[Them][ALL_PIECES] |= b;
+    ei.rookSupport[Us] = 0;
     ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][PAWN] = ei.pi->pawn_attacks(Us);
     ei.attackedBy2[Us] = ei.attackedBy[Us][PAWN] & ei.attackedBy[Us][KING];
 
@@ -344,15 +346,19 @@ namespace {
             // Bonus when on an open or semi-open file
             if (ei.pi->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pi->semiopen_file(Them, file_of(s))];
-
-            // Penalize when trapped by the king, even more if the king cannot castle
-            else if (mob <= 3)
+            else
             {
-                Square ksq = pos.square<KING>(Us);
+                ei.rookSupport[Us] |= file_bb(s);
 
-                if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
-                    && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                // Penalize when trapped by the king, even more if the king cannot castle
+                if (mob <= 3)
+                {
+                    Square ksq = pos.square<KING>(Us);
+
+                    if (   ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
+                        && !ei.pi->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
+                        score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                }
             }
         }
 
@@ -586,7 +592,7 @@ namespace {
 
     b &=  ~pos.pieces()
         & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+        & (ei.attackedBy[Us][ALL_PIECES] | ei.rookSupport[Us] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
