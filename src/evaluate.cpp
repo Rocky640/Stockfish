@@ -145,7 +145,7 @@ namespace {
   };
   
   const Score OutpostFile[FILE_NB] = { 
-    S(15, 0), S(10, 0), S(5, 0), S(0, 0), S(-5, 0), S(-10, 0), S(-15, 0) 
+    S(15, 0), S(10, 0), S(5, 0), S(0, 0), S(-5, 0), S(-10, 0), S(-15, 0), S(-20, 0) 
   };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
