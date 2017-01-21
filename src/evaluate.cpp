@@ -196,7 +196,7 @@ namespace {
   const Score OtherCheck          = S(10, 10);
   const Score CloseEnemies        = S( 7,  0);
   const Score PawnlessFlank       = S(20, 80);
-  const Score LooseEnemies        = S( 0, 25);
+  const Score LooseEnemies        = S( 0, 12);
   const Score ThreatByHangingPawn = S(71, 61);
   const Score ThreatByRank        = S(16,  3);
   const Score Hanging             = S(48, 27);
@@ -523,9 +523,9 @@ namespace {
     Score score = SCORE_ZERO;
 
     // Small bonus if the opponent has loose pawns or pieces
-    if (   (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
-        & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]))
-        score += LooseEnemies;
+    b =   (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
+       & ~(ei.attackedBy[Us][ALL_PIECES] | ei.attackedBy[Them][ALL_PIECES]);
+    score += LooseEnemies * ( 2 * (!!(b & ~pos.pieces(PAWN))) + (!!(b & pos.pieces(PAWN))));
 
     // Non-pawn enemies attacked by a pawn
     weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
