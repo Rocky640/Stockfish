@@ -143,6 +143,11 @@ namespace {
     { S(22, 6), S(33, 9) }, // Knight
     { S( 9, 2), S(14, 4) }  // Bishop
   };
+  
+  const Score OutpostFile[FILE_NB] = {
+     S(-10, -2), S(-4, 0), S(2, 2), S(8, 2), S(8, 2), S(2, 2), S(-4, 0), S(-10, -2)    
+  };
+      
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
@@ -310,7 +315,8 @@ namespace {
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * 2;
+                score +=  Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * 2
+                        + OutpostFile[file_of(s)];
             else
             {
                 bb &= b & ~pos.pieces(Us);
