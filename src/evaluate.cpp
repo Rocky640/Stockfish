@@ -144,10 +144,7 @@ namespace {
     { S( 9, 2), S(14, 4) }  // Bishop
   };
   
-  const Score OutpostFile[FILE_NB] = {
-     S(-10, -2), S(-4, 0), S(2, 2), S(8, 2), S(8, 2), S(2, 2), S(-4, 0), S(-10, -2)    
-  };
-      
+  const Score OutpostFile[FILE_NB] = { S(15, 0), S(10, 0), S(5, 0), S(0, 0), S(-5, 0), S(-10, 0), S(-15, 0) };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
