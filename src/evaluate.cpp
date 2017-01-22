@@ -712,11 +712,10 @@ namespace {
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
 
     // Find the safe squares for our pieces inside the area defined by
-    // SpaceMask. A square is unsafe if it is attacked by an enemy
-    // pawn, or if it is undefended and attacked by an enemy piece.
+    // SpaceMask and mobilityArea. A square is unsafe if it is attacked by an
+    // enemy pawn, or if it is undefended and attacked by an enemy piece.
     Bitboard safe =   SpaceMask
-                   & ~pos.pieces(Us, PAWN)
-                   & ~ei.attackedBy[Them][PAWN]
+                   &  ei.mobilityArea[Us]
                    & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     // Find all squares which are at most three squares behind some friendly pawn
@@ -732,7 +731,7 @@ namespace {
     bonus = std::min(16, bonus);
     int weight = pos.count<ALL_PIECES>(Us) - 2 * ei.pe->open_files();
 
-    return make_score(bonus * weight * weight / 18, 0);
+    return make_score(bonus * weight * weight / 22, 0);
   }
 
 
