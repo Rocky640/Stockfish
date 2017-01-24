@@ -232,10 +232,14 @@ namespace {
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
 
-    // Find our pawns on the first two ranks, and those which are blocked
+    // Find our pawns on their first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
-    // Squares occupied by those pawns, by our king, or controlled by enemy pawns
+    // Consider also squares occupied by possibly mobile pawns, but which are easy to lock,
+    // because facing a phalanx
+    b |= ei.pe->blockable_pawns(Us);
+
+    // Squares occupied by all those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
     ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
 
