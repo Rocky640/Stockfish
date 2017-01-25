@@ -310,7 +310,7 @@ namespace {
 
         int mob = popcount(b & ei.mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt][mob];
-        ei.lowMobPieces[Us] += (mob <= 2);
+        ei.lowMobPieces[Us] += (mob <= 2 && !(b & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))));
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
