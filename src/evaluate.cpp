@@ -302,8 +302,9 @@ namespace {
                    | ei.attackedBy[Them][ROOK]);
 
         int mob = popcount(b & ei.mobilityArea[Us]);
-
         mobility[Us] += MobilityBonus[Pt][mob];
+        if (mob <= 2) 
+            ei.mobilityArea[Us] &= ~SquareBB[s];
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
