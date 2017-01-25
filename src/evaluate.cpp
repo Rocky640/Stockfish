@@ -77,6 +77,7 @@ namespace {
     Pawns::Entry* pe;
     Bitboard pinnedPieces[COLOR_NB];
     Bitboard mobilityArea[COLOR_NB];
+    int lowMobPieces[COLOR_NB];
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type (can be also ALL_PIECES).
@@ -168,6 +169,11 @@ namespace {
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
+  
+  // Entangled penalty according to number of low mobility pieces, not counting the king.
+  const Score Entangled[8] = { 
+     S(0, 0), S(1, 1), S(4, 4), S(9, 9), S(16, 16), S(25, 25), S(36, 36), S(49, 49)
+  };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
@@ -231,6 +237,7 @@ namespace {
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
     ei.pinnedPieces[Us] = pos.pinned_pieces(Us);
+    ei.lowMobPieces[Us] = 0;
 
     // Find our pawns on the first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
@@ -303,8 +310,7 @@ namespace {
 
         int mob = popcount(b & ei.mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt][mob];
-        if (mob <= 2) 
-            ei.mobilityArea[Us] &= ~SquareBB[s];
+        ei.lowMobPieces[Us] += (mob <= 2);
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
@@ -530,6 +536,8 @@ namespace {
 
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
+    
+    score += Entangled[ei.lowMobPieces[Them]];
 
     // Small bonus if the opponent has loose pawns or pieces
     if (   (pos.pieces(Them) ^ pos.pieces(Them, QUEEN, KING))
