@@ -189,6 +189,7 @@ namespace {
   const Score WeakQueen           = S(50, 10);
   const Score OtherCheck          = S(10, 10);
   const Score CloseEnemies        = S( 7,  0);
+  const Score OutOfPlayQueen      = S(20,  0);
   const Score PawnlessFlank       = S(20, 80);
   const Score LooseEnemies        = S( 0, 25);
   const Score ThreatByHangingPawn = S(71, 61);
@@ -500,6 +501,10 @@ namespace {
 
     score -= CloseEnemies * popcount(b);
 
+    // Penalty if queen cannot help
+    if (pos.pieces(Us, QUEEN) && !(ei.attackedBy[Us][QUEEN] & KingFlank[kf] & Camp))
+        score -= OutOfPlayQueen;
+    
     // Penalty when our king is on a pawnless flank
     if (!(pos.pieces(PAWN) & KingFlank[kf]))
         score -= PawnlessFlank;
