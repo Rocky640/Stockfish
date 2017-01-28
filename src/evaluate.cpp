@@ -608,7 +608,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB);
 
     b =  (shift<Left>(b) | shift<Right>(b))
-       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & CenterRanks
+       &  pos.pieces(Them, KNIGHT, BISHOP) & CenterRanks
        & ~safeThreats;
 
     score -= SafeFromPawnPush * popcount(b);
