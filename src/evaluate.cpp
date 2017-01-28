@@ -195,6 +195,7 @@ namespace {
   const Score ThreatByRank        = S(16,  3);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
+  const Score SafeFromPawnPush    = S(19, 11);
   const Score HinderPassedPawn    = S( 7,  0);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
@@ -521,8 +522,9 @@ namespace {
     const Square Up         = (Us == WHITE ? NORTH      : SOUTH);
     const Square Left       = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
-    const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
+    const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
+	const Bitboard CenterRanks = Rank4BB | Rank5BB;
 
     Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
@@ -585,19 +587,31 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
+    // Squares that can be reached by pawns on the next move
+    b  = shift<Up>(pos.pieces(Us, PAWN) & ~TRank7BB)  & ~pos.pieces();
+    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
+    // Consider only the safe squares
+    b &=  ~ei.attackedBy[Them][PAWN]
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b =  (shift<Left>(b) | shift<Right>(b))
-       &  pos.pieces(Them)
-       & ~ei.attackedBy[Us][PAWN];
+    // Analyse the new attacks from these safe squares
+    safeThreats = (shift<Left>(b) | shift<Right>(b)) & pos.pieces(Them) & ~ei.attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush * popcount(safeThreats);
+
+    // Analyse pieces which does not qualify as outpost, but nevertheless cannot
+    // be attacked by pawns (either the pawn is blocked, or the attack would be unsafe
+
+    // Squares that can (or cannot) be reached by pawns on the next move
+    b  = shift<Up>(pos.pieces(Us, PAWN) & ~TRank7BB);
+    b |= shift<Up>(b & TRank3BB);
+
+    b =  (shift<Left>(b) | shift<Right>(b))
+       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & CenterRanks
+       & ~safeThreats;
+
+    score -= SafeFromPawnPush * popcount(b);
 
     if (DoTrace)
         Trace::add(THREAT, Us, score);
