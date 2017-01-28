@@ -150,7 +150,7 @@ namespace {
   // Threat[attacker type][attacked PieceType]
   // contains bonuses according to which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered. Attacks by queen are not considered too.
-  const Score Threat[4][PIECE_TYPE_NB] = {
+  Score Threat[4][PIECE_TYPE_NB] = {
       { S(0, 0), S(0,  0), S(176, 139), S(131, 127), S(217, 218), S(203, 215) }, //by safe pawn
       { S(0, 0), S(0, 33), S( 45,  43), S( 46,  47), S( 72, 107), S( 48, 118) }, //only by minor(s)
       { S(0, 0), S(0, 25), S( 40,  62), S( 40,  59), S(  0,  34), S( 35,  48) }, //only by rook(s)
@@ -160,7 +160,9 @@ namespace {
   // ThreatByRank[pawn/non-pawn] contains a bonus which will be multiplied by the relative rank
   // of the threatened piece (from the enemy point of view). 
   // For example, if white attacks a black Nf3, the relative rank is RANK_6.
-  const Score ThreatByRank[2] = { S(0, 0), S(16,  3)};
+  Score ThreatByRank[2] = { S(0, 0), S(16,  3)};
+  
+  TUNE(SetRange(0, 300), Threat, ThreatByRank);
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
