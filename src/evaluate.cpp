@@ -151,10 +151,10 @@ namespace {
   // contains bonuses according to which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered. Attacks by queen are not considered too.
   const Score Threat[4][PIECE_TYPE_NB] = {
-      { S(0, 0), S(0,  0), S(178, 141), S(131, 131), S(218, 219), S(207, 214) }, //by safe pawn
-      { S(0, 0), S(0, 29), S( 41,  38), S( 50,  49), S( 77, 114), S( 46, 126) }, //only by minor(s)
-      { S(0, 0), S(1, 22), S( 36,  60), S( 41,  59), S(  3,  34), S( 35,  54) }, //only by rook(s)
-      { S(0, 0), S(4, 31), S( 44,  63), S( 47,  57), S( 71, 108), S( 50, 121) }  //by minor(s) and rook(s)
+      { S(0, 0), S(0,  0), S(182,136), S(130,127), S(211,216), S(205,214) }, //by safe pawn
+      { S(0, 0), S(0, 32), S( 40, 40), S( 45, 46), S( 78,115), S( 46,129) }, //only by minor(s)
+      { S(0, 0), S(2, 20), S( 37, 57), S( 39, 59), S(  7, 41), S( 38, 54) }, //only by rook(s)
+      { S(0, 0), S(4, 36), S( 44, 63), S( 44, 59), S( 72,111), S( 51,121) }  //by minor(s) and rook(s)
   };
 
   // ThreatByRank[pawn/non-pawn] contains a bonus which will be multiplied by the relative rank
