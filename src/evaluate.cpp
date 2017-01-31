@@ -430,15 +430,9 @@ namespace {
                     - 717 * !pos.count<QUEEN>(Them)
                     -   7 * mg_value(score) / 5 - 5;
 
-        // Analyse the enemy's safe queen contact checks. Firstly, find the
-        // undefended squares around our king reachable by the enemy queen...
-        b = undefended & ei.attackedBy[Them][QUEEN] & ~pos.pieces(Them);
-
-        // ...and keep squares supported by another enemy piece.
-        kingDanger += QueenContactCheck * popcount(b & ei.attackedBy2[Them]);
-
         // Analyse the safe enemy's checks which are possible on next move
-        safe  = ~(ei.attackedBy[Us][ALL_PIECES] | pos.pieces(Them));
+        safe  = ~ei.attackedBy[Us][ALL_PIECES] | (ei.attackedBy2[Them] & undefended);
+        safe &= ~pos.pieces(Them);
 
         b1 = pos.attacks_from<ROOK  >(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
