@@ -438,8 +438,8 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
-            kingDanger += QueenCheck;
+        b = (b1 | b2) & ei.attackedBy[Them][QUEEN] & safe;
+        kingDanger += QueenCheck * popcount(b);
 
         // For minors and rooks, also consider the square safe if attacked twice,
         // and only defended by our queen.
