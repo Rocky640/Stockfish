@@ -365,6 +365,11 @@ namespace {
             Bitboard pinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, pinners))
                 score -= WeakQueen;
+
+            // Compute potential checks from a queen sniper aligned with king
+            Bitboard b = between_bb(pos.square<KING>(Them), s) & pos.pieces();
+            if (!more_than_one(b) && (b & (pos.pieces(Us) ^ pos.pieces(Us, PAWN))))
+                score += OtherCheck * 2;
         }
     }
 
