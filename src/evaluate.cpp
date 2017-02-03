@@ -292,11 +292,6 @@ namespace {
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
-        if (Pt == QUEEN)
-            b &= ~(  ei.attackedBy[Them][KNIGHT]
-                   | ei.attackedBy[Them][BISHOP]
-                   | ei.attackedBy[Them][ROOK]);
-
         int mob = popcount(b & ei.mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt][mob];
@@ -363,7 +358,7 @@ namespace {
         {
             // Penalty if any relative pin or discovered attack against the queen
             Bitboard pinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, pinners))
+            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP) & ~b, s, pinners))
                 score -= WeakQueen;
         }
     }
