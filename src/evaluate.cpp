@@ -626,6 +626,11 @@ namespace {
 
         Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
 
+        // Scale down bonus for candidate passers which need more than one pawn
+        // push to become passed.
+        if (!pos.pawn_passed(Us, s + pawn_push(Us)))
+            mbonus /= 2, ebonus /= 2;
+
         if (rr)
         {
             Square blockSq = s + pawn_push(Us);
@@ -675,11 +680,6 @@ namespace {
         // Assign a small bonus when the opponent has no pieces left
         if (!pos.non_pawn_material(Them))
             ebonus += 20;
-
-        // Scale down bonus for candidate passers which need more than one pawn
-        // push to become passed.
-        if (!pos.pawn_passed(Us, s + pawn_push(Us)))
-            mbonus /= 2, ebonus /= 2;
 
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
