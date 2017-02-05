@@ -34,7 +34,7 @@ namespace {
   namespace Trace {
 
     enum Term { // The first 8 entries are for PieceType
-      MATERIAL = 8, IMBALANCE, MOBILITY, THREAT, PASSED, SPACE, TOTAL, TERM_NB
+      MATERIAL = 8, IMBALANCE, MOBILITY, THREAT, PASSER, SPACE, TOTAL, TERM_NB
     };
 
     double scores[TERM_NB][COLOR_NB][PHASE_NB];
@@ -168,17 +168,10 @@ namespace {
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
 
-  // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
-  // We don't use a Score because we process the two components independently.
-  const Value Passed[][RANK_NB] = {
-    { V(5), V( 5), V(31), V(73), V(166), V(252) },
-    { V(7), V(14), V(38), V(73), V(166), V(252) }
-  };
-
-  // PassedFile[File] contains a bonus according to the file of a passed pawn
-  const Score PassedFile[FILE_NB] = {
-    S(  9, 10), S( 2, 10), S( 1, -8), S(-20,-12),
-    S(-20,-12), S( 1, -8), S( 2, 10), S(  9, 10)
+  // PasserFile[File] contains a bonus according to the file of a passer pawn
+  const Score PasserFile[FILE_NB] = {
+    S( 12, 19), S( 5, 19), S( 4,  1), S(-17,- 3),
+    S(-17, -3), S( 4,  1), S( 5, 19), S( 12, 19)
   };
 
   // Assorted bonuses and penalties used by evaluation
@@ -195,7 +188,8 @@ namespace {
   const Score ThreatByRank        = S(16,  3);
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
-  const Score HinderPassedPawn    = S( 7,  0);
+  const Score PasserControl       = S( 7,  0);
+  const Score OnlyKingCanStop     = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -228,7 +222,7 @@ namespace {
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
-    // Find our pawns on the first two ranks, and those which are blocked
+    // Find our blocked pawns, and those on rank 2 or 3
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
@@ -610,7 +604,7 @@ namespace {
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
-    b = ei.pe->passed_pawns(Us);
+    b = ei.pe->passer_pawns(Us);
 
     while (b)
     {
@@ -618,74 +612,74 @@ namespace {
 
         assert(!(pos.pieces(PAWN) & forward_bb(Us, s)));
 
+        score += PasserFile[file_of(s)];
+
         bb = forward_bb(Us, s) & (ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them));
-        score -= HinderPassedPawn * popcount(bb);
+        score -= PasserControl * popcount(bb);
 
-        int r = relative_rank(Us, s) - RANK_2;
-        int rr = r * (r - 1);
-
-        Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
-
-        if (rr)
-        {
-            Square blockSq = s + pawn_push(Us);
-
-            // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(Us  ), blockSq) * 2 * rr;
-
-            // If blockSq is not the queening square then consider also a second push
-            if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us)) * rr;
-
-            // If the pawn is free to advance, then increase the bonus
-            if (pos.empty(blockSq))
-            {
-                // If there is a rook or queen attacking/defending the pawn from behind,
-                // consider all the squaresToQueen. Otherwise consider only the squares
-                // in the pawn's path attacked or occupied by the enemy.
-                defendedSquares = unsafeSquares = squaresToQueen = forward_bb(Us, s);
-
-                bb = forward_bb(Them, s) & pos.pieces(ROOK, QUEEN) & pos.attacks_from<ROOK>(s);
-
-                if (!(pos.pieces(Us) & bb))
-                    defendedSquares &= ei.attackedBy[Us][ALL_PIECES];
-
-                if (!(pos.pieces(Them) & bb))
-                    unsafeSquares &= ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
-
-                // If there aren't any enemy attacks, assign a big bonus. Otherwise
-                // assign a smaller bonus if the block square isn't attacked.
-                int k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
-
-                // If the path to the queen is fully defended, assign a big bonus.
-                // Otherwise assign a smaller bonus if the block square is defended.
-                if (defendedSquares == squaresToQueen)
-                    k += 6;
-
-                else if (defendedSquares & blockSq)
-                    k += 4;
-
-                mbonus += k * rr, ebonus += k * rr;
-            }
-            else if (pos.pieces(Us) & blockSq)
-                mbonus += rr + r * 2, ebonus += rr + r * 2;
-        } // rr != 0
-
-        // Assign a small bonus when the opponent has no pieces left
+        // Assign a bonus when the opponent has no pieces left
         if (!pos.non_pawn_material(Them))
-            ebonus += 20;
+            score += OnlyKingCanStop;
 
-        // Scale down bonus for candidate passers which need more than one pawn
-        // push to become passed.
-        if (!pos.pawn_passed(Us, s + pawn_push(Us)))
-            mbonus /= 2, ebonus /= 2;
+        int r = relative_rank(Us, s);
+        if (r < RANK_4)
+            continue;
 
-        score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+        Square blockSq = s + pawn_push(Us);
+
+        // Initializethe the middle game factor for this pawn.
+        // Candidates which need more than one push to be passed are scored less.
+        int mf = pos.pawn_passed(Us, blockSq) ? 13 : 8;
+
+        // If the pawn is free to advance, increase the bonus
+        if (pos.empty(blockSq))
+        {
+            // If there is a rook or queen attacking/defending the pawn from behind,
+            // consider all the squaresToQueen. Otherwise consider only the squares
+            // in the pawn's path attacked or occupied by the enemy.
+            defendedSquares = unsafeSquares = squaresToQueen = forward_bb(Us, s);
+
+            bb = forward_bb(Them, s) & pos.pieces(ROOK, QUEEN) & pos.attacks_from<ROOK>(s);
+
+            if (!(pos.pieces(Us) & bb))
+                defendedSquares &= ei.attackedBy[Us][ALL_PIECES];
+
+            if (!(pos.pieces(Them) & bb))
+                unsafeSquares &= ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
+
+            // If there aren't any enemy attacks, assign a big bonus. Otherwise
+            // assign a smaller bonus if the block square isn't attacked.
+            mf += !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
+
+            // If the path to the queen is fully defended, assign a big bonus.
+            // Otherwise assign a smaller bonus if the block square is defended.
+            if (defendedSquares == squaresToQueen)
+                mf += 6;
+
+            else if (defendedSquares & blockSq)
+                mf += 4;
+        }
+        else if (pos.pieces(Us) & blockSq)
+            mf += 1;
+
+        // End game factor is same than middlegame factor...
+        int ef = mf;
+        
+        // ...except for some adjustments based on the kings proximity...
+        ef +=  distance(pos.square<KING>(Them), blockSq) * 5
+             - distance(pos.square<KING>(Us  ), blockSq) * 2;
+
+        // ...and some more if a second push if applicable.
+        if (r < RANK_7)
+            ef -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us));
+
+        // Scale this pawn score by a quadratic row factor
+        int rr = (r - 1) * (r - 2);
+        score += make_score(mf * rr, ef * rr);
     }
 
     if (DoTrace)
-        Trace::add(PASSED, Us, score);
+        Trace::add(PASSER, Us, score);
 
     // Add the scores to the middlegame and endgame eval
     return score;
@@ -841,7 +835,7 @@ Value Eval::evaluate(const Position& pos) {
   score +=  evaluate_threats<WHITE, DoTrace>(pos, ei)
           - evaluate_threats<BLACK, DoTrace>(pos, ei);
 
-  // Evaluate passed pawns, we need full attack information including king
+  // Evaluate passer pawns, we need full attack information including king
   score +=  evaluate_passer_pawns<WHITE, DoTrace>(pos, ei)
           - evaluate_passer_pawns<BLACK, DoTrace>(pos, ei);
 
@@ -909,7 +903,7 @@ std::string Eval::trace(const Position& pos) {
      << "       Mobility | " << Term(MOBILITY)
      << "    King safety | " << Term(KING)
      << "        Threats | " << Term(THREAT)
-     << "   Passed pawns | " << Term(PASSED)
+     << "   Passer pawns | " << Term(PASSER)
      << "          Space | " << Term(SPACE)
      << "----------------+-------------+-------------+-------------\n"
      << "          Total | " << Term(TOTAL);
