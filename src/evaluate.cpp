@@ -622,9 +622,8 @@ namespace {
 
         Square blockSq = s + pawn_push(Us);
 
-        // Initializethe the middle game factor for this pawn.
-        // Candidates which need more than one push to be passed are scored less.
-        int mf = pos.pawn_passed(Us, blockSq) ? 13 : 8;
+        // Initializethe the middle game factor for this pawn
+        int mf = 13;
 
         // If the pawn is free to advance, increase the bonus
         if (pos.empty(blockSq))
@@ -655,7 +654,11 @@ namespace {
                 mf += 4;
         }
         else if (pos.pieces(Us) & blockSq)
-            mf += 1;
+            mf += 2;
+
+        // Candidates which need more than one push to be passed are scored less.
+        if (pos.pawn_passed(Us, blockSq))
+            mf /= 2;
 
         // End game factor is same than middlegame factor...
         int ef = mf;
