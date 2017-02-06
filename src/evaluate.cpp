@@ -622,7 +622,7 @@ namespace {
 
         Square blockSq = s + pawn_push(Us);
 
-        // Initializethe the middle game factor for this pawn
+        // Initialize the middle game factor for this pawn
         int mf = 13;
 
         // If the pawn is free to advance, increase the bonus
@@ -656,10 +656,6 @@ namespace {
         else if (pos.pieces(Us) & blockSq)
             mf += 2;
 
-        // Candidates which need more than one push to be passed are scored less.
-        if (pos.pawn_passed(Us, blockSq))
-            mf /= 2;
-
         // End game factor is same than middlegame factor...
         int ef = mf;
         
@@ -671,8 +667,10 @@ namespace {
         if (r < RANK_7)
             ef -= distance(pos.square<KING>(Us), blockSq + pawn_push(Us));
 
-        // Scale this pawn score by a quadratic row factor
-        int rr = (r - 1) * (r - 2);
+        // Establish the scaling factor for this pawn.
+        // Candidates which need more than one push to be passed are scored less.
+        int rr = (r - 1) * (r - 2) >> !!pos.pawn_passed(Us, blockSq);
+
         score += make_score(mf * rr, ef * rr);
     }
 
