@@ -175,11 +175,6 @@ namespace {
     { V(7), V(14), V(38), V(73), V(166), V(252) }
   };
 
-  // PassedFile[File] contains a bonus according to the file of a passed pawn
-  const Score PassedFile[FILE_NB] = {
-    S(  9, 10), S( 2, 10), S( 1, -8), S(-20,-12),
-    S(-20,-12), S( 1, -8), S( 2, 10), S(  9, 10)
-  };
 
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S(16,  0);
@@ -676,7 +671,7 @@ namespace {
         if (!pos.pawn_passed(Us, s + pawn_push(Us)))
             mbonus /= 2, ebonus /= 2;
 
-        score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+        score += make_score(mbonus, ebonus);
     }
 
     if (DoTrace)
