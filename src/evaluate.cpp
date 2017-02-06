@@ -171,8 +171,8 @@ namespace {
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
   const Value Passed[][RANK_NB] = {
-    { V(5), V( 5), V(31), V(73), V(166), V(252) },
-    { V(7), V(14), V(38), V(73), V(166), V(252) }
+    {  V(5), V( 5), V(31), V(73), V(166), V(252) },
+    { V(27), V(34), V(58), V(93), V(186), V(272) }
   };
 
   // PassedFile[File] contains a bonus according to the file of a passed pawn
@@ -666,10 +666,6 @@ namespace {
             else if (pos.pieces(Us) & blockSq)
                 mbonus += rr + r * 2, ebonus += rr + r * 2;
         } // rr != 0
-
-        // Assign a small bonus when the opponent has no pieces left
-        if (!pos.non_pawn_material(Them))
-            ebonus += 20;
 
         // Scale down bonus for candidate passers which need more than one pawn
         // push to become passed.
