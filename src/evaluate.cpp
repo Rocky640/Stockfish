@@ -669,7 +669,7 @@ namespace {
 
         // Establish the scaling factor for this pawn.
         // Candidates which need more than one push to be passed are scored less.
-        int rr = (r - 1) * (r - 2) >> !!pos.pawn_passed(Us, blockSq);
+        int rr = (r - 1) * (r - 2) >> !pos.pawn_passed(Us, blockSq);
 
         score += make_score(mf * rr, ef * rr);
     }
