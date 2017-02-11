@@ -196,6 +196,7 @@ namespace {
   const Score Hanging             = S(48, 27);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score HinderPassedPawn    = S( 7,  0);
+  const Score Unstoppable         = S( 0, 20);
 
   // Penalty for a bishop on a1/h1 (a8/h8 for black) which is trapped by
   // a friendly pawn on b2/g2 (b7/g7 for black). This can obviously only
@@ -834,6 +835,17 @@ Value Eval::evaluate(const Position& pos) {
   score +=  evaluate_passer_pawns<WHITE, DoTrace>(pos, ei)
           - evaluate_passer_pawns<BLACK, DoTrace>(pos, ei);
 
+  // If both sides have only pawns, score for potential unstoppable pawns
+  if (!pos.non_pawn_material(WHITE) && !pos.non_pawn_material(BLACK))
+  {
+      Bitboard b;
+      if ((b = ei.pe->passed_pawns(WHITE)) != 0)
+          score += Unstoppable * int(relative_rank(WHITE, frontmost_sq(WHITE, b)));
+
+      if ((b = ei.pe->passed_pawns(BLACK)) != 0)
+          score -= Unstoppable * int(relative_rank(BLACK, frontmost_sq(BLACK, b)));
+  }
+  
   // Evaluate space for both sides, only during opening
   if (pos.non_pawn_material(WHITE) + pos.non_pawn_material(BLACK) >= 12222)
       score +=  evaluate_space<WHITE>(pos, ei)
