@@ -460,13 +460,25 @@ namespace {
         else if (b2 & ei.attackedBy[Them][BISHOP] & other)
             score -= OtherCheck;
 
-        // Enemy knights safe and other checks
-        b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
-        if (b & safe)
-            kingDanger += KnightCheck;
+        if (pos.pieces(Them, KNIGHT))
+        {
+            // Enemy knights safe and other checks
+            b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
+            if (b & safe)
+                kingDanger += KnightCheck;
 
-        else if (b & other)
-            score -= OtherCheck;
+            else if (b & other)
+                score -= OtherCheck;
+
+            // Analyse captures on "undefended" squares which would decoy our king
+            // and expose it to a knight check
+            b = undefended & ~ei.attackedBy[Them][KNIGHT];
+            while (b)
+            {
+                if (pos.attacks_from<KNIGHT>(pop_lsb(&b)) & ei.attackedBy[Them][KNIGHT] & safe)
+                    kingDanger += KnightCheck / 2;
+            }
+        }
 
         // Transform the kingDanger units into a Score, and substract it from the evaluation
         if (kingDanger > 0)
