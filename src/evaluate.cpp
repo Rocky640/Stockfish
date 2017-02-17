@@ -94,6 +94,8 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     Bitboard kingRing[COLOR_NB];
 
+    Bitboard rookFileSupport[COLOR_NB];
+
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
     int kingAttackersCount[COLOR_NB];
@@ -110,6 +112,7 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
+
   };
 
   #define V(v) Value(v)
@@ -250,6 +253,8 @@ namespace {
     }
     else
         ei.kingRing[Us] = ei.kingAttackersCount[Them] = 0;
+
+    ei.rookFileSupport[Us] = 0;
   }
 
 
@@ -334,6 +339,8 @@ namespace {
 
         if (Pt == ROOK)
         {
+             ei.rookFileSupport[Us] |= file_bb(s);
+
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
@@ -573,7 +580,9 @@ namespace {
 
     b &=  ~pos.pieces()
         & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+        & (   ei.attackedBy[Us][ALL_PIECES]
+           |  ei.rookFileSupport[Us]
+           | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
