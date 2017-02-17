@@ -385,7 +385,7 @@ namespace {
   };
 
   template<Color Us, bool DoTrace>
-  Score evaluate_king(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_king(const Position& pos, EvalInfo& ei) {
 
     const Color Them    = (Us == WHITE ? BLACK : WHITE);
     const Square Up     = (Us == WHITE ? NORTH : SOUTH);
@@ -462,8 +462,13 @@ namespace {
 
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
-        if (b & safe)
+        
+        if ((b1 = b & safe))
+        {
+            while (b1)
+                ei.attackedBy[Them][ALL_PIECES] |= pos.attacks_from<KNIGHT>(pop_lsb(&b1));
             kingDanger += KnightCheck;
+        }
 
         else if (b & other)
             score -= OtherCheck;
