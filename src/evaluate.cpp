@@ -385,7 +385,7 @@ namespace {
   };
 
   template<Color Us, bool DoTrace>
-  Score evaluate_king(const Position& pos, const EvalInfo& ei) {
+  Score evaluate_king(const Position& pos, EvalInfo& ei) {
 
     const Color Them    = (Us == WHITE ? BLACK : WHITE);
     const Square Up     = (Us == WHITE ? NORTH : SOUTH);
@@ -431,8 +431,16 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
+        if ((b = (b1 | b2) & ei.attackedBy[Them][QUEEN] & safe))
+        {
             kingDanger += QueenCheck;
+            while (b)
+            {
+                Square s = pop_lsb(&b);
+                ei.attackedBy[Them][ALL_PIECES] |=  pos.attacks_from<ROOK>(s)
+                                                  | pos.attacks_from<BISHOP>(s);
+            }
+        }
 
         // For minors and rooks, also consider the square safe if attacked twice,
         // and only defended by our queen.
