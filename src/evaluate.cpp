@@ -472,7 +472,7 @@ namespace {
 
             // Analyse captures on "undefended" squares which would decoy our king
             // and expose it to a knight check
-            b = undefended & ~ei.attackedBy[Them][KNIGHT];
+            b = undefended & ~ei.attackedBy[Them][KNIGHT] & pos.pieces(Us);
             while (b)
             {
                 if (pos.attacks_from<KNIGHT>(pop_lsb(&b)) & ei.attackedBy[Them][KNIGHT] & safe)
