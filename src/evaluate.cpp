@@ -465,9 +465,12 @@ namespace {
         
         if ((b1 = b & safe))
         {
-            while (b1)
-                ei.attackedBy[Them][ALL_PIECES] |= pos.attacks_from<KNIGHT>(pop_lsb(&b1));
             kingDanger += KnightCheck;
+            
+            while (b1)
+                ei.attackedBy[Them][KNIGHT] |= pos.attacks_from<KNIGHT>(pop_lsb(&b1));
+
+            ei.attackedBy[Them][ALL_PIECES] |= ei.attackedBy[Them][KNIGHT];
         }
 
         else if (b & other)
