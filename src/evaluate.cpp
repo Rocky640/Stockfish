@@ -275,14 +275,16 @@ namespace {
     {
         // Find attacked squares, including some x-ray attacks for bishops and rooks.
         // X-Ray through queen is considered only if may contribute to a king attack.
+
         if (Pt == BISHOP)
-            b = attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN));
+            b = (PseudoAttacks[BISHOP][s] & ei.kingRing[Them])
+                ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+                : pos.attacks_from<Pt>(s);
         else if (Pt == ROOK)
-            b = (PseudoAttacks[ROOK][s] & ei.kingRing[Them])
-                ? attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
-                : attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
+            b = attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN));
         else
             b = pos.attacks_from<Pt>(s);
+
 
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
