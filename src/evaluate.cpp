@@ -277,14 +277,13 @@ namespace {
         // X-Ray through queen is considered only if may contribute to some attack.
 
         if (Pt == BISHOP)
-            b = (PseudoAttacks[BISHOP][s] & (ei.kingRing[Them] | pos.pieces(Them)))
-                ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-                : pos.attacks_from<Pt>(s);
+            b =   attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN));
         else if (Pt == ROOK)
-            b = attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN));
+            b = (PseudoAttacks[ROOK][s] & (ei.kingRing[Them] | pos.pieces(Them)))
+                ? attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+                : attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
         else
             b = pos.attacks_from<Pt>(s);
-
 
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
