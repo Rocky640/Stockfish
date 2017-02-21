@@ -274,14 +274,14 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including some x-ray attacks for bishops and rooks.
-        // X-Ray through queen is considered only if may contribute to some attack.
+        // X-Ray through queen is considered for rooks, except on ranks not leading to king
 
         if (Pt == BISHOP)
             b =   attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN));
         else if (Pt == ROOK)
-            b = ((rank_bb(s) & ei.kingRing[Them] | file_bb(s)) & pos.pieces(Us, QUEEN))
-                ? attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
-                : attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
+            b = (rank_bb(s) & pos.pieces(Us, QUEEN) & ~ei.attackedBy[Them][KING])
+                ? attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK))
+                : attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN));
         else
             b = pos.attacks_from<Pt>(s);
 
