@@ -190,6 +190,8 @@ enum Value : int {
   QueenValueMg  = 2513,  QueenValueEg  = 2650,
 
   MidgameLimit  = 15258, EndgameLimit  = 3915
+  
+  //MidgameLimit  = 15600, EndgameLimit  = 3800
 };
 
 enum PieceType {

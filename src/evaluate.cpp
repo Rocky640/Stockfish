@@ -279,7 +279,7 @@ namespace {
         if (Pt == BISHOP)
             b =   attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN));
         else if (Pt == ROOK)
-            b = (PseudoAttacks[ROOK][s] & (ei.kingRing[Them] | pos.pieces(Them)))
+            b = ((rank_bb(s) & ei.kingRing[Them] | file_bb(s)) & pos.pieces(Us, QUEEN))
                 ? attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
                 : attacks_bb<ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK));
         else
