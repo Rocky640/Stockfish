@@ -187,6 +187,7 @@ namespace {
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
   const Score WeakQueen           = S(50, 10);
+  const Score OverloadedKing      = S(10, 25);
   const Score OtherCheck          = S(10, 10);
   const Score CloseEnemies        = S( 7,  0);
   const Score PawnlessFlank       = S(20, 80);
@@ -400,15 +401,24 @@ namespace {
     // King shelter and enemy pawns storm
     Score score = ei.pe->king_safety<Us>(pos, ksq);
 
+     // Squares which are defended only by our king
+    undefended =   ei.attackedBy[Them][ALL_PIECES]
+                &  ei.attackedBy[Us][KING]
+                & ~ei.attackedBy2[Us];
+
+    // Find out if king has no flexibility of move because of defensive duties
+    b1 = undefended & pos.pieces(Us);
+    b = ei.attackedBy[Us][KING] & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Us));
+    while (b1)
+    {
+        if (!more_than_one(DistanceRingBB[pop_lsb(&b1)][0] & b))
+            score -= OverloadedKing;
+    }
+
     // Main king safety evaluation
     if (ei.kingAttackersCount[Them])
     {
-        // Find the attacked squares which are defended only by our king...
-        undefended =   ei.attackedBy[Them][ALL_PIECES]
-                    &  ei.attackedBy[Us][KING]
-                    & ~ei.attackedBy2[Us];
-
-        // ... and those which are not defended at all in the larger king ring
+        // Squares which are not defended at all in the larger king ring
         b =  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
            & ei.kingRing[Us] & ~pos.pieces(Them);
 
