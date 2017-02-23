@@ -187,7 +187,7 @@ namespace {
   const Score RookOnPawn          = S( 8, 24);
   const Score TrappedRook         = S(92,  0);
   const Score WeakQueen           = S(50, 10);
-  const Score OverloadedKing      = S(10, 25);
+  const Score OverloadedKing      = S( 0, 25);
   const Score OtherCheck          = S(10, 10);
   const Score CloseEnemies        = S( 7,  0);
   const Score PawnlessFlank       = S(20, 80);
@@ -411,7 +411,7 @@ namespace {
     b = ei.attackedBy[Us][KING] & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Us));
     while (b1)
     {
-        if (!more_than_one(DistanceRingBB[pop_lsb(&b1)][0] & b))
+        if (!(DistanceRingBB[pop_lsb(&b1)][0] & b))
             score -= OverloadedKing;
     }
 
