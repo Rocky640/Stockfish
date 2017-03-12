@@ -149,12 +149,12 @@ namespace {
   // ThreatBySafePawn[PieceType] contains bonuses according to which piece
   // type is attacked by a pawn which is protected or is not attacked.
   const Score ThreatBySafePawn[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 0), S(176, 139), S(131, 127), S(217, 218), S(203, 215)
+    S(0, 0), S(24, 13), S(176, 139), S(131, 127), S(217, 218), S(203, 215)
   };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
-  // which piece type attacks which one. Attacks on lesser pieces which are
-  // pawn-defended are not considered.
+  // which piece type attacks which one. Attacks on pawn defended pawns are
+  // not considered.
   const Score ThreatByMinor[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118)
   };
@@ -520,47 +520,40 @@ namespace {
     const Square Up         = (Us == WHITE ? NORTH      : SOUTH);
     const Square Left       = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
-    const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
+    const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, targets, threats;
     Score score = SCORE_ZERO;
 
-    // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
+    // Consider all enemy pieces as potential targets,
+    // except their pawn protected pawns
+    targets = pos.pieces(Them) ^ (pos.pieces(Them, PAWN) & ei.attackedBy[Them][PAWN]);
 
-    if (weak)
+    // 1) Analyse our pawn threats
+    threats = targets & ei.attackedBy[Us][PAWN];
+
+    if (threats)
     {
-        b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
-                                    | ei.attackedBy[Us][ALL_PIECES]);
+        b = pos.pieces(Us, PAWN) & (   ei.attackedBy[Us][ALL_PIECES]
+                                    | ~ei.attackedBy[Them][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        b = (shift<Right>(b) | shift<Left>(b)) & targets;
 
-        if (weak ^ safeThreats)
+        if (b ^ threats)
             score += ThreatByHangingPawn;
 
-        while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        while (b)
+            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&b)))];
     }
 
-    // Squares strongly protected by the opponent, either because they attack the
-    // square with a pawn, or because they attack the square twice and we don't.
-    stronglyProtected =  ei.attackedBy[Them][PAWN]
-                       | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
+    // 2) Analyse our non-pawn threats (excluding targets attacked only by pawns)
+    threats =  targets & ei.attackedBy[Us][ALL_PIECES]
+             & (~threats | ei.attackedBy2[Us]);
 
-    // Non-pawn enemies, strongly protected
-    defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              & stronglyProtected;
-
-    // Enemies not strongly protected and under our attack
-    weak =   pos.pieces(Them)
-          & ~stronglyProtected
-          &  ei.attackedBy[Us][ALL_PIECES];
-
-    // Add a bonus according to the kind of attacking pieces
-    if (defended | weak)
+    if (threats)
     {
-        b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        b = threats & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -569,7 +562,7 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
+        b = threats & ei.attackedBy[Us][ROOK];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -578,24 +571,22 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
-
-        b = weak & ei.attackedBy[Us][KING];
+        b = threats & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+
+        score += Hanging * popcount(threats & ~ei.attackedBy[Them][ALL_PIECES]);
     }
 
-    // Bonus if some pawns can safely push and attack an enemy piece
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
-    b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
+    // 3) Analyse our pawns which are free to push one or two squares...
+    b  = shift<Up>(pos.pieces(Us, PAWN) & ~TRank7BB) & ~pos.pieces();
+    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
-    b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
-        & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
+    // ...and land on a somewhat safe square...
+    b &= (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    b =  (shift<Left>(b) | shift<Right>(b))
-       &  pos.pieces(Them)
-       & ~ei.attackedBy[Us][PAWN];
+    // ...and attack some target from there.
+    b = (shift<Left>(b) | shift<Right>(b)) & targets;
 
     score += ThreatByPawnPush * popcount(b);
 
