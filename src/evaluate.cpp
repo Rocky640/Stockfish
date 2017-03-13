@@ -152,19 +152,20 @@ namespace {
     S(0, 0), S(0, 0), S(176, 139), S(131, 127), S(217, 218), S(203, 215)
   };
 
-  // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
-  // which piece type attacks which one. Attacks on lesser pieces which are
-  // pawn-defended are not considered.
+  // ThreatByMinor[attacked PieceType] contains bonuses for minor attacks on
+  // non-pawns, and on pawns which are neither pawn-defended or over-protected.
   const Score ThreatByMinor[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118)
   };
-
+  
+  // ThreatByRook[attacked PieceType] contains bonuses for rook attacks on
+  // queens, and on non-queen which are neither pawn-defended or over protected.
   const Score ThreatByRook[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48)
   };
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
-  // pawns or pieces which are not pawn-defended.
+  // pawns or pieces which are neither pawn-defended or over protected.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
@@ -590,7 +591,7 @@ namespace {
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
-        & ~ei.attackedBy[Them][PAWN]
+        & ~stronglyProtected
         & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
     b =  (shift<Left>(b) | shift<Right>(b))
