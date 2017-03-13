@@ -523,44 +523,46 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, weak, nonPawns;
     Score score = SCORE_ZERO;
 
+    nonPawns = pos.pieces(Them) ^ pos.pieces(Them, PAWN);
+
     // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
+    weak = nonPawns & ei.attackedBy[Us][PAWN];
 
     if (weak)
     {
         b = pos.pieces(Us, PAWN) & ( ~ei.attackedBy[Them][ALL_PIECES]
                                     | ei.attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        b = (shift<Right>(b) | shift<Left>(b)) & weak;
 
-        if (weak ^ safeThreats)
+        if (weak ^ b)
             score += ThreatByHangingPawn;
 
-        while (safeThreats)
-            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
+        while (b)
+            score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&b)))];
     }
 
-    // Squares strongly protected by the opponent, either because they attack the
-    // square with a pawn, or because they attack the square twice and we don't.
-    stronglyProtected =  ei.attackedBy[Them][PAWN]
-                       | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
+    weak = pos.pieces(Them) & ei.attackedBy[Us][ALL_PIECES];
 
-    // Non-pawn enemies, strongly protected
-    defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              & stronglyProtected;
-
-    // Enemies not strongly protected and under our attack
-    weak =   pos.pieces(Them)
-          & ~stronglyProtected
-          &  ei.attackedBy[Us][ALL_PIECES];
-
-    // Add a bonus according to the kind of attacking pieces
-    if (defended | weak)
+    if (weak)
     {
-        b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        // Bonus for each undefended enemy under attack
+        score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
+
+        // Consider only attacks on insufficiently controlled enemies
+        //v1: 5803228 (same bench as master !)
+        //weak &=  ~ei.attackedBy[Them][PAWN]
+        //       & (ei.attackedBy2[Us] | ~ei.attackedBy2[Them]);
+
+        //v2: 6408050
+        weak &=  (ei.attackedBy[Us][PAWN] | ~ei.attackedBy[Them][PAWN])
+               & (ei.attackedBy2[Us] | ~ei.attackedBy2[Them]);
+
+        // Analyse threats by our minor pieces on weak pawns or on non-pawns
+        b = (weak | nonPawns) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -569,7 +571,8 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
+        // Analyse threats by our rooks on weak enemies or queen
+        b = (weak | pos.pieces(Them, QUEEN)) & ei.attackedBy[Us][ROOK];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -578,8 +581,7 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
-
+        // Analyse threats by our king on weak enemies
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
