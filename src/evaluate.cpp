@@ -557,8 +557,13 @@ namespace {
         //weak &=  ~ei.attackedBy[Them][PAWN]
         //       & (ei.attackedBy2[Us] | ~ei.attackedBy2[Them]);
 
-        //v2: 6408050
-        weak &=  (ei.attackedBy[Us][PAWN] | ~ei.attackedBy[Them][PAWN])
+        //v2: 6408050 failed in 11000 games
+        //weak &=  (ei.attackedBy[Us][PAWN] | ~ei.attackedBy[Them][PAWN])
+        //       & (ei.attackedBy2[Us] | ~ei.attackedBy2[Them]);
+
+        //v3: 6553719
+        weak &=  ~ei.pe->dble_attacks(Them)
+               & (ei.attackedBy[Us][PAWN] | ~ei.attackedBy[Them][PAWN])
                & (ei.attackedBy2[Us] | ~ei.attackedBy2[Them]);
 
         // Analyse threats by our minor pieces on weak pawns or on non-pawns
