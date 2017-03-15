@@ -40,6 +40,9 @@ namespace {
   // Unsupported pawn penalty for pawns which are neither isolated or backward
   const Score Unsupported = S(17, 8);
 
+  // Penalty for a levered pawn which is the single defender of a pawn
+  const Score PassiveLever = S(8, 4);
+
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
@@ -109,6 +112,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
+    Bitboard dbleSupport = shift<Right>(ourPawns) & shift<Left>(ourPawns);
     e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
@@ -181,7 +185,11 @@ namespace {
             score -= Doubled;
 
         if (lever)
+        {
             score += Lever[relative_rank(Us, s)];
+            if (pawnAttacksBB[s] & ourPawns & ~dbleSupport)
+                score -= PassiveLever;
+        }
     }
 
     return score;
