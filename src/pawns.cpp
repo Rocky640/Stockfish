@@ -46,6 +46,9 @@ namespace {
   // Doubled pawn penalty
   const Score Doubled = S(18, 38);
 
+  // Bonus for a lever if an opponent take would leave his pawn isolated
+  const Score ActiveLever = S(10, 10);
+
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
     S( 0,  0), S( 0,  0), S(0, 0), S(0, 0),
@@ -181,7 +184,11 @@ namespace {
             score -= Doubled;
 
         if (lever)
+        {
             score += Lever[relative_rank(Us, s)];
+            if (!(theirPawns & adjacent_files_bb(f) & ~SquareBB[lsb(lever)]))
+                score += ActiveLever;
+        }
     }
 
     return score;
