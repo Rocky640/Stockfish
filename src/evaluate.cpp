@@ -544,8 +544,8 @@ namespace {
     }
 
     // Squares strongly protected by the opponent, either because they attack the
-    // square with a pawn, or because they attack the square twice and we don't.
-    stronglyProtected =  ei.attackedBy[Them][PAWN]
+    // square with a non-levered pawn, or because they attack the square twice and we don't.
+    stronglyProtected =  (ei.attackedBy[Them][PAWN] & ~ei.pe->weak_defense(Them))
                        | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
 
     // Non-pawn enemies, strongly protected
