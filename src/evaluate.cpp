@@ -298,6 +298,16 @@ namespace {
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
+        
+        if (Pt == QUEEN)
+        {
+            // Queen under attack by a non queen: exclude squares controlled by non-queen
+            if (   (ei.attackedBy[Them][ALL_PIECES] & s)
+                && !(b & pos.pieces(Them, QUEEN)))
+             b &= ~(  ei.attackedBy[Them][KNIGHT]
+                    | ei.attackedBy[Them][BISHOP]
+                    | ei.attackedBy[Them][ROOK]);
+        }
 
         int mob = popcount(b & ei.mobilityArea[Us]);
 
