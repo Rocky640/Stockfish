@@ -29,13 +29,33 @@ using namespace std;
 
 namespace {
 
-  // Polynomial material imbalance parameters
+  // Pawn imbalance [# of pawn (Them)][# of pawn (Us)]
+  // Only the player with more pawns have a bonus, the other has bonus = 0
+  // Only 36 values are non zero, and probably, imbalance of +-4 and more are quite rare
+  // Initial values based on joergoster PawnSet, and same bench 6128779
+  
+  int PawnImbalance[9][9] = {
+      {0,-56,83,-75,93,-33,-150,-45,7},
+      {0,0,139,-19,149,23,-94,11,63},
+      {0,0,0,-158,10,-116,-233,-128,-76},
+      {0,0,0,0,168,42,-75,30,82},
+      {0,0,0,0,0,-126,-243,-138,-86},
+      {0,0,0,0,0,0,-117,-12,40},
+      {0,0,0,0,0,0,0,105,157},
+      {0,0,0,0,0,0,0,0,52},
+      {0,0,0,0,0,0,0,0,0}
+  };
+  TUNE(SetRange(-500, 500), PawnImbalance);
 
+  //We should always use this when tuning many parameters:
+  UPDATE_ON_LAST();
+
+  // Polynomial material imbalance parameters
   const int QuadraticOurs[][PIECE_TYPE_NB] = {
     //            OUR PIECES
     // pair pawn knight bishop rook queen
     {1667                               }, // Bishop pair
-    {  40,    2                         }, // Pawn
+    {  40,    0                         }, // Pawn
     {  32,  255,  -3                    }, // Knight      OUR PIECES
     {   0,  104,   4,    0              }, // Bishop
     { -26,   -2,  47,   105,  -149      }, // Rook
@@ -89,7 +109,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    int bonus = 0;
+    int bonus = PawnImbalance[pieceCount[Them][PAWN]][pieceCount[Us][PAWN]];
 
     // Second-degree polynomial material imbalance by Tord Romstad
     for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
