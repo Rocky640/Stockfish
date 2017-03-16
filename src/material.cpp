@@ -48,7 +48,8 @@ namespace {
   TUNE(SetRange(-500, 500), PawnImbalance);
 
   //We should always use this when tuning many parameters:
-  UPDATE_ON_LAST();
+  //UPDATE_ON_LAST();
+  //Ah ah: but only if we use a post update function !!!!!
 
   // Polynomial material imbalance parameters
   const int QuadraticOurs[][PIECE_TYPE_NB] = {
