@@ -314,7 +314,7 @@ namespace {
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * 2;
             else
             {
-                bb &= b & ~pos.pieces(Us);
+                bb &= b & ei.mobilityArea[Us];
                 if (bb)
                    score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
             }
