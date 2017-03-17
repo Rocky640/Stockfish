@@ -52,6 +52,32 @@ namespace {
     {  46,   39,  24,   -24,    0       }, // Rook
     { 101,  100, -37,   141,  268,    0 }  // Queen
   };
+  /*
+  int PawnImbalanceJorg[9][9] = { //Expending his 9 parameters to 32
+      {   0                                   },
+      { -56,  0                               },
+      {  83,139,   0                          },
+      { -75,-19,-158,   0                     },
+      {  93,149,  10, 168,   0                },
+      { -33, 23,-116,  42,-126,   0           },
+      {-150,-94,-233, -75,-243,-117,  0       },
+      { -45, 11,-128,  30,-138, -12,105, 0    },
+      {   7, 63, -76,  82, -86,  40,157, 52, 0}
+  };
+  */
+  
+  int PawnImbalance[9][9] = { //After tuning
+     {   0                                   },
+     {-135,   0                              },
+     { 121, 140,   0                         },
+     { -79, -26,-147,  0                     },
+     { 122, 142,  11,213,   0                },
+     { -65,   5,-155, 19,-139,  0            },
+     {-154,-122,-224,-65,-277,-79,  0        },
+     { -61,  16,-140, 66,-126, 12, 98,  0    },
+     {  -4,  52, -84, 77,-120, 48,123,105,  0}
+};
+
 
   // Endgame evaluation and scaling functions are accessed directly and not through
   // the function maps because they correspond to more than one material hash key.
@@ -89,7 +115,7 @@ namespace {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    int bonus = 0;
+    int bonus = PawnImbalance[pieceCount[Us][PAWN]][pieceCount[Them][PAWN]];
 
     // Second-degree polynomial material imbalance by Tord Romstad
     for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
