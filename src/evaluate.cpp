@@ -79,11 +79,14 @@ namespace {
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type (can be also ALL_PIECES).
+    // It includes some squares indirectly attacked by rooks and bishops via xray through 
+    // same color queen
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
-    // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
-    // pawn or squares attacked by 2 pawns are not explicitly added.
+    // or by one pawn and one piece. Diagonal x-ray through
+    // pawn or squares attacked by 2 pawns are not explicitly added, but any other
+    // x-rays are considered attacked by 2.
     Bitboard attackedBy2[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
@@ -135,8 +138,9 @@ namespace {
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they can reach an outpost square, bigger if that square is
-  // supported by a pawn. If the minor piece occupies an outpost square
-  // then score is doubled.
+  // supported by a pawn. The scores below will be doubled if the minor piece 
+  // actually occupies an outpost square.
+
   const Score Outpost[][2] = {
     { S(22, 6), S(33, 9) }, // Knight
     { S( 9, 2), S(14, 4) }  // Bishop
@@ -160,7 +164,7 @@ namespace {
   };
 
   const Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 25), S(40, 62), S(40, 59), S( 0, 34), S(35, 48)
+    S(0, 0), S(0, 25), S(40, 62), S(40, 59), S(0, 34), S(35, 48)
   };
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
@@ -186,7 +190,7 @@ namespace {
     { S(0, 0), S( 7, 9), S( 7, 1), S( 1, 5), S(-10,-4), S( -1,-4), S( -7,-3), S(-16,-10) }, // Knight
     { S(0, 0), S(11, 8), S(-7,-1), S(-1,-2), S( -1,-7), S(-11,-3), S( -9,-1), S(-16, -1) }, // Bishop
     { S(0, 0), S(10, 0), S(-2, 2), S(-5, 4), S( -6, 2), S(-14,-3), S( -2,-9), S(-12, -7) }, // Rook
-    { S(0, 0), S( 3,-5), S( 2,-5), S(-4, 0), S( -9,-6),  S(-4, 7), S(-13,-7), S(-10, -7) }  // Queen
+    { S(0, 0), S( 3,-5), S( 2,-5), S(-4, 0), S( -9,-6), S( -4, 7), S(-13,-7), S(-10, -7) }  // Queen
   };
 
   // Assorted bonuses and penalties used by evaluation
@@ -289,7 +293,11 @@ namespace {
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+        // If this piece supports some already computed attack,
+        // or is supported from behind by our queen, append those squares to the attackedBy2 bitboard
+        bb = b & pos.pieces(Us, QUEEN);
+        ei.attackedBy2[Us] |= (ei.attackedBy[Us][ALL_PIECES] | (bb ? ArrowBB[lsb(bb)][s] : 0)) & b;
+
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
