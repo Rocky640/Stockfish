@@ -86,8 +86,8 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // controlledBy[color] are the squares which are defended by a pawn,
-    // or where the defense outnumbers the attacks
+    // controlledBy[color] are the squares which are defended by a pawn of the 
+    // given color, or defended more than it is attacked
     Bitboard controlledBy[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
@@ -527,43 +527,39 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, target, defended, safeThreats;
+    Bitboard b, targets, safeThreats;
     Score score = SCORE_ZERO;
 
-    // Squares attacked by their pawn, or where they have more attacks then us
+    // Squares defended by an enemy pawn, or defended more than it is attacked
     ei.controlledBy[Them] =  ei.attackedBy[Them][PAWN]
                           | (ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES])
                           | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
 
-    // Non-pawn enemies attacked by a pawn
-    target = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
+    // Analyze threats by pawns on non-pawns.
+    targets = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
 
-    if (target)
+    if (targets)
     {
         b = pos.pieces(Us, PAWN) & ~ei.controlledBy[Them];
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & target;
+        safeThreats = (shift<Right>(b) | shift<Left>(b)) & targets;
 
-        if (target ^ safeThreats)
+        if (targets ^ safeThreats)
             score += ThreatByHangingPawn;
 
         while (safeThreats)
             score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
     }
 
-    // Non-pawn enemies, strongly protected
-    defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              & ei.controlledBy[Them];
-
-    // Enemies not strongly protected and under our attack
-    target =  pos.pieces(Them)
-            & ~ei.controlledBy[Them]
-            & ei.attackedBy[Us][ALL_PIECES];
+    // Analyze threats by non-pawns
+    targets = pos.pieces(Them) & ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
-    if (defended | target)
+    if (targets)
     {
-        b = (defended | target) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+        // Analyze the minor attacks on anything except well defended pawns
+        b =  targets & ~(pos.pieces(PAWN) & ei.controlledBy[Them])
+           & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -572,7 +568,9 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        b = (pos.pieces(Them, QUEEN) | target) & ei.attackedBy[Us][ROOK];
+        // Analyze the rook attacks on queens or any target which is not well defended
+        b = (pos.pieces(Them, QUEEN) | (targets & ~ei.controlledBy[Them]))
+            & ei.attackedBy[Us][ROOK];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -581,11 +579,14 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        score += Hanging * popcount(target & ~ei.attackedBy[Them][ALL_PIECES]);
-
-        b = target & ei.attackedBy[Us][KING];
+        // Analyze king attacks on not strongly protected pieces
+        b =  targets & ~ei.controlledBy[Them]
+           & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+
+        // Increase the bonus for unprotected targets
+        score += Hanging * popcount(targets & ~ei.attackedBy[Them][ALL_PIECES]);
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
