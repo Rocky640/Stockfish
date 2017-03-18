@@ -546,7 +546,7 @@ namespace {
     // Squares strongly protected by the opponent, either because they attack the
     // square with a pawn, or because they attack the square twice and we don't.
     stronglyProtected =  ei.attackedBy[Them][PAWN]
-                       | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
+                       | (ei.attackedBy2[Them] & ~(ei.attackedBy2[Us] | ei.attackedBy[Them][QUEEN]));
 
     // Non-pawn enemies, strongly protected
     defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
