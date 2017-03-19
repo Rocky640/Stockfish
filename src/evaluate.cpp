@@ -85,6 +85,16 @@ namespace {
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
+    
+    // attackedBy[square] is a bitboard representing all squares
+    // attacked by a non king on the given square. Information on squares with 
+    // king, pawn or no piece is not updated, and shall not be used.
+    Bitboard attacksFrom[SQUARE_NB];
+
+    // controlledBy[color] is a bitboard representing all squares
+    // controlled by a given color: either the square is defended by a pawn of that color,
+    // or the attacks by this color outnumbers the attacks by the other color.
+    Bitboard controlledBy[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -224,26 +234,17 @@ namespace {
   // Threshold for lazy evaluation
   const Value LazyThreshold = Value(1500);
 
-  // eval_init() initializes king and attack bitboards for a given color
-  // adding pawn attacks. To be done at the beginning of the evaluation.
+  // eval_init_stage1() initializes king and attack bitboards for a given color
+  // adding pawn attacks. To be done at the very beginning of the evaluation.
 
   template<Color Us>
-  void eval_init(const Position& pos, EvalInfo& ei) {
+  void eval_init_stage1(const Position& pos, EvalInfo& ei) {
 
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
-    const Square Down = (Us == WHITE ? SOUTH : NORTH);
-    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
-
-    // Find our pawns on the first two ranks, and those which are blocked
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
-
-    // Squares occupied by those pawns, by our king, or controlled by enemy pawns
-    // are excluded from the mobility area.
-    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
 
     // Initialise the attack bitboards with the king and pawn information
-    b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
+    Bitboard b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     ei.attackedBy[Us][PAWN] = ei.pe->pawn_attacks(Us);
 
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
@@ -261,21 +262,17 @@ namespace {
   }
 
 
-  // evaluate_pieces() assigns bonuses and penalties to the pieces of a given
-  // color and type.
+  // eval_init_stage2() initialize the attack bitboards for minor and major pieces
 
-  template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
-  Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility) {
+  template<Color Us = WHITE, PieceType Pt = KNIGHT>
+  void eval_init_stage2(const Position& pos, EvalInfo& ei) {
 
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b;
     Square s;
-    Score score = SCORE_ZERO;
 
     ei.attackedBy[Us][Pt] = 0;
 
@@ -289,15 +286,66 @@ namespace {
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
-        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
-
         if (b & ei.kingRing[Them])
         {
             ei.kingAttackersCount[Us]++;
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
+
+        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+        ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= ei.attacksFrom[s] = b;
+    }
+    // Recursively call eval_init_stage2() of next piece type until KING is excluded
+    eval_init_stage2<Them, NextPt>(pos, ei);
+  }
+
+  template<>
+  void eval_init_stage2<WHITE, KING>(const Position&, EvalInfo&) { return; }
+
+
+  // eval_init_stage3() initializes the last evalinfo bitboards: controlled and mobility,
+  // based on information gathered by eval_init_stage1 and 2
+  
+  template<Color Us>
+  void eval_init_stage3(const Position& pos, EvalInfo& ei) {
+
+    const Color  Them = (Us == WHITE ? BLACK : WHITE);
+    const Square Down = (Us == WHITE ? SOUTH : NORTH);
+    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+
+    // Squares defended by an enemy pawn, or defended more than it is attacked
+    ei.controlledBy[Them] =  ei.attackedBy[Them][PAWN]
+                           | (ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES])
+                           | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
+
+    // Find our pawns on the first two ranks, and those which are blocked
+    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+
+    // Squares occupied by those pawns, by our king, or controlled by the enemy
+    // are excluded from the mobility area.
+    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
+  }
+
+  // evaluate_pieces() assigns bonuses and penalties for minors and major pieces of a 
+  // given color, using the full eval info bitboards caculated in the eval_init stages.
+
+  template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
+  Score evaluate_pieces(const Position& pos, const EvalInfo& ei, Score* mobility) {
+
+    const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
+    const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                               : Rank5BB | Rank4BB | Rank3BB);
+    const Square* pl = pos.squares<Pt>(Us);
+
+    Bitboard b, bb;
+    Square s;
+    Score score = SCORE_ZERO;
+
+    while ((s = *pl++) != SQ_NONE)
+    {
+        b = ei.attacksFrom[s];
 
         int mob = popcount(b & ei.mobilityArea[Us]);
 
@@ -381,9 +429,9 @@ namespace {
   }
 
   template<>
-  Score evaluate_pieces<false, WHITE, KING>(const Position&, EvalInfo&, Score*) { return SCORE_ZERO; }
+  Score evaluate_pieces<false, WHITE, KING>(const Position&, const EvalInfo&, Score*) { return SCORE_ZERO; }
   template<>
-  Score evaluate_pieces< true, WHITE, KING>(const Position&, EvalInfo&, Score*) { return SCORE_ZERO; }
+  Score evaluate_pieces< true, WHITE, KING>(const Position&, const EvalInfo&, Score*) { return SCORE_ZERO; }
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
@@ -523,7 +571,7 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, weak, defended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -543,18 +591,13 @@ namespace {
             score += ThreatBySafePawn[type_of(pos.piece_on(pop_lsb(&safeThreats)))];
     }
 
-    // Squares strongly protected by the opponent, either because they attack the
-    // square with a pawn, or because they attack the square twice and we don't.
-    stronglyProtected =  ei.attackedBy[Them][PAWN]
-                       | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
-
     // Non-pawn enemies, strongly protected
     defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              & stronglyProtected;
+              & ei.controlledBy[Them];
 
     // Enemies not strongly protected and under our attack
     weak =   pos.pieces(Them)
-          & ~stronglyProtected
+          & ~ei.controlledBy[Them]
           &  ei.attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
@@ -825,23 +868,27 @@ Value Eval::evaluate(const Position& pos) {
      return pos.side_to_move() == WHITE ? v : -v;
 
   // Initialize attack and king safety bitboards
-  eval_init<WHITE>(pos, ei);
-  eval_init<BLACK>(pos, ei);
+  eval_init_stage1<WHITE>(pos, ei);
+  eval_init_stage1<BLACK>(pos, ei);
+
+  eval_init_stage2<>(pos, ei);
+
+  eval_init_stage3<WHITE>(pos, ei);
+  eval_init_stage3<BLACK>(pos, ei);
 
   // Evaluate all pieces but king and pawns
   score += evaluate_pieces<DoTrace>(pos, ei, mobility);
   score += mobility[WHITE] - mobility[BLACK];
 
-  // Evaluate kings after all other pieces because we need full attack
-  // information when computing the king safety evaluation.
+  // Evaluate kings
   score +=  evaluate_king<WHITE, DoTrace>(pos, ei)
           - evaluate_king<BLACK, DoTrace>(pos, ei);
 
-  // Evaluate tactical threats, we need full attack information including king
+  // Evaluate tactical threats
   score +=  evaluate_threats<WHITE, DoTrace>(pos, ei)
           - evaluate_threats<BLACK, DoTrace>(pos, ei);
 
-  // Evaluate passed pawns, we need full attack information including king
+  // Evaluate passed pawns
   score +=  evaluate_passer_pawns<WHITE, DoTrace>(pos, ei)
           - evaluate_passer_pawns<BLACK, DoTrace>(pos, ei);
 
