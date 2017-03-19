@@ -536,7 +536,7 @@ namespace {
 
     if (targets)
     {
-        b = pos.pieces(Us, PAWN) & (ei.attackedBy[Us][PAWN] | ~controlledByThem);
+        b = pos.pieces(Us, PAWN) & ~controlledByThem;
         b = (shift<Right>(b) | shift<Left>(b)) & targets;
 
         if (targets ^ b)
@@ -588,7 +588,7 @@ namespace {
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
-    b &= ~pos.pieces() & (ei.attackedBy[Us][PAWN] | ~controlledByThem);
+    b &= ~(pos.pieces() | controlledByThem);
 
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
