@@ -324,7 +324,7 @@ namespace {
 
     // Squares occupied by those pawns, by our king, or controlled by the enemy
     // are excluded from the mobility area.
-    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
+    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.controlledBy[Them]);
   }
 
   // evaluate_pieces() assigns bonuses and penalties for minors and major pieces of a 
