@@ -531,6 +531,8 @@ namespace {
                       | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
 
     hangingForUs = ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES];
+    
+    controlledByThem |= hangingForUs;
 
     // Analyze threats by pawns on non-pawns.
     targets = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
