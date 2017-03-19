@@ -523,23 +523,20 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, targets, hangingForUs, controlledByThem;
+    Bitboard b, targets, controlledByThem;
     Score score = SCORE_ZERO;
 
     // Squares defended by an enemy pawn, or defended more than it is attacked
     controlledByThem =  ei.attackedBy[Them][PAWN]
+                      | (ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES])
                       | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
-
-    hangingForUs = ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES];
-    
-    controlledByThem |= hangingForUs;
 
     // Analyze threats by pawns on non-pawns.
     targets = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
 
     if (targets)
     {
-        b = pos.pieces(Us, PAWN) & ~hangingForUs;
+        b = pos.pieces(Us, PAWN) & (ei.attackedBy[Us][PAWN] | ~controlledByThem);
         b = (shift<Right>(b) | shift<Left>(b)) & targets;
 
         if (targets ^ b)
@@ -591,7 +588,7 @@ namespace {
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
-    b &= ~(pos.pieces() | ei.attackedBy[Them][PAWN] | hangingForUs);
+    b &= ~pos.pieces() & (ei.attackedBy[Us][PAWN] | ~controlledByThem);
 
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
