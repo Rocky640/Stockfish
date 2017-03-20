@@ -201,6 +201,7 @@ namespace {
   const Score ThreatByHangingPawn = S(71, 61);
   const Score ThreatByRank        = S(16,  3);
   const Score Hanging             = S(48, 27);
+  const Score MobilityAdjust      = S( 5, 10);
   const Score ThreatByPawnPush    = S(38, 22);
   const Score HinderPassedPawn    = S( 7,  0);
 
@@ -584,6 +585,12 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+    
+    // Some mobility bonus was allocated in evaluate_pieces for major pieces even
+    // for some squares controlled by the enemy. Penalize those squares.
+    b = (ei.attackedBy[Us][ROOK] | ei.attackedBy[Us][QUEEN])
+       & ei.mobilityArea[Us] & stronglyProtected;
+    score -= MobilityAdjust * popcount(b);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
