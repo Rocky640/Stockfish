@@ -166,6 +166,9 @@ namespace {
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[2] = { S(3, 62), S(9, 138) };
+  
+  Score MobilityAdjust[4]  = { S( 5, 10), S( 5, 10), S( 5, 10), S( 5, 10) };
+  TUNE (SetRange(-20, 20), MobilityAdjust);
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
@@ -201,6 +204,7 @@ namespace {
   const Score ThreatByHangingPawn = S(71, 61);
   const Score ThreatByRank        = S(16,  3);
   const Score Hanging             = S(48, 27);
+  
   const Score ThreatByPawnPush    = S(38, 22);
   const Score HinderPassedPawn    = S( 7,  0);
 
@@ -584,6 +588,17 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    // Compensate for some mobility bonus was allocated in evaluate_pieces for major pieces even
+    // for some squares controlled by us.  Penalize those squares.
+    Bitboard bb = ei.attackedBy[Them][KNIGHT] | ei.attackedBy[Them][BISHOP];
+    b = ei.attackedBy[Us][ROOK] & ei.mobilityArea[Us] & stronglyProtected;
+    score -= MobilityAdjust[0] * popcount(b & bb);
+    score -= MobilityAdjust[1] * popcount(b & ~bb);
+
+    b = ei.attackedBy[Us][QUEEN] & ei.mobilityArea[Us] & stronglyProtected;
+    score -= MobilityAdjust[2] * popcount(b & bb);
+    score -= MobilityAdjust[3] * popcount(b & ~bb);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
