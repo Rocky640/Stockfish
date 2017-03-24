@@ -312,12 +312,11 @@ namespace {
             bb = OutpostRanks & ~ei.pe->pawn_attacks_span(Them);
             if (bb & s)
                 score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * 2;
-            else
-            {
-                bb &= b & ~pos.pieces(Us);
-                if (bb)
-                   score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
-            }
+            
+            // Bonus for reachable outpost squares
+            bb &= b & ~pos.pieces(Us);
+            if (bb)
+                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & bb)];
 
             // Bonus when behind a pawn
             if (    relative_rank(Us, s) < RANK_5
