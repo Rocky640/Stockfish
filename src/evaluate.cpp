@@ -308,10 +308,10 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
-            // Bonus for outpost squares
+            // Bonus for occupying an outpost square
             bb = OutpostRanks & ~ei.pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * 2;
+                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)];
             
             // Bonus for reachable outpost squares
             bb &= b & ~pos.pieces(Us);
