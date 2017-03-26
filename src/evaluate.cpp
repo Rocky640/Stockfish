@@ -86,6 +86,9 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    // Pieces of any color between first queen of given color and opponent rook or bishop
+    Bitboard queen_blockers[COLOR_NB]; 
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -253,6 +256,10 @@ namespace {
     }
     else
         ei.kingRing[Us] = ei.kingAttackersCount[Them] = 0;
+
+    ei.queen_blockers[Us] = 
+        pos.pieces(Us, QUEEN) ? pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), pos.squares<QUEEN>(Us)[0], b)
+                              : 0;
   }
 
 
@@ -293,6 +300,9 @@ namespace {
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
+
+        if (ei.queen_blockers[Us] & s)
+            b &= LineBB[pos.squares<QUEEN>(Us)[0]][s];
 
         int mob = popcount(b & ei.mobilityArea[Us]);
 
@@ -357,17 +367,6 @@ namespace {
                     && !ei.pe->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
-        }
-
-        if (Pt == QUEEN)
-        {
-            // Penalty if any relative pin or discovered attack against the queen
-            // except for a retaliating pinned piece
-            Bitboard pinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, pinners)
-                & ~(pos.pieces(Us, ROOK) & PseudoAttacks[ROOK][s])
-                & ~(pos.pieces(Us, BISHOP) & PseudoAttacks[BISHOP][s]))
-                score -= WeakQueen;
         }
     }
 
@@ -581,6 +580,10 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    // Potential discovered attacks on queen, or relatively pinned pawn
+    if (ei.queen_blockers[Them] & (pos.pieces(Us) | pos.pieces(PAWN)))
+        score += WeakQueen;
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
