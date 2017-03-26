@@ -438,7 +438,10 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
+        if (b1 & ei.attackedBy[Them][QUEEN] & safe)
+            kingDanger += QueenCheck;
+
+        if (b2 & ei.attackedBy[Them][QUEEN] & safe)
             kingDanger += QueenCheck;
 
         // For minors and rooks, also consider the square safe if attacked twice,
@@ -470,7 +473,7 @@ namespace {
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
-            kingDanger += KnightCheck;
+            kingDanger += KnightCheck * popcount(b & safe);
 
         else if (b & other)
             score -= OtherCheck;
