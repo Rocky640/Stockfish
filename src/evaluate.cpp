@@ -145,8 +145,8 @@ namespace {
   // RookOnFile[semiopen/open][queen too] contains bonuses for each rook when there is no
   // friendly pawn on the rook file, bigger if queen on file too.
   const Score RookOnFile[][2] = { 
-     { S(20,  7), S(25, 10) }, //semi open
-     { S(45, 20), S(60, 30) }  //open
+     { S(20,  7), S(25,  7) }, //semi open
+     { S(45, 20), S(60, 20) }  //open
   };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
