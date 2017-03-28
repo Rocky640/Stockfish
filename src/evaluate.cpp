@@ -146,7 +146,7 @@ namespace {
   // friendly pawn on the rook file, bigger if queen on file too.
   const Score RookOnFile[][2] = { 
      { S(20,  7), S(25,  7) }, //semi open
-     { S(45, 20), S(60, 20) }  //open
+     { S(45, 20), S(75, 20) }  //open
   };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
@@ -350,7 +350,7 @@ namespace {
             // Bonus when on an open or semi-open file
             if (ei.pe->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pe->semiopen_file(Them, file_of(s))]
-                                   [!!(file_bb(s) & pos.pieces(Us, QUEEN))];
+                                   [!!(file_bb(s) & b & pos.pieces(Us, QUEEN))];
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
