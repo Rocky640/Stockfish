@@ -306,7 +306,10 @@ namespace {
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * 2;
+            {
+                bool samecolorbishop =  !(DarkSquares & s) == !(DarkSquares & pos.pieces(Them, BISHOP));
+                score += Outpost[Pt == BISHOP][!!(ei.attackedBy[Us][PAWN] & s)] * (2 + !samecolorbishop);
+            }
             else
             {
                 bb &= b & ~pos.pieces(Us);
