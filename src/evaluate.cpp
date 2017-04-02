@@ -431,8 +431,8 @@ namespace {
                     -   7 * mg_value(score) / 5 - 5;
 
         // Analyse the safe enemy's checks which are possible on next move
-        safe  = ~pos.pieces(Them);
-        safe &= ~ei.attackedBy[Us][ALL_PIECES] | (undefended & ei.attackedBy2[Them]);
+        safe  = ~(pos.pieces(Them) | ei.attackedBy[Us][PAWN]);
+        safe &= ~ei.attackedBy[Us][ALL_PIECES] | (ei.attackedBy2[Them] & ~ei.attackedBy2[Us]);
 
         b1 = pos.attacks_from<ROOK  >(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
@@ -440,12 +440,6 @@ namespace {
         // Enemy queen safe checks
         if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
             kingDanger += QueenCheck;
-
-        // For minors and rooks, also consider the square safe if attacked twice,
-        // and only defended by our queen.
-        safe |=  ei.attackedBy2[Them]
-               & ~(ei.attackedBy2[Us] | pos.pieces(Them))
-               & ei.attackedBy[Us][QUEEN];
 
         // Some other potential checks are also analysed, even from squares
         // currently occupied by the opponent own pieces, as long as the square
