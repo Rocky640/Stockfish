@@ -298,11 +298,11 @@ namespace {
 
         mobility[Us] += MobilityBonus[Pt-2][mob];
 
-        // Bonus for this piece as a king protector
-        score += Protector[Pt-2][distance(s, pos.square<KING>(Us))];
-
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+             // Bonus for this piece as a king protector
+            score += Protector[Pt-2][distance(s, pos.square<KING>(Us))];
+
             // Bonus for outpost squares
             bb = OutpostRanks & ~ei.pe->pawn_attacks_span(Them);
             if (bb & s)
