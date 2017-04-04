@@ -442,10 +442,9 @@ namespace {
             kingDanger += QueenCheck;
 
         // For minors and rooks, also consider the square safe if attacked twice,
-        // and only defended by our queen.
+        // and defended only once, by a non-pawn
         safe |=  ei.attackedBy2[Them]
-               & ~(ei.attackedBy2[Us] | pos.pieces(Them))
-               & ei.attackedBy[Us][QUEEN];
+               & ~(ei.attackedBy2[Us] | pos.pieces(Them) | ei.attackedBy[Us][PAWN]);
 
         // Some other potential checks are also analysed, even from squares
         // currently occupied by the opponent own pieces, as long as the square
