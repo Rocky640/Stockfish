@@ -195,6 +195,7 @@ namespace {
   const Score ThreatByHangingPawn = S( 71, 61);
   const Score ThreatBySafePawn    = S(182,175);
   const Score ThreatByRank        = S( 16,  3);
+  const Score BishopSupport       = S( 20, 20);
   const Score Hanging             = S( 48, 27);
   const Score ThreatByPawnPush    = S( 38, 22);
   const Score HinderPassedPawn    = S(  7,  0);
@@ -571,6 +572,10 @@ namespace {
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
+
+        // Bonus for other pieces supporting bishop attacks
+        b = (weak | defended) & ei.attackedBy2[Us] & ei.attackedBy[Us][BISHOP];
+        score += BishopSupport * popcount(b);
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
 
