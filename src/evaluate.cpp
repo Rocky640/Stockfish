@@ -491,7 +491,7 @@ namespace {
     b =  (Us == WHITE ? b << 4 : b >> 4)
        | (b & ei.attackedBy2[Them] & ~ei.attackedBy[Us][PAWN]);
 
-    score -= make_score(pos.count<PAWN>(Us) * popcount(b), 0);
+    score -= make_score((pos.count<PAWN>(Them) + 2) * popcount(b), 0);
 
     // Penalty when our king is on a pawnless flank
     if (!(pos.pieces(PAWN) & KingFlank[kf]))
