@@ -572,7 +572,13 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
+        // Hanging bonus for each attacked enemy which is undefended,
+        // or which is only defended by king or queen and attacked twice.
+        b  = ~ei.attackedBy[Them][ALL_PIECES];
+        b |=  ((ei.attackedBy[Them][KING] | ei.attackedBy[Them][QUEEN]) & ~ei.attackedBy2[Them])
+            & ei.attackedBy2[Us];
+
+        score += Hanging * popcount(b & weak);
 
         b = weak & ei.attackedBy[Us][KING];
         if (b)
