@@ -187,6 +187,7 @@ namespace {
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
   const Score RookOnPawn          = S(  8, 24);
+  const Score NoOpenFiles         = S( 10, 30);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
   const Score OtherCheck          = S( 10, 10);
@@ -343,6 +344,9 @@ namespace {
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
+            
+            if (!ei.pe->open_files())
+                score -= NoOpenFiles;
 
             // Bonus when on an open or semi-open file
             if (ei.pe->semiopen_file(Us, file_of(s)))
