@@ -40,7 +40,7 @@ namespace {
   // Unsupported pawn penalty for pawns which are neither isolated or backward
   const Score Unsupported = S(17, 8);
 
-  // Connected pawn bonus by opposed, phalanx, twice supported and rank
+  // Connected pawn bonus by blocked, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
 
   // Doubled pawn penalty
@@ -101,7 +101,7 @@ namespace {
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush, connected;
     Square s;
-    bool opposed, backward;
+    bool opposed, blocked, backward;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -128,6 +128,7 @@ namespace {
 
         // Flag the pawn
         opposed    = theirPawns & forward_bb(Us, s);
+        blocked    = theirPawns & (s + Up);
         stoppers   = theirPawns & passed_pawn_mask(Us, s);
         lever      = theirPawns & pawnAttacksBB[s];
         leverPush  = theirPawns & pawnAttacksBB[s + Up];
@@ -175,7 +176,7 @@ namespace {
             score -= Unsupported;
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[blocked][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
 
         if (doubled)
             score -= Doubled;
@@ -199,14 +200,14 @@ void init() {
 
   static const int Seed[RANK_NB] = { 0, 8, 19, 13, 71, 94, 169, 324 };
 
-  for (int opposed = 0; opposed <= 1; ++opposed)
+  for (int blocked = 0; blocked <= 1; ++blocked)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
           for (int apex = 0; apex <= 1; ++apex)
               for (Rank r = RANK_2; r < RANK_8; ++r)
   {
-      int v = (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
+      int v = (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> blocked;
       v += (apex ? v / 2 : 0);
-      Connected[opposed][phalanx][apex][r] = make_score(v, v * (r-2) / 4);
+      Connected[blocked][phalanx][apex][r] = make_score(v, v * (r-2) / 4);
   }
 }
 
