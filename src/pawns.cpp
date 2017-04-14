@@ -265,6 +265,13 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
                  [d][rkThem];
   }
 
+  // Consider also a pawn on a 4th file near center and in our camp, for example e4 against Kg1 or Kh1
+  // or semi open file
+  center += (center < FILE_E ? File(2) : -File(2));
+  b = theirPawns & file_bb(center);
+  if (!b || relative_rank(Us, frontmost_sq(Them, b)) < RANK_5)
+      safety -= Value(100);
+
   return safety;
 }
 
