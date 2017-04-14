@@ -681,6 +681,9 @@ namespace {
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
 
+    if (!pos.non_pawn_material() || pos.non_pawn_material() == 2 * QueenValueMg)
+        score += score / 4;
+
     if (DoTrace)
         Trace::add(PASSED, Us, score);
 
