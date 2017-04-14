@@ -270,7 +270,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
   center += (center < FILE_E ? File(2) : -File(2));
   b = theirPawns & file_bb(center);
   if (!b || relative_rank(Us, frontmost_sq(Them, b)) < RANK_5)
-      safety -= Value(100);
+      safety -= Value(50);
 
   return safety;
 }
