@@ -682,7 +682,7 @@ namespace {
     }
 
     if (!pos.non_pawn_material() || pos.non_pawn_material() == 2 * QueenValueMg)
-        score += score / 4;
+        score += score / 8;
 
     if (DoTrace)
         Trace::add(PASSED, Us, score);
