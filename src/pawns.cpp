@@ -34,8 +34,11 @@ namespace {
   // Isolated pawn penalty by opposed flag
   const Score Isolated[2] = { S(45, 40), S(30, 27) };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[2] = { S(56, 33), S(41, 19) };
+  // Backward pawn penalty by strongSentry and opposed falg
+  const Score Backward[2][2] = {
+      { S(51, 29), S(39, 17) },
+      { S(60, 37), S(43, 21) }
+  };
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward
   const Score Unsupported = S(17, 8);
@@ -98,10 +101,10 @@ namespace {
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard b, neighbours, stoppers, doubled, supported, phalanx, backward;
     Bitboard lever, leverPush, connected;
     Square s;
-    bool opposed, backward;
+    bool opposed, strongSentry;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
     const Bitboard* pawnAttacksBB = StepAttacksBB[make_piece(Us, PAWN)];
@@ -140,7 +143,7 @@ namespace {
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
         if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
-            backward = false;
+            backward = 0;
         else
         {
             // Find the backmost rank with neighbours or stoppers
@@ -149,7 +152,21 @@ namespace {
             // The pawn is backward when it cannot safely progress to that rank:
             // either there is a stopper in the way on this rank, or there is a
             // stopper on adjacent file which controls the way to that rank.
-            backward = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
+            backward = b = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
+
+            // Analyse strength of backward stoppers if any
+            strongSentry = false;
+            while (b)
+            {
+                Square ss = pop_lsb(&b);
+                if (   (file_of(ss) == f)
+                    || (pawnAttacksBB[ss] & theirPawns)
+                    || !(passed_pawn_mask(Them, ss) & (ourPawns ^ s)))
+                {
+                    strongSentry = true;
+                    break;
+                }
+            }
 
             assert(!backward || !(pawn_attack_span(Them, s + Up) & neighbours));
         }
@@ -169,7 +186,7 @@ namespace {
             score -= Isolated[opposed];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= Backward[strongSentry][opposed];
 
         else if (!supported)
             score -= Unsupported;
