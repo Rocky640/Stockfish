@@ -36,8 +36,8 @@ namespace {
 
   // Backward pawn penalty by strongSentry and opposed flag
   const Score Backward[2][2] = {
-      { S(42, 25), S(35, 14) }, //not strong
-      { S(62, 37), S(42, 20) }  //strong
+      { S(40, 23), S(34, 16) }, //not strong
+      { S(64, 38), S(43, 21) }  //strong
   };
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward
