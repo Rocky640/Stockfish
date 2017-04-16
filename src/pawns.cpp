@@ -34,10 +34,10 @@ namespace {
   // Isolated pawn penalty by opposed flag
   const Score Isolated[2] = { S(45, 40), S(30, 27) };
 
-  // Backward pawn penalty by strongSentry and opposed falg
+  // Backward pawn penalty by strongSentry and opposed flag
   const Score Backward[2][2] = {
-      { S(51, 29), S(39, 17) },
-      { S(60, 37), S(43, 21) }
+      { S(42, 25), S(35, 14) }, //not strong
+      { S(62, 37), S(42, 20) }  //strong
   };
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward
@@ -98,8 +98,11 @@ namespace {
 
     const Color  Them  = (Us == WHITE ? BLACK      : WHITE);
     const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
+    const Square Down  = (Us == WHITE ? SOUTH      : NORTH);
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Square TheirRight = (Us == WHITE ? SOUTH_WEST : NORTH_EAST);
+    const Square TheirLeft  = (Us == WHITE ? SOUTH_EAST : NORTH_WEST);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx, backward;
     Bitboard lever, leverPush, connected;
@@ -111,6 +114,9 @@ namespace {
 
     Bitboard ourPawns   = pos.pieces(Us  , PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
+
+    Bitboard blockers   = theirPawns | (shift<TheirRight>(theirPawns) & shift<TheirLeft>(theirPawns));
+    Bitboard free       = ourPawns & ~shift<Down>(blockers);
 
     e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
@@ -155,13 +161,14 @@ namespace {
             backward = b = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
 
             // Analyse strength of backward stoppers if any
+            // A stopper is strong if it is supported or we cannot
+            // lever that pawn (other than the pawn on s)
             strongSentry = false;
             while (b)
             {
                 Square ss = pop_lsb(&b);
-                if (   (file_of(ss) == f)
-                    || (pawnAttacksBB[ss] & theirPawns)
-                    || !(passed_pawn_mask(Them, ss) & (ourPawns ^ s)))
+                if (   (pawnAttacksBB[ss] & theirPawns)
+                    || !(pawn_attack_span(Them, ss) & free & ~SquareBB[s]))
                 {
                     strongSentry = true;
                     break;
