@@ -651,9 +651,17 @@ namespace {
 
                 if (!(pos.pieces(Us) & bb))
                     defendedSquares &= ei.attackedBy[Us][ALL_PIECES];
+                else
+                    defendedSquares &= ei.attackedBy[Us][ALL_PIECES] | !pos.pieces(Them);
 
                 if (!(pos.pieces(Them) & bb))
-                    unsafeSquares &= ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
+                    unsafeSquares &= (~defendedSquares & ei.attackedBy[Them][ALL_PIECES])
+                                    | ei.attackedBy2[Them]
+                                    | pos.pieces(Them);
+                else
+                    unsafeSquares &= ~defendedSquares
+                                    | ei.attackedBy[Them][ALL_PIECES]
+                                    | pos.pieces(Them);
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
