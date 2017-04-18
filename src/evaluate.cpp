@@ -652,7 +652,7 @@ namespace {
                 if (!(pos.pieces(Us) & bb))
                     defendedSquares &= ei.attackedBy[Us][ALL_PIECES];
                 else
-                    defendedSquares &= ei.attackedBy[Us][ALL_PIECES] | !pos.pieces(Them);
+                    defendedSquares &= ei.attackedBy[Us][ALL_PIECES] | ~pos.pieces(Them);
 
                 if (!(pos.pieces(Them) & bb))
                     unsafeSquares &= (~defendedSquares & ei.attackedBy[Them][ALL_PIECES])
