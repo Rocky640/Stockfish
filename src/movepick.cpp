@@ -146,13 +146,29 @@ void MovePicker::score<QUIETS>() {
   const CounterMoveStats& fmh = *(ss-2)->counterMoves;
   const CounterMoveStats& fm2 = *(ss-4)->counterMoves;
 
+  Move lastMove = (ss - 1)->currentMove;
   Color c = pos.side_to_move();
 
-  for (auto& m : *this)
-      m.value =  cmh[pos.moved_piece(m)][to_sq(m)]
-               + fmh[pos.moved_piece(m)][to_sq(m)]
-               + fm2[pos.moved_piece(m)][to_sq(m)]
-               + history.get(c, m);
+  if (is_ok(lastMove) && (type_of(lastMove) == NORMAL))
+  {
+      Bitboard lessdefended = StepAttacksBB[pos.piece_on(to_sq(lastMove))][from_sq(lastMove)];
+      Bitboard moredefended = StepAttacksBB[pos.piece_on(to_sq(lastMove))][to_sq(lastMove)];
+
+      for (auto& m : *this)
+        m.value = cmh[pos.moved_piece(m)][to_sq(m)]
+        + fmh[pos.moved_piece(m)][to_sq(m)]
+        + fm2[pos.moved_piece(m)][to_sq(m)]
+        + history.get(c, m)
+        + Value(500) * (!!(lessdefended & to_sq(m)) - !!(moredefended & to_sq(m)));
+  }
+  else
+  {
+    for (auto& m : *this)
+        m.value = cmh[pos.moved_piece(m)][to_sq(m)]
+        + fmh[pos.moved_piece(m)][to_sq(m)]
+        + fm2[pos.moved_piece(m)][to_sq(m)]
+        + history.get(c, m);
+  }
 }
 
 template<>
