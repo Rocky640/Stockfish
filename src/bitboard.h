@@ -246,14 +246,14 @@ inline Bitboard attacks_bb(Square s, Bitboard occupied) {
   return (Pt == ROOK ? RookAttacks : BishopAttacks)[s][magic_index<Pt>(s, occupied)];
 }
 
-inline Bitboard attacks_bb(Piece pc, Square s, Bitboard occupied) {
-  assert(type_of(pc) != PAWN);
-  switch (type_of(pc))
+inline Bitboard attacks_bb(PieceType pt, Square s, Bitboard occupied) {
+  assert(pt != PAWN);
+  switch (pt)
   {
   case BISHOP: return attacks_bb<BISHOP>(s, occupied);
   case ROOK  : return attacks_bb<ROOK>(s, occupied);
   case QUEEN : return attacks_bb<BISHOP>(s, occupied) | attacks_bb<ROOK>(s, occupied);
-  default    : return PseudoAttacks[type_of(pc)][s];
+  default    : return PseudoAttacks[pt][s];
   }
 }
 
