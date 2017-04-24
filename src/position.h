@@ -275,12 +275,12 @@ template<PieceType Pt>
 inline Bitboard Position::attacks_from(Square s) const {
   return  Pt == BISHOP || Pt == ROOK ? attacks_bb<Pt>(s, byTypeBB[ALL_PIECES])
         : Pt == QUEEN  ? attacks_from<ROOK>(s) | attacks_from<BISHOP>(s)
-        : StepAttacksBB[Pt][s];
+        : PseudoAttacks[Pt][s];
 }
 
 template<>
 inline Bitboard Position::attacks_from<PAWN>(Square s, Color c) const {
-  return StepAttacksBB[make_piece(c, PAWN)][s];
+  return PawnAttacks[c][s];
 }
 
 inline Bitboard Position::attacks_from(Piece pc, Square s) const {

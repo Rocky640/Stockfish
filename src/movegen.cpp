@@ -80,7 +80,7 @@ namespace {
 
     // Knight promotion is the only promotion that can give a direct check
     // that's not already included in the queen promotion.
-    if (Type == QUIET_CHECKS && (StepAttacksBB[W_KNIGHT][to] & ksq))
+    if (Type == QUIET_CHECKS && (PseudoAttacks[KNIGHT][to] & ksq))
         *moveList++ = make<PROMOTION>(to - D, to, KNIGHT);
     else
         (void)ksq; // Silence a warning under MSVC

@@ -41,14 +41,14 @@ Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
 Bitboard AdjacentFilesBB[FILE_NB];
 Bitboard InFrontBB[COLOR_NB][RANK_NB];
-Bitboard StepAttacksBB[PIECE_NB][SQUARE_NB];
+Bitboard PawnAttacks[COLOR_NB][SQUARE_NB];
+Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
 Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 Bitboard DistanceRingBB[SQUARE_NB][8];
 Bitboard ForwardBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
-Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
 
 namespace {
 
@@ -202,8 +202,14 @@ void Bitboards::init() {
                   Square to = s + Square(c == WHITE ? steps[pt][i] : -steps[pt][i]);
 
                   if (is_ok(to) && distance(s, to) < 3)
-                      StepAttacksBB[make_piece(c, pt)][s] |= to;
+				  {
+					  if (pt == PAWN)
+						  PawnAttacks[c][s] |= to;
+					  else
+						  PseudoAttacks[pt][s] |= to;
               }
+              }
+  
 
   Square RookDeltas[] = { NORTH,  EAST,  SOUTH,  WEST  };
   Square BishopDeltas[] = { NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST };
