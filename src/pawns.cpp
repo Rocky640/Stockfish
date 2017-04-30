@@ -110,6 +110,7 @@ namespace {
 
     e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
+    e->occupiedRanks[Us] = 0;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
@@ -123,6 +124,7 @@ namespace {
         File f = file_of(s);
 
         e->semiopenFiles[Us]   &= ~(1 << f);
+        e->occupiedRanks[Us]   |= (1 << rank_of(s));
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
 
         // Flag the pawn
@@ -225,7 +227,8 @@ Entry* probe(const Position& pos) {
 
   e->key = key;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
-  e->asymmetry = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
+  e->asymmetry =  popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK])
+                + popcount(e->occupiedRanks[WHITE] & e->occupiedRanks[BLACK]);
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   return e;
 }
