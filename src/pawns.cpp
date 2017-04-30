@@ -177,10 +177,13 @@ namespace {
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
 
         if (doubled && !supported)
-           score -= Doubled;
+            score -= Doubled;
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+
+        if (!opposed)
+            e->asymmetry += 1 + !more_than_one(stoppers);
     }
 
     return score;
@@ -224,9 +227,11 @@ Entry* probe(const Position& pos) {
       return e;
 
   e->key = key;
-  e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
-  e->asymmetry = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
+  e->asymmetry = 0;
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
+
+  e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
+
   return e;
 }
 
