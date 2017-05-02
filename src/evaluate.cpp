@@ -721,6 +721,10 @@ namespace {
 
     // ...count safe + (behind & safe) with a single popcount.
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
+
+    // Reduce bonus for pawn supported safe squares for the enemy in our zone
+    bonus -= popcount(SpaceMask & ei.attackedBy[Them][PAWN] & ~ei.attackedBy[Us][PAWN]);
+
     int weight = pos.count<ALL_PIECES>(Us) - 2 * ei.pe->open_files();
 
     return make_score(bonus * weight * weight / 16, 0);
