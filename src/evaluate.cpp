@@ -702,6 +702,9 @@ namespace {
     const Bitboard SpaceMask =
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+    const Bitboard LowRanks = 
+      Us == WHITE ? Rank2BB | Rank3BB : Rank6BB | Rank7BB;
+
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
@@ -711,8 +714,8 @@ namespace {
                    & ~ei.attackedBy[Them][PAWN]
                    & (ei.attackedBy[Us][ALL_PIECES] | ~ei.attackedBy[Them][ALL_PIECES]);
 
-    // Find all squares which are at most three squares behind some friendly pawn
-    Bitboard behind = pos.pieces(Us, PAWN);
+    // Find all squares which are at most three squares behind some advanced friendly pawn
+    Bitboard behind = pos.pieces(Us, PAWN) & ~LowRanks;
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
