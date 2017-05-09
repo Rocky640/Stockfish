@@ -86,6 +86,12 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    // pseudoAttacks[color] are some extended x-ray "attacked" squares computed for
+    // bishop or rooks through other non-pawns (any color) until the next pawn obstacle hurdle.
+    // Example: White Bg2 Nf3 d5 => e4 and d5 are added to the pseudoAttacks
+    // Example: White Rg1 Bg2 g5, Black Ng3 => g3, g4 and g5 are added to the pseudoAttacks
+    Bitboard pseudoAttacks[COLOR_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and the three (or two, for a king on an edge file)
@@ -182,7 +188,6 @@ namespace {
   const Score BishopPawns         = S(  8, 12);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
-  const Score WeakQueen           = S( 50, 10);
   const Score OtherCheck          = S( 10, 10);
   const Score CloseEnemies        = S(  7,  0);
   const Score PawnlessFlank       = S( 20, 80);
@@ -190,6 +195,7 @@ namespace {
   const Score ThreatBySafePawn    = S(182,175);
   const Score ThreatByRank        = S( 16,  3);
   const Score Hanging             = S( 48, 27);
+  const Score WeakPiece           = S( 45, 10);
   const Score ThreatByPawnPush    = S( 38, 22);
   const Score HinderPassedPawn    = S(  7,  0);
 
@@ -235,7 +241,8 @@ namespace {
     // Initialise the attack bitboards with the king and pawn information
     b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     ei.attackedBy[Us][PAWN] = ei.pe->pawn_attacks(Us);
-
+    
+    ei.pseudoAttacks[Us] = 0;
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
     ei.attackedBy[Us][ALL_PIECES] = b | ei.attackedBy[Us][PAWN];
 
@@ -278,6 +285,8 @@ namespace {
 
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
+        else if (Pt == BISHOP || Pt == ROOK)
+            ei.pseudoAttacks[Us] |= attacks_bb<Pt>(s, pos.pieces(PAWN)) & ~b;
 
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
@@ -351,14 +360,6 @@ namespace {
                     && !ei.pe->semiopen_side(Us, file_of(ksq), file_of(s) < file_of(ksq)))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
-        }
-
-        if (Pt == QUEEN)
-        {
-            // Penalty if any relative pin or discovered attack against the queen
-            Bitboard pinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, pinners))
-                score -= WeakQueen;
         }
     }
 
@@ -572,7 +573,14 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+    
+    // Analyze queens and undefended pieces
+    b  =  (pos.pieces(Them) ^ pos.pieces(Them, KING, PAWN))
+        & ~ei.attackedBy[Them][ALL_PIECES];
+    b |= pos.pieces(Them, QUEEN);
 
+    score += WeakPiece * popcount(b & ei.pseudoAttacks[Us]);
+    
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
