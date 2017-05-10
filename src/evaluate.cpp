@@ -286,7 +286,7 @@ namespace {
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
         else if (Pt == BISHOP || Pt == ROOK)
-            ei.xRayAttacks[Us] |= attacks_bb<Pt>(s, pos.pieces() & ~b);
+            ei.xRayAttacks[Us] |= attacks_bb<Pt>(s, pos.pieces() & ~b) & ~b;
 
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
