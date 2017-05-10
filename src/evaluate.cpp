@@ -86,11 +86,11 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // pseudoAttacks[color] are some extended x-ray "attacked" squares computed for
-    // bishop or rooks through other non-pawns (any color) until the next pawn obstacle hurdle.
-    // Example: White Bg2 Nf3 d5 => e4 and d5 are added to the pseudoAttacks
-    // Example: White Rg1 Bg2 g5, Black Ng3 => g3, g4 and g5 are added to the pseudoAttacks
-    Bitboard pseudoAttacks[COLOR_NB];
+    // xRayAttacks[color] are the attacked squares by bishops and rooks
+    // once we remove the first blocker (pawn or piece, any color) on their paths.
+    // Example: White Bg2 Nf3 d5 => e4 and d5 are added to the xRayAttacks[WHITE]
+    // Example: White Rg1 Bg2  Black Ng3 Rg8 => g3 is added to the xRayAttacks[WHITE]
+    Bitboard xRayAttacks[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -242,7 +242,7 @@ namespace {
     b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     ei.attackedBy[Us][PAWN] = ei.pe->pawn_attacks(Us);
     
-    ei.pseudoAttacks[Us] = 0;
+    ei.xRayAttacks[Us] = 0;
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
     ei.attackedBy[Us][ALL_PIECES] = b | ei.attackedBy[Us][PAWN];
 
@@ -286,7 +286,7 @@ namespace {
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
         else if (Pt == BISHOP || Pt == ROOK)
-            ei.pseudoAttacks[Us] |= attacks_bb<Pt>(s, pos.pieces(PAWN)) & ~b;
+            ei.xRayAttacks[Us] |= attacks_bb<Pt>(s, pos.pieces() & ~b);
 
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
@@ -573,13 +573,14 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
-    
-    // Analyze queens and undefended pieces
+
+    // Analyze queens and weak pieces aligned with our rook or bishops with
+    // exactly one blocker (pawn or pieces, any color) in between
     b  =  (pos.pieces(Them) ^ pos.pieces(Them, KING, PAWN))
         & ~ei.attackedBy[Them][ALL_PIECES];
     b |= pos.pieces(Them, QUEEN);
 
-    score += WeakPiece * popcount(b & ei.pseudoAttacks[Us]);
+    score += WeakPiece * popcount(b & ei.xRayAttacks[Us]);
     
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
