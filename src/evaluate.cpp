@@ -217,7 +217,6 @@ namespace {
   void eval_init(const Position& pos, EvalInfo& ei) {
 
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
@@ -417,8 +416,8 @@ namespace {
         // the pawn shelter (current 'score' value).
         kingDanger =        ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]
                     + 102 * ei.kingAdjacentZoneAttacksCount[Them]
-                    + 201 * popcount(undefended)
-                    + 143 * (popcount(b) + !!pos.pinned_pieces(Us))
+                    + 201 * popcount(undefended | b)
+                    + 143 * (!!pos.pinned_pieces(Us))
                     - 848 * !pos.count<QUEEN>(Them)
                     -  28 * mg_value(score) / 25 - 5;
 
