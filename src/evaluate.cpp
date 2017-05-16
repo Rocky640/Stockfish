@@ -243,7 +243,7 @@ namespace {
     if (pos.non_pawn_material(Them) >= QueenValueMg)
     {
         ei.kingRing[Us] = b;
-        if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
+        if (relative_rank(Us, pos.square<KING>(Us)) <= RANK_2)
             ei.kingRing[Us] |= shift<Up>(b);
 
         ei.kingAttackersCount[Them] = popcount(b & ei.pe->pawn_attacks(Them));
