@@ -86,12 +86,8 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // kingRing[color] is the zone around the king which is considered
-    // by the king safety evaluation. This consists of the squares directly
-    // adjacent to the king, and (only for a king on its first rank) the
-    // squares two ranks in front of the king. For instance, if black's king
-    // is on g8, kingRing[BLACK] is a bitboard containing the squares f8, h8,
-    // f7, g7, h7, f6, g6 and h6.
+    // kingRing[color] are the squares attacked by the king if we want to compute 
+    // king safety
     Bitboard kingRing[COLOR_NB];
 
     // kingAttackersCount[color] is the number of pieces of the given color
@@ -243,9 +239,6 @@ namespace {
     if (pos.non_pawn_material(Them) >= QueenValueMg)
     {
         ei.kingRing[Us] = b;
-        if (relative_rank(Us, pos.square<KING>(Us)) <= RANK_2)
-            ei.kingRing[Us] |= shift<Up>(b);
-
         ei.kingAttackersCount[Them] = popcount(b & ei.pe->pawn_attacks(Them));
         ei.kingAdjacentZoneAttacksCount[Them] = ei.kingAttackersWeight[Them] = 0;
     }
@@ -412,9 +405,10 @@ namespace {
                     &  ei.attackedBy[Us][KING]
                     & ~ei.attackedBy2[Us];
 
-        // ... and those which are not defended at all in the larger king ring
+        // ... and those which are not defended at all in the shifted three squares
+        // in front of the king
         b =  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
-           & ei.kingRing[Us] & ~pos.pieces(Them);
+           & shift<Up>(ei.attackedBy[Us][KING]) & ~pos.pieces(Them);
 
         // Initialize the 'kingDanger' variable, which will be transformed
         // later into a king danger score. The initial value is based on the
