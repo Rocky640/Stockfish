@@ -180,7 +180,7 @@ namespace {
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
   const Score OtherCheck          = S( 10, 10);
-  const Score CloseEnemies        = S(  7,  0);
+  const Score CloseEnemies        = S( 10,  0);
   const Score PawnlessFlank       = S( 20, 80);
   const Score ThreatByHangingPawn = S( 71, 61);
   const Score ThreatBySafePawn    = S(182,175);
@@ -416,8 +416,8 @@ namespace {
         // the pawn shelter (current 'score' value).
         kingDanger =        ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]
                     + 102 * ei.kingAdjacentZoneAttacksCount[Them]
-                    + 201 * popcount(undefended | b)
-                    + 143 * (!!pos.pinned_pieces(Us))
+                    + 201 * popcount(undefended)
+                    + 143 * (popcount(b) + (!!pos.pinned_pieces(Us)))
                     - 848 * !pos.count<QUEEN>(Them)
                     -  28 * mg_value(score) / 25 - 5;
 
