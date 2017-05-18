@@ -202,7 +202,7 @@ namespace {
   #undef V
 
   // KingAttackWeights[PieceType] contains king attack weights by piece type
-  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
+  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11, 11 };
 
   // Penalties for enemy's safe checks
   const int QueenCheck  = 780;
@@ -239,15 +239,26 @@ namespace {
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
     ei.attackedBy[Us][ALL_PIECES] = b | ei.attackedBy[Us][PAWN];
 
-    // Init our king safety tables only if we are going to use them
-    if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
+    ei.kingAttackersCount[Them] = ei.kingAdjacentZoneAttacksCount[Them]
+                                = ei.kingAttackersWeight[Them] = 0;
+
+    if (pos.non_pawn_material(Them))
+    {
+        ei.kingAttackersCount[Them] = popcount(b & ei.pe->pawn_attacks(Them));
+        if (b & pos.attacks_from<KING>(pos.square<KING>(Them)))
+        {
+            ei.kingAttackersCount[Them] +=1;
+            ei.kingAdjacentZoneAttacksCount[Them] = popcount(b & pos.attacks_from<KING>(pos.square<KING>(Them)));
+            ei.kingAttackersWeight[Them] = KingAttackWeights[KING];
+        }
+    }
+
+    // See if we need our king safety tables, otherwise set at 0
+    if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg || ei.kingAttackersCount[Them])
     {
         ei.kingRing[Us] = b;
         if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
             ei.kingRing[Us] |= shift<Up>(b);
-
-        ei.kingAttackersCount[Them] = popcount(b & ei.pe->pawn_attacks(Them));
-        ei.kingAdjacentZoneAttacksCount[Them] = ei.kingAttackersWeight[Them] = 0;
     }
     else
         ei.kingRing[Us] = ei.kingAttackersCount[Them] = 0;
