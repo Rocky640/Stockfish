@@ -233,9 +233,9 @@ namespace {
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard PawnMask = 
-       (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB) & ~CenterFiles;
+       (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB) | ~CenterFiles;
 
-    // Find our pawns on the first two ranks, and those which are blocked or on side files
+    // Find our pawns which are blocked, or on some low ranks, or on side files
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | PawnMask);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
