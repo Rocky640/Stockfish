@@ -38,7 +38,7 @@ namespace {
   const Score Backward[] = { S(56, 33), S(41, 19) };
 
   // SemiBackward pawn penalty by opposed flag
-  const Score SemiBackward[] = { S(45, 33), S(30, 19)};
+  const Score SemiBackward[] = { S(31, 20), S(23, 13)};
 
   // Unsupported pawn penalty for pawns which are neither of the above 3 types
   const Score Unsupported = S(17, 8);
