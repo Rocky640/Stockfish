@@ -37,7 +37,10 @@ namespace {
   // Backward pawn penalty by opposed flag
   const Score Backward[] = { S(56, 33), S(41, 19) };
 
-  // Unsupported pawn penalty for pawns which are neither isolated or backward
+  // SemiBackward pawn penalty by opposed flag
+  const Score SemiBackward[] = { S(45, 33), S(30, 19)};
+
+  // Unsupported pawn penalty for pawns which are neither of the above 3 types
   const Score Unsupported = S(17, 8);
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
@@ -180,7 +183,22 @@ namespace {
             score -= Backward[opposed];
 
         else if (!supported)
-            score -= Unsupported;
+        {
+            // A pawn is semi backward if it supports its only neighbour
+            // and a move forward would isolate this pawn after a capture
+            // of the attacked neighbour.
+            // Example: White e4, Black d5 and c6.
+            // c6 is semi backward, because if c6-c5, white plays e4xd5
+            // and c5 is isolated
+            if (   !more_than_one(neighbours)
+                && (b = PawnAttacks[Us][s] & ourPawns)
+                && (PawnAttacks[Us][lsb(b)] & theirPawns)
+                &&  !((PawnAttacks[Them][lsb(b)] & ourPawns) ^ s)
+                && (relative_rank(Us, s) < RANK_5))
+                score -= SemiBackward[opposed];
+            else
+                score -= Unsupported;
+        }
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
