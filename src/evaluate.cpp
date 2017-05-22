@@ -204,11 +204,13 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
-  // Penalties for enemy's safe checks
-  const int QueenCheck  = 780;
-  const int RookCheck   = 880;
-  const int BishopCheck = 435;
-  const int KnightCheck = 790;
+  // Penalties for enemy's safe checks. For rook and knights,
+  // allocate a smaller bonus if the checking piece is unprotected and
+  // attackable by the king.
+  const int QueenCheck     = 780;
+  const int RookCheck[2]   = {700, 920}; //was 880
+  const int BishopCheck    = 435;
+  const int KnightCheck[2] = {610, 830}; //was 790
 
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
@@ -398,8 +400,9 @@ namespace {
                                        : ~Bitboard(0) ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard undefended, b, b1, b2, safe, other;
+    Bitboard undefended, safeKingMoves, b, b1, b2, safe, other;
     int kingDanger;
+    bool badCheck;
 
     // King shelter and enemy pawns storm
     Score score = ei.pe->king_safety<Us>(pos, ksq);
@@ -415,6 +418,10 @@ namespace {
         // ... and those which are not defended at all in the larger king ring
         b =  ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES]
            & ei.kingRing[Us] & ~pos.pieces(Them);
+
+        // Find escape squares for the king
+        safeKingMoves =    ei.attackedBy[Us][KING] 
+                       & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces());
 
         // Initialize the 'kingDanger' variable, which will be transformed
         // later into a king danger score. The initial value is based on the
@@ -453,8 +460,14 @@ namespace {
                   | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
 
         // Enemy rooks safe and other checks
-        if (b1 & ei.attackedBy[Them][ROOK] & safe)
-            kingDanger += RookCheck;
+        if ((b = b1 & ei.attackedBy[Them][ROOK] & safe))
+        {
+            // Find if checking square is unprotected and attackable by king
+            badCheck =  (b & ~ei.attackedBy2[Them])
+                      && !more_than_one(b)
+                      && (pos.attacks_from<KING>(lsb(b)) & safeKingMoves);
+            kingDanger += RookCheck[!badCheck];
+        }
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
@@ -467,11 +480,17 @@ namespace {
             score -= OtherCheck;
 
         // Enemy knights safe and other checks
-        b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
-        if (b & safe)
-            kingDanger += KnightCheck;
+        b2 = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
+        if ((b = b2 & safe))
+        {
+            // Find if checking square is unprotected and attackable by king
+            badCheck =  (b & ~ei.attackedBy2[Them])
+                      && !more_than_one(b)
+                      && (pos.attacks_from<KING>(lsb(b)) & safeKingMoves);
+            kingDanger += KnightCheck[!badCheck];
+        }
 
-        else if (b & other)
+        else if (b2 & other)
             score -= OtherCheck;
 
         // Transform the kingDanger units into a Score, and substract it from the evaluation
