@@ -204,13 +204,12 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
-  // Penalties for enemy's safe checks. For rook and knights,
-  // allocate a smaller bonus if the checking piece is unprotected and
-  // attackable by the king.
+  // Penalties for enemy's safe checks. For bishops and rooks, allocate a smaller
+  // bonus if a similar piece can safely interpose.
   const int QueenCheck     = 780;
   const int RookCheck[2]   = {700, 920}; //was 880
-  const int BishopCheck    = 435;
-  const int KnightCheck[2] = {610, 830}; //was 790
+  const int BishopCheck[2] = {300, 476}; //was 435
+  const int KnightCheck    = 790;
 
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
@@ -400,7 +399,7 @@ namespace {
                                        : ~Bitboard(0) ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard undefended, safeKingMoves, b, b1, b2, safe, other;
+    Bitboard undefended, b, b1, b2, safe, other;
     int kingDanger;
     bool badCheck;
 
@@ -420,8 +419,8 @@ namespace {
            & ei.kingRing[Us] & ~pos.pieces(Them);
 
         // Find escape squares for the king
-        safeKingMoves =    ei.attackedBy[Us][KING] 
-                       & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces());
+        //safeKingMoves =    ei.attackedBy[Us][KING] 
+        //              & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces());
 
         // Initialize the 'kingDanger' variable, which will be transformed
         // later into a king danger score. The initial value is based on the
@@ -462,10 +461,9 @@ namespace {
         // Enemy rooks safe and other checks
         if ((b = b1 & ei.attackedBy[Them][ROOK] & safe))
         {
-            // Find if checking square is unprotected and attackable by king
-            badCheck =  (b & ~ei.attackedBy2[Them])
-                      && !more_than_one(b)
-                      && (pos.attacks_from<KING>(lsb(b)) & safeKingMoves);
+            // Find if a rook can safely interpose
+            badCheck =   !more_than_one(b)
+                      && (between_bb(ksq, lsb(b)) & ei.attackedBy[Us][ROOK] & ei.attackedBy2[Us]);
             kingDanger += RookCheck[!badCheck];
         }
 
@@ -473,22 +471,21 @@ namespace {
             score -= OtherCheck;
 
         // Enemy bishops safe and other checks
-        if (b2 & ei.attackedBy[Them][BISHOP] & safe)
-            kingDanger += BishopCheck;
+        if ((b = b2 & ei.attackedBy[Them][BISHOP] & safe))
+        { 
+            // Find if a bishop can safely interpose
+            badCheck =   !more_than_one(b)
+                      && (between_bb(ksq, lsb(b)) & ei.attackedBy[Us][BISHOP] & ei.attackedBy2[Us]);
+            kingDanger += BishopCheck[!badCheck];
+        }
 
         else if (b2 & ei.attackedBy[Them][BISHOP] & other)
             score -= OtherCheck;
 
         // Enemy knights safe and other checks
         b2 = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
-        if ((b = b2 & safe))
-        {
-            // Find if checking square is unprotected and attackable by king
-            badCheck =  (b & ~ei.attackedBy2[Them])
-                      && !more_than_one(b)
-                      && (pos.attacks_from<KING>(lsb(b)) & safeKingMoves);
-            kingDanger += KnightCheck[!badCheck];
-        }
+        if (b2 & safe)
+            kingDanger += KnightCheck;
 
         else if (b2 & other)
             score -= OtherCheck;
