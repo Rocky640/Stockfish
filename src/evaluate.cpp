@@ -205,7 +205,7 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
   // Penalties for enemy's safe checks
-  const int QueenCheck  = 780;
+  const int QueenCheck[2]  = { 600, 880}; //was 780
   const int RookCheck   = 880;
   const int BishopCheck = 435;
   const int KnightCheck = 790;
@@ -400,6 +400,7 @@ namespace {
     const Square ksq = pos.square<KING>(Us);
     Bitboard undefended, b, b1, b2, safe, other;
     int kingDanger;
+    bool badCheck;
 
     // King shelter and enemy pawns storm
     Score score = ei.pe->king_safety<Us>(pos, ksq);
@@ -437,8 +438,16 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ei.attackedBy[Them][QUEEN] & safe)
-            kingDanger += QueenCheck;
+        if ((b = (b1 | b2) & ei.attackedBy[Them][QUEEN] & safe))
+        {
+            // Find if a rook or bishop can safely interpose and retaliate
+            badCheck =   !more_than_one(b)
+                      && (  between_bb(ksq, lsb(b))
+                          & ei.attackedBy[Us][(b1 & b) ? ROOK : BISHOP]
+                          & ei.attackedBy2[Us]
+                          & ~ei.attackedBy[Them][ALL_PIECES]);
+            kingDanger += QueenCheck[!badCheck];
+        }
 
         // For minors and rooks, also consider the square safe if attacked twice,
         // and only defended by our queen.
