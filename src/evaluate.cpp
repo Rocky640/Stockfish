@@ -223,10 +223,14 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
-    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
-
-    // Find our pawns on the first two ranks, and those which are blocked
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    const Bitboard TRank2 = (Us == WHITE ? Rank2BB: Rank7BB);
+    const Bitboard TRank3 = (Us == WHITE ? Rank3BB: Rank6BB);
+    
+    // Find our pawns on rank 3, and those which are blocked
+    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | TRank3);
+    
+    // Consider also pawns and pieces on second rank
+    b |= pos.pieces(Us) & TRank2;
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
