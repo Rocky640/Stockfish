@@ -463,7 +463,7 @@ namespace {
         {
             // Find if a rook can safely interpose
             badCheck =   !more_than_one(b)
-                      && (between_bb(ksq, lsb(b)) & ei.attackedBy[Us][ROOK] & ei.attackedBy2[Us]);
+                      && (between_bb(ksq, lsb(b)) & ei.attackedBy[Us][ROOK] & ei.attackedBy2[Us] & ~ei.attackedBy[Them][ALL_PIECES]);
             kingDanger += RookCheck[!badCheck];
         }
 
@@ -475,7 +475,7 @@ namespace {
         { 
             // Find if a bishop can safely interpose
             badCheck =   !more_than_one(b)
-                      && (between_bb(ksq, lsb(b)) & ei.attackedBy[Us][BISHOP] & ei.attackedBy2[Us]);
+                      && (between_bb(ksq, lsb(b)) & ei.attackedBy[Us][BISHOP] & ei.attackedBy2[Us] & ~ei.attackedBy[Them][ALL_PIECES]);
             kingDanger += BishopCheck[!badCheck];
         }
 
