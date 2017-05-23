@@ -223,21 +223,10 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
-    const Bitboard LowRanks = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB 
-                                           : Rank8BB | Rank7BB | Rank6BB);
-
-    // Consider squares occupied by pieces or not attacked by our pawns
-    Bitboard b = pos.pieces() | ~ei.attackedBy[Us][PAWN];
-    
-    // Find our pawns on the first two ranks, and those which are blocked or not phalanx
-    b = pos.pieces(Us, PAWN) & (shift<Down>(b & ~LowRanks) | LowRanks);
-
-    // Squares occupied by those pawns, by our king, or controlled by enemy pawns
-    // are excluded from the mobility area.
-    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
+    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     // Initialise the attack bitboards with the king and pawn information
-    b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
+    Bitboard b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     ei.attackedBy[Us][PAWN] = ei.pe->pawn_attacks(Us);
 
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
@@ -255,6 +244,18 @@ namespace {
     }
     else
         ei.kingRing[Us] = ei.kingAttackersCount[Them] = 0;
+    
+    // Init mobilityArea
+    // Consider squares occupied by pieces or not attacked by our pawns, and find the
+    // squares one rank below
+    b = shift<Down>(pos.pieces() | ~ei.attackedBy[Us][PAWN]);
+    
+    // Find our pawns on the first two ranks, and those which are blocked or not phalanx
+    b = pos.pieces(Us, PAWN) & (b | LowRanks);
+
+    // Squares occupied by those pawns, by our king, or controlled by enemy pawns
+    // are excluded from the mobility area.
+    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
   }
 
 
