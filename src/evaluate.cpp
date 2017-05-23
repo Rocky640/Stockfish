@@ -223,13 +223,14 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
-    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+    const Bitboard LowRanks = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB 
+                                           : Rank8BB | Rank7BB | Rank6BB);
 
     // Consider squares occupied by pieces or not attacked by our pawns
     Bitboard b = pos.pieces() | ~ei.attackedBy[Us][PAWN];
     
     // Find our pawns on the first two ranks, and those which are blocked or not phalanx
-    b = pos.pieces(Us, PAWN) & (shift<Down>(b) | LowRanks);
+    b = pos.pieces(Us, PAWN) & (shift<Down>(b & ~LowRanks) | LowRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
