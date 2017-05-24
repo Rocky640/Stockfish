@@ -180,7 +180,6 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
-  const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
   const Score OtherCheck          = S( 10, 10);
@@ -188,7 +187,8 @@ namespace {
   const Score PawnlessFlank       = S( 20, 80);
   const Score ThreatByHangingPawn = S( 71, 61);
   const Score ThreatBySafePawn    = S(182,175);
-  const Score ThreatByRank        = S( 16,  3);
+  const Score PieceRank           = S( 16,  3);
+  const Score PawnRank            = S(  1,  4);
   const Score Hanging             = S( 48, 27);
   const Score ThreatByPawnPush    = S( 38, 22);
   const Score HinderPassedPawn    = S(  7,  0);
@@ -338,10 +338,6 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Bonus for aligning with enemy pawns on the same rank/file
-            if (relative_rank(Us, s) >= RANK_5)
-                score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
-
             // Bonus when on an open or semi-open file
             if (ei.pe->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[!!ei.pe->semiopen_file(Them, file_of(s))];
@@ -558,8 +554,10 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += ThreatByMinor[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            if (type_of(pos.piece_on(s)) == PAWN)
+                score += PawnRank * (int)relative_rank(Us, s);
+            else
+                score += PieceRank * (int)relative_rank(Them, s);
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
@@ -567,8 +565,10 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            if (type_of(pos.piece_on(s)) == PAWN)
+                score += PawnRank * (int)relative_rank(Us, s);
+            else
+                score += PieceRank * (int)relative_rank(Them, s);
         }
 
         score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
