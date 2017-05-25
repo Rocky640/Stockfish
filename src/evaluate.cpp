@@ -292,7 +292,10 @@ namespace {
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & ei.mobilityArea[Us]);
+        // Compute number of squares in the mobility area, and reduce by one
+        // if we have more than one piece in the way.
+        int mob =  popcount(b & ei.mobilityArea[Us])
+                 - more_than_one(b & ei.mobilityArea[Us] & pos.pieces(Us));
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
