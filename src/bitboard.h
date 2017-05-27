@@ -103,7 +103,6 @@ inline bool more_than_one(Bitboard b) {
   return b & (b - 1);
 }
 
-
 /// rank_bb() and file_bb() return a bitboard representing all the squares on
 /// the given file or rank.
 
@@ -328,6 +327,18 @@ inline Square pop_lsb(Bitboard* b) {
   const Square s = lsb(*b);
   *b &= *b - 1;
   return s;
+}
+
+/// pop() removes the least significant bit (if any) in a bitboard
+
+inline void pop(Bitboard* b) {
+  //if (b)
+      *b &= *b - 1;
+}
+
+inline bool more_than_two(Bitboard b) {
+  pop(&b);
+  return b & (b - 1);
 }
 
 

@@ -293,10 +293,10 @@ namespace {
         }
 
         // Compute number of squares in the mobility area, and for minor pieces,
-        // reduce by one if it defends more than one piece in this area.
+        // reduce by one if it defends more than 2 friendly pieces in this area.
         int mob =  popcount(b & ei.mobilityArea[Us]);
         if (Pt == BISHOP || Pt == KNIGHT)
-            mob -= more_than_one(b & ei.mobilityArea[Us] & pos.pieces(Us));
+            mob -= more_than_two(b & ei.mobilityArea[Us] & pos.pieces(Us));
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
