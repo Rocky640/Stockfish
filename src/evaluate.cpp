@@ -517,8 +517,12 @@ namespace {
     const Bitboard TRank2BB = (Us == WHITE ? Rank2BB    : Rank7BB);
     const Bitboard TRank7BB = (Us == WHITE ? Rank7BB    : Rank2BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard targets, b, weak, defended, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
+
+    targets =  pos.pieces(Them) & ei.attackedBy[Us][ALL_PIECES];
+    if (!targets)
+        return score;
 
     // Non-pawn enemies attacked by a pawn
     weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & ei.attackedBy[Us][PAWN];
@@ -546,37 +550,32 @@ namespace {
               & stronglyProtected;
 
     // Enemies not strongly protected and under our attack
-    weak =   pos.pieces(Them)
-          & ~stronglyProtected
-          &  ei.attackedBy[Us][ALL_PIECES];
+    weak = targets & ~stronglyProtected;
 
     // Add a bonus according to the kind of attacking pieces
-    if (defended | weak)
+    b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
+    while (b)
     {
-        b = (defended | weak) & (ei.attackedBy[Us][KNIGHT] | ei.attackedBy[Us][BISHOP]);
-        while (b)
-        {
-            Square s = pop_lsb(&b);
-            score += ThreatByMinor[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
-        }
-
-        b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
-        while (b)
-        {
-            Square s = pop_lsb(&b);
-            score += ThreatByRook[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
-        }
-
-        score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
-
-        b = weak & ei.attackedBy[Us][KING];
-        if (b)
-            score += ThreatByKing[more_than_one(b)];
+        Square s = pop_lsb(&b);
+        score += ThreatByMinor[type_of(pos.piece_on(s))];
+        if (type_of(pos.piece_on(s)) != PAWN)
+            score += ThreatByRank * (int)relative_rank(Them, s);
     }
+
+    b = (pos.pieces(Them, QUEEN) | weak) & ei.attackedBy[Us][ROOK];
+    while (b)
+    {
+        Square s = pop_lsb(&b);
+        score += ThreatByRook[type_of(pos.piece_on(s))];
+        if (type_of(pos.piece_on(s)) != PAWN)
+            score += ThreatByRank * (int)relative_rank(Them, s);
+    }
+
+    score += Hanging * popcount(weak & ~ei.attackedBy[Them][ALL_PIECES]);
+
+    b = weak & ei.attackedBy[Us][KING];
+    if (b)
+        score += ThreatByKing[more_than_one(b)];
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
