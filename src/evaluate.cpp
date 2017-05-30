@@ -654,6 +654,8 @@ namespace {
                 if (!(pos.pieces(Them) & bb))
                     unsafeSquares &= ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
 
+                unsafeSquares &= ~ei.attackedBy[Us][PAWN];
+
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
                 int k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
