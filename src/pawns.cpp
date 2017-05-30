@@ -97,6 +97,8 @@ namespace {
     const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Bitboard Advanced = (Us == WHITE ? RANK_5 | RANK_6 | RANK_7
+                                           : RANK_4 | RANK_3 | RANK_2);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush, connected;
@@ -192,7 +194,7 @@ namespace {
             score += Lever[relative_rank(Us, s)];
     }
 
-    return score;
+    return score * (Advanced & e->passedPawns[Us] ? 7 : 9) / 8;
   }
 
 } // namespace
