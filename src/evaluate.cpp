@@ -605,12 +605,21 @@ namespace {
   template<Color Us, bool DoTrace>
   Score evaluate_passer_pawns(const Position& pos, const EvalInfo& ei) {
 
-    const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Color  Them = (Us == WHITE ? BLACK : WHITE);
+    const Square  Up  = (Us == WHITE ? NORTH : SOUTH);
 
-    Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
+    Bitboard b, bb, controlled, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
     b = ei.pe->passed_pawns(Us);
+
+    if (b)
+    {
+        controlled  =  (ei.attackedBy2[Them] & ~ei.attackedBy2[Us])
+                     | (ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES])
+                     | pos.pieces(Them);
+        controlled &=  ~ei.attackedBy[Us][PAWN];
+    }
 
     while (b)
     {
@@ -618,7 +627,7 @@ namespace {
 
         assert(!(pos.pieces(Them, PAWN) & forward_bb(Us, s + pawn_push(Us))));
 
-        bb = forward_bb(Us, s) & (ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Them));
+        bb =  forward_bb(Us, s - Up) & ~controlled;
         score -= HinderPassedPawn * popcount(bb);
 
         int r = relative_rank(Us, s) - RANK_2;
@@ -628,7 +637,7 @@ namespace {
 
         if (rr)
         {
-            Square blockSq = s + pawn_push(Us);
+            Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
             ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
