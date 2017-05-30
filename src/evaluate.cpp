@@ -608,18 +608,18 @@ namespace {
     const Color  Them = (Us == WHITE ? BLACK : WHITE);
     const Square  Up  = (Us == WHITE ? NORTH : SOUTH);
 
-    Bitboard b, bb, controlled, squaresToQueen, defendedSquares, unsafeSquares;
+    Bitboard b, bb, hindered, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
     b = ei.pe->passed_pawns(Us);
 
     if (b)
     {
-        controlled  =  (ei.attackedBy2[Them] & ~ei.attackedBy2[Us])
+        hindered  =  (ei.attackedBy2[Them] & ~ei.attackedBy2[Us])
                      | (ei.attackedBy[Them][ALL_PIECES] & ~ei.attackedBy[Us][ALL_PIECES])
                      | pos.pieces(Them);
-        controlled &=  ~ei.attackedBy[Us][PAWN];
-    }
+        hindered &=  ~ei.attackedBy[Us][PAWN];
+    
 
     while (b)
     {
@@ -627,7 +627,7 @@ namespace {
 
         assert(!(pos.pieces(Them, PAWN) & forward_bb(Us, s + pawn_push(Us))));
 
-        bb =  forward_bb(Us, s - Up) & ~controlled;
+        bb =  forward_bb(Us, s - Up) & hindered;
         score -= HinderPassedPawn * popcount(bb);
 
         int r = relative_rank(Us, s) - RANK_2;
@@ -687,6 +687,7 @@ namespace {
             mbonus /= 2, ebonus /= 2;
 
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+    }
     }
 
     if (DoTrace)
