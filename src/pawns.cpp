@@ -134,7 +134,7 @@ namespace {
         neighbours = ourPawns   & adjacent_files_bb(f);
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
-        connected  = supported | phalanx;
+        connected  = supported  | phalanx;
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
@@ -254,9 +254,11 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
   Bitboard ourPawns = b & pos.pieces(Us);
   Bitboard theirPawns = b & pos.pieces(Them);
   Value safety = MaxSafetyBonus;
-  File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
+  File kf = file_of(ksq);
+  File fromf = kf > FILE_A ? kf - File(1) : FILE_A;
+  File tof   = kf < FILE_H ? kf + File(1) : FILE_H;
 
-  for (File f = center - File(1); f <= center + File(1); ++f)
+  for (File f = fromf; f <= tof; ++f)
   {
       b = ourPawns & file_bb(f);
       Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
