@@ -1271,7 +1271,7 @@ moves_loop: // When in check search starts from here
       {
           assert(type_of(move) != ENPASSANT); // Due to !pos.advanced_pawn_push
 
-          futilityValue = futilityBase + PieceValue[EG][pos.piece_on(to_sq(move))];
+          futilityValue = futilityBase + PieceValue[SE][pos.piece_on(to_sq(move))];
 
           if (futilityValue <= alpha)
           {

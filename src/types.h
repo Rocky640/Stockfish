@@ -154,7 +154,7 @@ template<Color C, CastlingSide S> struct MakeCastling {
 enum Phase {
   PHASE_ENDGAME,
   PHASE_MIDGAME = 128,
-  MG = 0, EG = 1, PHASE_NB = 2
+  MG = 0, EG = 1, SE = 2, PHASE_NB = 2
 };
 
 enum ScaleFactor {
@@ -205,7 +205,7 @@ enum Piece {
   PIECE_NB = 16
 };
 
-extern Value PieceValue[PHASE_NB][PIECE_NB];
+extern Value PieceValue[PHASE_NB + 1][PIECE_NB];
 
 enum Depth : int {
 

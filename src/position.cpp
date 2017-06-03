@@ -1022,11 +1022,11 @@ bool Position::see_ge(Move m, Value v) const {
   if (type_of(m) == ENPASSANT)
   {
       occupied = SquareBB[to - pawn_push(~stm)]; // Remove the captured pawn
-      balance = PieceValue[MG][PAWN];
+      balance = PieceValue[SE][PAWN];
   }
   else
   {
-      balance = PieceValue[MG][piece_on(to)];
+      balance = PieceValue[SE][piece_on(to)];
       occupied = 0;
   }
 
@@ -1036,7 +1036,7 @@ bool Position::see_ge(Move m, Value v) const {
   if (nextVictim == KING)
       return true;
 
-  balance -= PieceValue[MG][nextVictim];
+  balance -= PieceValue[SE][nextVictim];
 
   if (balance >= v)
       return true;
@@ -1066,8 +1066,8 @@ bool Position::see_ge(Move m, Value v) const {
       if (nextVictim == KING)
           return relativeStm == bool(attackers & pieces(~stm));
 
-      balance += relativeStm ?  PieceValue[MG][nextVictim]
-                             : -PieceValue[MG][nextVictim];
+      balance += relativeStm ?  PieceValue[SE][nextVictim]
+                             : -PieceValue[SE][nextVictim];
 
       relativeStm = !relativeStm;
 
