@@ -180,7 +180,7 @@ namespace {
             score -= Isolated[opposed];
 
         else if (backward)
-            score -= Backward[opposed] - BackwardNeighbours * popcount(neighbours);
+            score -= Backward[opposed] + BackwardNeighbours * popcount(neighbours);
 
         else if (!supported)
             score -= Unsupported;
