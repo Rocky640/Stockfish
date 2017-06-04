@@ -35,7 +35,10 @@ namespace {
   const Score Isolated[] = { S(45, 40), S(30, 27) };
 
   // Backward pawn penalty by opposed flag
-  const Score Backward[] = { S(56, 33), S(41, 19) };
+  const Score Backward[] = { S(38, 18), S(23, 4) };
+  
+  // Adjustment according to number of neighbours
+  const Score BackwardNeighbours = S(12, 10);
 
   // Unsupported pawn penalty for pawns which are neither isolated or backward
   const Score Unsupported = S(17, 8);
@@ -177,7 +180,7 @@ namespace {
             score -= Isolated[opposed];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= Backward[opposed] - BackwardNeighbours * popcount(neighbours);
 
         else if (!supported)
             score -= Unsupported;
