@@ -184,6 +184,7 @@ namespace {
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
   const Score OtherCheck          = S( 10, 10);
+  const Score KingRim             = S(  0,100);
   const Score CloseEnemies        = S(  7,  0);
   const Score PawnlessFlank       = S( 20, 80);
   const Score ThreatByHangingPawn = S( 71, 61);
@@ -384,6 +385,8 @@ namespace {
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard SideFiles   = FileABB | FileHBB;
+  const Bitboard BackRanks   = Rank1BB | Rank8BB;
 
   const Bitboard KingFlank[FILE_NB] = {
     QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
@@ -496,6 +499,16 @@ namespace {
     // Penalty when our king is on a pawnless flank
     if (!(pos.pieces(PAWN) & KingFlank[kf]))
         score -= PawnlessFlank;
+    
+    // Analyse back rank weakness for a king on the rim and opponent has some majors
+    if (pos.pieces(Them, QUEEN, ROOK))
+    {
+        b = ei.attackedBy[Us][KING] & ~(ei.attackedBy[Them][ALL_PIECES] | pos.pieces(Us, PAWN));
+        // Penalize if king has no move apart from its rank or file
+        if (   ((SideFiles & ksq) && !(b & ~SideFiles))
+            || ((BackRanks & ksq) && !(b & ~BackRanks)))
+            score -= KingRim;
+    }
 
     if (DoTrace)
         Trace::add(KING, Us, score);
