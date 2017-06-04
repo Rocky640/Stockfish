@@ -300,7 +300,7 @@ namespace {
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b );
+        int mob = popcount(b & ei.mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 1][mob];
 
         if (Pt == BISHOP)
