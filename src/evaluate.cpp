@@ -115,9 +115,12 @@ namespace {
   #define V(v) Value(v)
   #define S(mg, eg) make_score(mg, eg)
 
-  // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
+  // MobilityBonus[PieceType-1][attacked] contains bonuses for middle and end game,
   // indexed by piece type and number of attacked squares in the mobility area.
-  const Score MobilityBonus[][32] = {
+  Score MobilityBonus[][32] = {
+    { S(110,110), S(110,110), S(110,110), S(110,110), S(110,110), S(110,110), // Bishop pair avg
+      S(110,110), S(110,110), S(110,110), S(110,110), S(110,110), S(110,110),
+      S(110,110), S(110,110) },
     { S(-75,-76), S(-57,-54), S( -9,-28), S( -2,-10), S(  6,  5), S( 14, 12), // Knights
       S( 22, 26), S( 29, 29), S( 36, 29) },
     { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
@@ -132,6 +135,8 @@ namespace {
       S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
+  
+  TUNE(MobilityBonus[0]);
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they can reach an outpost square, bigger if that square is
@@ -269,11 +274,14 @@ namespace {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
-
+    int pcount = 0;
     ei.attackedBy[Us][Pt] = 0;
+
 
     while ((s = *pl++) != SQ_NONE)
     {
+        pcount += 1;
+
         // Find attacked squares, including x-ray attacks for bishops and rooks
         b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
@@ -292,9 +300,16 @@ namespace {
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & ei.mobilityArea[Us]);
+        int mob = popcount(b );
+        mobility[Us] += MobilityBonus[Pt - 1][mob];
 
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        if (Pt == BISHOP)
+            if (pcount == 2)
+            {
+                // Bishop Pair bonus, based on average mobility of both bishops.
+                mob = popcount(ei.attackedBy[Us][BISHOP] & ei.mobilityArea[Us]) / 2;
+                mobility[Us] += MobilityBonus[0][mob];
+            }
 
         // Bonus for this piece as a king protector
         score += KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
