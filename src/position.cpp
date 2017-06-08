@@ -1018,6 +1018,8 @@ bool Position::see_ge(Move m, Value v) const {
   Color stm = ~color_of(piece_on(from)); // First consider opponent's move
   Value balance; // Values of the pieces taken by us minus opponent's ones
   Bitboard occupied, stmAttackers;
+  bool bp[2] = {count<BISHOP>(WHITE) == 2, count<BISHOP>(BLACK) == 2};
+
 
   if (type_of(m) == ENPASSANT)
   {
@@ -1027,6 +1029,8 @@ bool Position::see_ge(Move m, Value v) const {
   else
   {
       balance = PieceValue[MG][piece_on(to)];
+      if (type_of(piece_on(to)) == BISHOP && bp[stm])
+          balance += 104, bp[stm] = false;
       occupied = 0;
   }
 
@@ -1037,6 +1041,8 @@ bool Position::see_ge(Move m, Value v) const {
       return true;
 
   balance -= PieceValue[MG][nextVictim];
+  if (nextVictim == BISHOP && bp[~stm]) 
+      balance -= 104, bp[~stm] = false;
 
   if (balance >= v)
       return true;
@@ -1066,8 +1072,12 @@ bool Position::see_ge(Move m, Value v) const {
       if (nextVictim == KING)
           return relativeStm == bool(attackers & pieces(~stm));
 
-      balance += relativeStm ?  PieceValue[MG][nextVictim]
-                             : -PieceValue[MG][nextVictim];
+      int extra = 0;
+      if (nextVictim == BISHOP && bp[stm])
+          extra = 104, bp[stm] = false;
+
+      balance += relativeStm ?  PieceValue[MG][nextVictim] + extra
+                             : -PieceValue[MG][nextVictim] - extra;
 
       relativeStm = !relativeStm;
 
