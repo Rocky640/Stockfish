@@ -110,6 +110,9 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
+    
+    // Squares which would be attacked if piece would be unpinned
+    Bitboard unpinnedAttacks[COLOR_NB];
   };
 
   #define V(v) Value(v)
@@ -189,6 +192,7 @@ namespace {
   const Score ThreatByHangingPawn = S( 71, 61);
   const Score ThreatBySafePawn    = S(182,175);
   const Score ThreatByRank        = S( 16,  3);
+  const Score Unpin               = S( 20, 20);
   const Score Hanging             = S( 48, 27);
   const Score ThreatByPawnPush    = S( 38, 22);
   const Score HinderPassedPawn    = S(  7,  0);
@@ -220,13 +224,19 @@ namespace {
   template<Color Us>
   void eval_init(const Position& pos, EvalInfo& ei) {
 
-    const Color  Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Up   = (Us == WHITE ? NORTH : SOUTH);
-    const Square Down = (Us == WHITE ? SOUTH : NORTH);
+    const Color  Them  = (Us == WHITE ? BLACK : WHITE);
+    const Square Up    = (Us == WHITE ? NORTH : SOUTH);
+    const Square Down  = (Us == WHITE ? SOUTH : NORTH);
+    const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
+    // Initialise unpinnedAttacks
+    Bitboard b = (pos.pinned_pieces(Us) & pos.pieces(Us, PAWN));
+    ei.unpinnedAttacks[Us] = shift<Left>(b) | shift<Right>(b);
+
     // Find our pawns on the first two ranks, and those which are blocked
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
@@ -238,6 +248,8 @@ namespace {
 
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
     ei.attackedBy[Us][ALL_PIECES] = b | ei.attackedBy[Us][PAWN];
+    
+    
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -280,7 +292,10 @@ namespace {
                          : pos.attacks_from<Pt>(s);
 
         if (pos.pinned_pieces(Us) & s)
+        {
+            ei.unpinnedAttacks[Us] |= b ^ LineBB[pos.square<KING>(Us)][s];
             b &= LineBB[pos.square<KING>(Us)][s];
+        }
 
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
@@ -577,6 +592,9 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+    
+    // Bonus for taking advantage of squares which would normally be defended
+    score += Unpin * popcount(ei.unpinnedAttacks[Them] & pos.pieces(Us));
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
