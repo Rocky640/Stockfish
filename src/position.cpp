@@ -1030,7 +1030,7 @@ bool Position::see_ge(Move m, Value v) const {
   {
       balance = PieceValue[MG][piece_on(to)];
       if (type_of(piece_on(to)) == BISHOP && bp[stm])
-          balance += 104, bp[stm] = false;
+          balance += 70, bp[stm] = false;
       occupied = 0;
   }
 
@@ -1042,7 +1042,7 @@ bool Position::see_ge(Move m, Value v) const {
 
   balance -= PieceValue[MG][nextVictim];
   if (nextVictim == BISHOP && bp[~stm]) 
-      balance -= 104, bp[~stm] = false;
+      balance -= 70, bp[~stm] = false;
 
   if (balance >= v)
       return true;
@@ -1074,7 +1074,7 @@ bool Position::see_ge(Move m, Value v) const {
 
       int extra = 0;
       if (nextVictim == BISHOP && bp[stm])
-          extra = 104, bp[stm] = false;
+          extra = 70, bp[stm] = false;
 
       balance += relativeStm ?  PieceValue[MG][nextVictim] + extra
                              : -PieceValue[MG][nextVictim] - extra;
