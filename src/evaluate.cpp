@@ -220,21 +220,32 @@ namespace {
   template<Color Us>
   void eval_init(const Position& pos, EvalInfo& ei) {
 
-    const Color  Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Up   = (Us == WHITE ? NORTH : SOUTH);
-    const Square Down = (Us == WHITE ? SOUTH : NORTH);
+    const Color  Them  = (Us == WHITE ? BLACK : WHITE);
+    const Square Up    = (Us == WHITE ? NORTH : SOUTH);
+    const Square Down  = (Us == WHITE ? SOUTH : NORTH);
+    const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+
+    const Square ksq = pos.square<KING>(Us);
 
     // Find our pawns on the first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
-    ei.mobilityArea[Us] = ~(b | pos.square<KING>(Us) | ei.pe->pawn_attacks(Them));
+    ei.mobilityArea[Us] = ~(b | ksq | ei.pe->pawn_attacks(Them));
 
-    // Initialise the attack bitboards with the king and pawn information
+    // Find pinned pawn attacks
+    b = (pos.pinned_pieces(Us) & pos.pieces(Us, PAWN));
+    b = (shift<Left>(b) | shift<Right>(b)) & ~PseudoAttacks[BISHOP][ksq];
+
+    // Find squares legally attacked by our pawns. This is exact except in some rare
+    // cases where more than one pawn is pinned.
+    ei.attackedBy[Us][PAWN] = ei.pe->dble_attacks(Us) | (ei.pe->pawn_attacks(Us) ^ b);
+
+    // Finish the pawn and king attack bitboard initialization
     b = ei.attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
-    ei.attackedBy[Us][PAWN] = ei.pe->pawn_attacks(Us);
 
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
     ei.attackedBy[Us][ALL_PIECES] = b | ei.attackedBy[Us][PAWN];
@@ -243,7 +254,7 @@ namespace {
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
     {
         ei.kingRing[Us] = b;
-        if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
+        if (relative_rank(Us, ksq) == RANK_1)
             ei.kingRing[Us] |= shift<Up>(b);
 
         ei.kingAttackersCount[Them] = popcount(b & ei.pe->pawn_attacks(Them));
@@ -281,6 +292,7 @@ namespace {
 
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
+
 
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
@@ -446,9 +458,9 @@ namespace {
                & ~(ei.attackedBy2[Us] | pos.pieces(Them))
                & ei.attackedBy[Us][QUEEN];
 
-        // Some other potential checks are also analysed, even from squares
-        // currently occupied by the opponent own pieces, as long as the square
-        // is not attacked by our pawns, and is not occupied by a blocked pawn.
+        // Some other potential ennemy checks are also analysed, even from squares
+        // currently occupied by his own pieces, as long as the square is not defended
+        // by our pawns, and is not occupied by a blocked pawn.
         other = ~(   ei.attackedBy[Us][PAWN]
                   | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
 
@@ -579,7 +591,7 @@ namespace {
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
-    b = pos.pieces(Us, PAWN) & ~TRank7BB;
+    b = pos.pieces(Us, PAWN) & ~TRank7BB & ~pos.pinned_pieces(Us);
     b = shift<Up>(b | (shift<Up>(b & TRank2BB) & ~pos.pieces()));
 
     b &=  ~pos.pieces()
