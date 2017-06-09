@@ -594,7 +594,7 @@ namespace {
     }
     
     // Bonus for taking advantage of squares which would normally be defended
-    score += Unpin * popcount(ei.unpinnedAttacks[Them] & pos.pieces(Us));
+    score += Unpin * popcount(ei.unpinnedAttacks[Them] & pos.pieces(Us) & ~ei.attackedBy2[Them]);
 
     // Bonus if some pawns can safely push and attack an enemy piece
     b = pos.pieces(Us, PAWN) & ~TRank7BB;
