@@ -436,7 +436,7 @@ namespace {
         kingDanger =        ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]
                     + 102 * ei.kingAdjacentZoneAttacksCount[Them]
                     + 201 * popcount(undefended)
-                    + 143 * (popcount(b) + !!pos.pinned_pieces(Us))
+                    + 143 * popcount(b)
                     - 848 * !pos.count<QUEEN>(Them)
                     -   9 * mg_value(score) / 8
                     +  40;
@@ -458,8 +458,8 @@ namespace {
                & ~(ei.attackedBy2[Us] | pos.pieces(Them))
                & ei.attackedBy[Us][QUEEN];
 
-        // Some other potential ennemy checks are also analysed, even from squares
-        // currently occupied by his own pieces, as long as the square is not defended
+        // Some other potential enemy checks are also analysed, even from squares
+        // currently occupied by their own pieces, as long as the square is not defended
         // by our pawns, and is not occupied by a blocked pawn.
         other = ~(   ei.attackedBy[Us][PAWN]
                   | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
