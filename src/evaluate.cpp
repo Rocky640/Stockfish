@@ -436,7 +436,7 @@ namespace {
         kingDanger =        ei.kingAttackersCount[Them] * ei.kingAttackersWeight[Them]
                     + 102 * ei.kingAdjacentZoneAttacksCount[Them]
                     + 201 * popcount(undefended)
-                    + 143 * popcount(b)
+                    + 143 * (popcount(b) + !!(pos.pinned_pieces(Us) & ~pos.pieces(PAWN)))
                     - 848 * !pos.count<QUEEN>(Them)
                     -   9 * mg_value(score) / 8
                     +  40;
