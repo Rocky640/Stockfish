@@ -287,7 +287,9 @@ namespace {
             // Remove squares which are in the line of attack of opponent slider
             // For example White Qe4 and black Re1, Ne8
             // Ne8 is not "attacked" by the white queen, and therefore should not have the "hanging" bonus
-            bb = b & pos.pieces(Them, BISHOP, ROOK);
+            bb = b & (  (pos.pieces(Them, BISHOP) & PseudoAttacks[BISHOP][s])
+                      | (pos.pieces(Them, ROOK  ) & PseudoAttacks[ROOK  ][s]));
+
             while (bb)
                 b &= ~LineBB[pop_lsb(&bb)][s];
         }
