@@ -282,6 +282,8 @@ namespace {
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+        
         if (Pt == QUEEN)
         {
             // Remove squares which are in the line of attack of opponent slider
@@ -291,10 +293,12 @@ namespace {
                       | (pos.pieces(Them, ROOK  ) & PseudoAttacks[ROOK  ][s]));
 
             while (bb)
-                b &= ~LineBB[pop_lsb(&bb)][s];
+            {
+                Square s2 = pop_lsb(&bb);
+                b &= ~(LineBB[s2][s] ^ s2);
+            }
         }
-
-        ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
+        
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
         if (b & ei.kingRing[Them])
