@@ -282,6 +282,16 @@ namespace {
         if (pos.pinned_pieces(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
+        if (Pt == QUEEN)
+        {
+            // Remove squares which are in the line of attack of opponent slider
+            // For example White Qe4 and black Re1, Ne8
+            // Ne8 is not "attacked" by the white queen, and therefore should not have the "hanging" bonus
+            bb = b & pos.pieces(Them, BISHOP, ROOK);
+            while (bb)
+                b &= ~LineBB[pop_lsb(&bb)][s];
+        }
+
         ei.attackedBy2[Us] |= ei.attackedBy[Us][ALL_PIECES] & b;
         ei.attackedBy[Us][ALL_PIECES] |= ei.attackedBy[Us][Pt] |= b;
 
