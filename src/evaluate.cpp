@@ -260,7 +260,8 @@ namespace {
   template<bool DoTrace, Color Us = WHITE, PieceType Pt = KNIGHT>
   Score evaluate_pieces(const Position& pos, EvalInfo& ei, Score* mobility) {
 
-    const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Color Them       = (Us == WHITE ? BLACK : WHITE);
+    const Square Down      = (Us == WHITE ? SOUTH : NORTH);
     const PieceType NextPt = (Us == WHITE ? Pt : PieceType(Pt + 1));
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
@@ -293,7 +294,7 @@ namespace {
         }
         
         if (Pt == ROOK)
-            b &= ~pos.pieces(Us, PAWN);
+            b &= ~(shift<Down>(ei.attackedBy[Them][PAWN]) & pos.pieces(Us, PAWN));
 
         int mob = popcount(b & ei.mobilityArea[Us]);
 
