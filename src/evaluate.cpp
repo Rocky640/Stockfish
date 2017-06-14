@@ -291,6 +291,9 @@ namespace {
             ei.kingAttackersWeight[Us] += KingAttackWeights[Pt];
             ei.kingAdjacentZoneAttacksCount[Us] += popcount(b & ei.attackedBy[Them][KING]);
         }
+        
+        if (Pt == ROOK)
+            b &= ~pos.pieces(Us, PAWN);
 
         int mob = popcount(b & ei.mobilityArea[Us]);
 
