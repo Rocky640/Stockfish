@@ -266,12 +266,12 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
       b = ourPawns & file_bb(f);
       Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
 
-      if (b && !more_than_one(b) && (pawnAttacks[Them] & b))
+      if ((pawnAttacks[Them] & b) && !more_than_one(b))
           safety -= (ShelterWeakness[d][rkUs] + ShelterWeakness[d][RANK_1]) / 2;
       else
           safety -=  ShelterWeakness[d][rkUs];
       
-      safety += StormDanger
+      safety -= StormDanger
                  [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
                   rkUs   == RANK_1                                          ? Unopposed :
                   rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked]
