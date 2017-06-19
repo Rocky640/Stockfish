@@ -190,6 +190,7 @@ namespace {
   const Score ThreatBySafePawn    = S(182,175);
   const Score ThreatByRank        = S( 16,  3);
   const Score Hanging             = S( 48, 27);
+  const Score BadRook             = S(  0, 50);
   const Score ThreatByPawnPush    = S( 38, 22);
   const Score HinderPassedPawn    = S(  7,  0);
 
@@ -576,6 +577,14 @@ namespace {
         b = weak & ei.attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+    }
+    
+    // Bonus if the opponent rook is tied to the defense of 2 orthogonal pieces
+    if (pos.count<ROOK>(Them) == 1)
+    {
+        b = ei.attackedBy[Them][ROOK] & weak & ~ei.attackedBy2[Them];
+        if ((rank_bb(pos.square<ROOK>(Them)) & b) && (file_bb(pos.square<ROOK>(Them)) & b))
+            score += BadRook;
     }
 
     // Bonus if some pawns can safely push and attack an enemy piece
