@@ -206,9 +206,9 @@ namespace {
 
   // Penalties for enemy's safe checks
   const int QueenCheck  = 780;
-  const int RookCheck   = 880;
-  const int BishopCheck = 435;
   const int KnightCheck = 790;
+  const int BishopCheck = 435;
+  const int RookCheck   = 880;
 
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
@@ -238,6 +238,7 @@ namespace {
 
     ei.attackedBy2[Us]            = b & ei.attackedBy[Us][PAWN];
     ei.attackedBy[Us][ALL_PIECES] = b | ei.attackedBy[Us][PAWN];
+    ei.attackedBy[Us][7] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -363,6 +364,7 @@ namespace {
             Bitboard pinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, pinners))
                 score -= WeakQueen;
+            ei.attackedBy[Us][7] |= b & PseudoAttacks[ROOK][s];
         }
     }
 
@@ -452,20 +454,6 @@ namespace {
         other = ~(   ei.attackedBy[Us][PAWN]
                   | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
 
-        // Enemy rooks safe and other checks
-        if (b1 & ei.attackedBy[Them][ROOK] & safe)
-            kingDanger += RookCheck;
-
-        else if (b1 & ei.attackedBy[Them][ROOK] & other)
-            score -= OtherCheck;
-
-        // Enemy bishops safe and other checks
-        if (b2 & ei.attackedBy[Them][BISHOP] & safe)
-            kingDanger += BishopCheck;
-
-        else if (b2 & ei.attackedBy[Them][BISHOP] & other)
-            score -= OtherCheck;
-
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & ei.attackedBy[Them][KNIGHT];
         if (b & safe)
@@ -473,6 +461,27 @@ namespace {
 
         else if (b & other)
             score -= OtherCheck;
+
+        // For bishops and rooks, also consider possible unsafe check followed up
+        // by a safe check by queen. But to avoid x-ray attacks through queen, 
+        // will only consider queen moves coming from a different angle.
+        b =   ei.attackedBy2[Them] & ei.attackedBy[Them][QUEEN]
+            & ~(ei.attackedBy2[Us] | pos.pieces(Them) | (ei.attackedBy[Us][PAWN] & ~pos.pieces(Us)));
+
+        // Enemy bishops safe and other checks
+        if (b2 & ei.attackedBy[Them][BISHOP] & (safe | (b & ei.attackedBy[Them][7])))
+            kingDanger += BishopCheck;
+
+        else if (b2 & ei.attackedBy[Them][BISHOP] & other)
+            score -= OtherCheck;
+
+        // Enemy rooks safe and other checks
+        if (b1 & ei.attackedBy[Them][ROOK] & (safe | (b & ~ei.attackedBy[Them][7])))
+            kingDanger += RookCheck;
+
+        else if (b1 & ei.attackedBy[Them][ROOK] & other)
+            score -= OtherCheck;
+
 
         // Transform the kingDanger units into a Score, and substract it from the evaluation
         if (kingDanger > 0)
