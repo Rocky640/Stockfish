@@ -598,6 +598,19 @@ namespace {
     return score;
   }
 
+  // kingDistance tries to better estimate the distance between a king and a square s
+  int kingDistance(const Color kingcolor, const Square s, const Position& pos, const EvalInfo& ei) {
+    int d = distance(pos.square<KING>(kingcolor), s);
+    if (d <= 1) return d;
+
+    // Squares where King can actually come closer to s
+    Bitboard target =  DistanceRingBB[s][d - 2]
+                     & ei.attackedBy[kingcolor][KING]
+                     & ~(ei.attackedBy[~kingcolor][ALL_PIECES] | pos.pieces(kingcolor));
+
+    // If no such square, increase the distance evaluation by 2
+    return d + 2 * !target;
+  }
 
   // evaluate_passer_pawns() evaluates the passed pawns and candidate passed
   // pawns of the given color.
@@ -631,8 +644,8 @@ namespace {
             Square blockSq = s + pawn_push(Us);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(  Us), blockSq) * 2 * rr;
+            ebonus +=  kingDistance(Them, blockSq, pos, ei) * 5 * rr
+                     - distance(pos.square<KING>(Us), blockSq) * 2 * rr;
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
