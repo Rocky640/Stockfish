@@ -432,6 +432,7 @@ namespace {
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
         safe &= ~ei.attackedBy[Us][ALL_PIECES] | (undefended & ei.attackedBy2[Them]);
+        safe |= pos.pieces(Us, QUEEN);
 
         b1 = pos.attacks_from<  ROOK>(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
@@ -445,6 +446,7 @@ namespace {
         safe |=  ei.attackedBy2[Them]
                & ~(ei.attackedBy2[Us] | pos.pieces(Them))
                & ei.attackedBy[Us][QUEEN];
+        safe |= pos.pieces(Us, ROOK);
 
         // Some other potential checks are also analysed, even from squares
         // currently occupied by the opponent own pieces, as long as the square
@@ -458,6 +460,8 @@ namespace {
 
         else if (b1 & ei.attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
+        
+        safe |= pos.pieces(Us, KNIGHT, BISHOP);
 
         // Enemy bishops safe and other checks
         if (b2 & ei.attackedBy[Them][BISHOP] & safe)
