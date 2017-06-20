@@ -608,8 +608,8 @@ namespace {
                      & ei.attackedBy[kingcolor][KING]
                      & ~(ei.attackedBy[~kingcolor][ALL_PIECES] | pos.pieces(kingcolor));
 
-    // If no such square, increase the distance evaluation by 2
-    return d + 2 * !target;
+    // If no such square, increase the distance evaluation by 1
+    return d + !target;
   }
 
   // evaluate_passer_pawns() evaluates the passed pawns and candidate passed
