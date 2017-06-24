@@ -204,6 +204,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
+  const Score RookBishop          = S( 10, 10);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
@@ -288,6 +289,8 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard RookRanks    = (Us == WHITE ? Rank7BB | Rank8BB
+                                               : Rank2BB | Rank1BB);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -368,7 +371,12 @@ namespace {
 
             // Bonus when on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
+            {
                 score += RookOnFile[!!pe->semiopen_file(Them, file_of(s))];
+                // Adjustment if bishops helps or hinder rook entry on the last 2 ranks
+                b = file_bb(s) & RookRanks;
+                score += RookBishop * (!!(b & attackedBy[Us][BISHOP]) - !!(b & attackedBy[Them][BISHOP]));
+            }
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
