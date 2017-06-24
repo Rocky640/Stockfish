@@ -349,7 +349,8 @@ namespace {
             // Bonus when bishop cannot be attacked by knight on next move
             if (Pt == BISHOP)
             {
-                b = PseudoAttacks[KNIGHT][s] & mobilityArea[Them] & attackedBy[Them][KNIGHT];
+                b =  ((PseudoAttacks[KNIGHT][s] & mobilityArea[Them]) | s)
+                   & attackedBy[Them][KNIGHT];
                 score += SafeBishopFromKnight * !b;
             }
 
