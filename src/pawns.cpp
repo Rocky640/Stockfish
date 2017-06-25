@@ -99,9 +99,9 @@ namespace {
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
-    Bitboard lever, leverPush, connected;
-    Square s;
-    bool opposed, backward;
+    Bitboard opposed, lever, leverPush, connected;
+    Square s, ss;
+    bool backward;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
 
@@ -123,7 +123,6 @@ namespace {
         File f = file_of(s);
 
         e->semiopenFiles[Us]   &= ~(1 << f);
-        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
 
         // Flag the pawn
         opposed    = theirPawns & forward_bb(Us, s);
@@ -174,22 +173,30 @@ namespace {
 
         // Score this pawn
         if (!neighbours)
-            score -= Isolated[opposed];
+            score -= Isolated[!!opposed];
 
         else if (backward)
-            score -= Backward[opposed];
+            score -= Backward[!!opposed];
 
         else if (!supported)
             score -= Unsupported;
 
         if (connected)
-            score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
+            score += Connected[!!opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
 
         if (doubled && !supported)
             score -= Doubled;
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+
+        b = pawn_attack_span(Us, s);
+        if (stoppers)
+        {
+            ss = backmost_sq(Us, shift<Up>(opposed) | (stoppers ^ opposed));
+            b &= in_front_bb(Them, rank_of(ss));
+        }
+        e->pawnAttacksSpan[Us] |= b;
     }
 
     return score;
