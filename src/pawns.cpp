@@ -97,6 +97,7 @@ namespace {
     const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Bitboard OuterFiles = FileABB | FileBBB | FileGBB | FileHBB;
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard opposed, lever, leverPush, connected;
@@ -194,7 +195,7 @@ namespace {
         if (stoppers)
         {
             ss = backmost_sq(Us, shift<Up>(opposed) | (stoppers ^ opposed));
-            b &= in_front_bb(Them, rank_of(ss));
+            b &= in_front_bb(Them, rank_of(ss)) | OuterFiles;
         }
         e->pawnAttacksSpan[Us] |= b;
     }
