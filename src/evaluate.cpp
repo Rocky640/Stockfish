@@ -237,6 +237,8 @@ namespace {
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
   const Value SpaceThreshold = Value(12222);
+  
+  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
 
 
   // initialize() computes king and pawn attacks, and the king ring bitboard
@@ -331,7 +333,7 @@ namespace {
                 score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * 2;
             else
             {
-                bb &= b & ~pos.pieces(Us);
+                bb &= b & ~pos.pieces(Us) & CenterFiles;
                 if (bb)
                    score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
             }
@@ -400,7 +402,6 @@ namespace {
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
-  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
 
   const Bitboard KingFlank[FILE_NB] = {
