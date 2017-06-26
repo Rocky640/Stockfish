@@ -124,6 +124,7 @@ namespace Material {
 /// have to recompute all when the same material configuration occurs again.
 
 Entry* probe(const Position& pos) {
+  static PRNG rng(0); // use a fixed seed to ensure first call to bench will be consistent
 
   Key key = pos.material_key();
   Entry* e = pos.this_thread()->materialTable[key];
@@ -223,7 +224,8 @@ Entry* probe(const Position& pos) {
   { pos.count<BISHOP>(BLACK) > 1, pos.count<PAWN>(BLACK), pos.count<KNIGHT>(BLACK),
     pos.count<BISHOP>(BLACK)    , pos.count<ROOK>(BLACK), pos.count<QUEEN >(BLACK) } };
 
-  e->value = int16_t((imbalance<WHITE>(PieceCount) - imbalance<BLACK>(PieceCount)) / 16);
+  e->value =   int16_t((imbalance<WHITE>(PieceCount) - imbalance<BLACK>(PieceCount)) / 16)
+             + (rng.rand<unsigned>() % 5) - 2;
   return e;
 }
 
