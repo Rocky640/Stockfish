@@ -423,7 +423,7 @@ namespace {
     Score score = pe->king_safety<Us>(pos, ksq);
 
     // Main king safety evaluation
-    if (kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them)))
+    if ((kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them))) || pos.pinned_pieces(Us))
     {
         // Find the attacked squares which are defended only by our king...
         kingOnlyDefended =   attackedBy[Them][ALL_PIECES]
