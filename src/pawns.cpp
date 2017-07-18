@@ -31,20 +31,24 @@ namespace {
   #define V Value
   #define S(mg, eg) make_score(mg, eg)
 
-  // Isolated pawn penalty by opposed flag
-  const Score Isolated[] = { S(45, 40), S(30, 27) };
+  // Weak pawn penalty by type and opposed flag
+  Score Weak[3][2] = {
+    { S(17,  8), S(17,  8) }, //unsupported but not isolated or backward
+    { S(45, 40), S(30, 27) }, //isolated
+    { S(56, 33), S(41, 19) }  //backward
+  };
+  
+  // Doubled pawn penalty by type and opposed flag
+  Score Doubled[3][2] = {
+    { S(18, 38), S(18, 38) }, //unsupported but not isolated or backward
+    { S(18, 38), S(18, 38) }, //isolated
+    { S(18, 38), S(18, 38) }  //backward
+  };
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[] = { S(56, 33), S(41, 19) };
-
-  // Unsupported pawn penalty for pawns which are neither isolated or backward
-  const Score Unsupported = S(17, 8);
+  TUNE(Weak, Doubled);
 
   // Connected pawn bonus by opposed, phalanx, twice supported and rank
   Score Connected[2][2][2][RANK_NB];
-
-  // Doubled pawn penalty
-  const Score Doubled = S(18, 38);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -98,10 +102,10 @@ namespace {
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard b, neighbours, stoppers, supported, phalanx;
     Bitboard lever, leverPush, connected;
     Square s;
-    bool opposed, backward;
+    bool opposed, backward, doubled;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
 
@@ -130,7 +134,7 @@ namespace {
         stoppers   = theirPawns & passed_pawn_mask(Us, s);
         lever      = theirPawns & PawnAttacks[Us][s];
         leverPush  = theirPawns & PawnAttacks[Us][s + Up];
-        doubled    = ourPawns   & (s - Up);
+        doubled    = ourPawns   & forward_file_bb(Them, s);
         neighbours = ourPawns   & adjacent_files_bb(f);
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
@@ -173,20 +177,12 @@ namespace {
         }
 
         // Score this pawn
-        if (!neighbours)
-            score -= Isolated[opposed];
-
-        else if (backward)
-            score -= Backward[opposed];
-
-        else if (!supported)
-            score -= Unsupported;
+        if (!supported)
+            score -=  Weak[!neighbours + backward * 2][opposed]
+                    + Doubled[!neighbours + backward * 2][opposed] * doubled;
 
         if (connected)
             score += Connected[opposed][!!phalanx][more_than_one(supported)][relative_rank(Us, s)];
-
-        if (doubled && !supported)
-            score -= Doubled;
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
