@@ -404,6 +404,10 @@ inline Rank relative_rank(Color c, Square s) {
   return relative_rank(c, rank_of(s));
 }
 
+inline File relative_file(Square s) {
+  return std::min(file_of(s), FILE_H - file_of(s));
+}
+
 inline bool opposite_colors(Square s1, Square s2) {
   int s = int(s1) ^ int(s2);
   return ((s >> 3) ^ s) & 1;
