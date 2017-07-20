@@ -229,7 +229,8 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
   // Penalties for enemy's safe checks
-  const int QueenCheck  = 780;
+  // For QueenCheck the penalty is smaller if a rook or bishop can safely block
+  const int QueenCheck[2] = { 880, 680}; 
   const int RookCheck   = 880;
   const int BishopCheck = 435;
   const int KnightCheck = 790;
@@ -455,8 +456,16 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & attackedBy[Them][QUEEN] & safe)
-            kingDanger += QueenCheck;
+        
+         if ((b = (b1 | b2) & attackedBy[Them][QUEEN] & safe))
+         {
+             // Find if a rook or bishop can safely block (and retaliate)
+             bool block =   !more_than_one(b)
+                         && (  between_bb(ksq, lsb(b))
+                             & attackedBy[Us][(b1 & b) ? ROOK : BISHOP]
+                             & attackedBy2[Us] & ~attackedBy2[Them]);
+             kingDanger += QueenCheck[block];
+         }
 
         // For minors and rooks, also consider the square safe if attacked twice,
         // and only defended by our queen.
