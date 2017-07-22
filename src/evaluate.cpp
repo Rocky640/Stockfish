@@ -600,12 +600,14 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
-        & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
+    b &= (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
+    // Consider also squares where pawn can take
+    b |= (shift<Left>(pos.pieces(Us, PAWN)) | shift<Right>(pos.pieces(Us, PAWN))) & pos.pieces(Them);
+    
     // Add a bonus for each new pawn threats from those squares
     b =  (shift<Left>(b) | shift<Right>(b))
-       &  pos.pieces(Them)
+       & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
        & ~attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
