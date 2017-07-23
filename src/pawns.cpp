@@ -31,17 +31,17 @@ namespace {
   #define V Value
   #define S(mg, eg) make_score(mg, eg)
 
-  // Isolated pawn penalty by opposed flag
-  const Score Isolated[] = { S(27, 30), S(13, 18) };
+  // Connected pawn bonus by phalanx, #support and rank
+  Score Connected[2][3][RANK_NB];
 
-  // Backward pawn penalty by opposed flag
-  const Score Backward[] = { S(40, 26), S(24, 12) };
+  // Isolated pawn penalty
+  const Score Isolated = S(27, 30);
 
-  // Connected pawn bonus by opposed, phalanx, #support and rank
-  Score Connected[2][2][3][RANK_NB];
+  // Backward pawn penalty
+  const Score Backward = S(40, 26);
 
   // Doubled pawn penalty
-  const Score Doubled = S(18, 38);
+  const Score Doubled    = S(18, 38);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -169,20 +169,27 @@ namespace {
         }
 
         // Score this pawn
+        Score pScore = SCORE_ZERO;
+
         if (supported | phalanx)
-            score += Connected[opposed][!!phalanx][popcount(supported)][relative_rank(Us, s)];
+            pScore += Connected[!!phalanx][popcount(supported)][relative_rank(Us, s)];
 
         else if (!neighbours)
-            score -= Isolated[opposed];
+            pScore -= Isolated;
 
         else if (backward)
-            score -= Backward[opposed];
+            pScore -= Backward;
 
         if (doubled && !supported)
-            score -= Doubled;
+            pScore -= Doubled;
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            pScore += Lever[relative_rank(Us, s)];
+
+        if (opposed)
+            pScore = pScore / 2;
+
+        score += pScore;
     }
 
     return score;
@@ -200,16 +207,14 @@ void init() {
 
   static const int Seed[RANK_NB] = { 0, 8, 19, 13, 71, 94, 169, 324 };
 
-  for (int opposed = 0; opposed <= 1; ++opposed)
-      for (int phalanx = 0; phalanx <= 1; ++phalanx)
-          for (int support = 0; support <= 2; ++support)
-              for (Rank r = RANK_2; r < RANK_8; ++r)
-  {
-      int v = 17 * support;
-      v += (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
-
-      Connected[opposed][phalanx][support][r] = make_score(v, v * (r - 2) / 4);
-  }
+  for (int phalanx = 0; phalanx <= 1; ++phalanx)
+      for (int support = 0; support <= 2; ++support)
+          for (Rank r = RANK_2; r < RANK_8; ++r)
+          {
+              int v = 18 * support;
+              v += (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0));
+              Connected[phalanx][support][r] = make_score(v, v * r / 4);
+          }
 }
 
 
