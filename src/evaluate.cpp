@@ -450,6 +450,7 @@ namespace {
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
         safe &= ~attackedBy[Us][ALL_PIECES] | (kingOnlyDefended & attackedBy2[Them]);
+        safe |= pos.pieces(Us, QUEEN);
 
         b1 = pos.attacks_from<  ROOK>(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
@@ -476,6 +477,8 @@ namespace {
 
         else if (b1 & attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
+
+        safe |= pos.pieces(Us, ROOK);
 
         // Enemy bishops safe and other checks
         if (b2 & attackedBy[Them][BISHOP] & safe)
