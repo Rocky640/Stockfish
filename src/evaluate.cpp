@@ -459,11 +459,12 @@ namespace {
         if ((b1 | b2) & attackedBy[Them][QUEEN] & safe)
             kingDanger += QueenCheck;
 
-        // For minors and rooks, also consider the square safe if attacked twice,
-        // and only defended by our queen.
+        // For minors and rooks, also consider the square safe if it is attacked twice,
+        // and only defended by our queen; or if it is occupied by our queen
         safe |=  attackedBy2[Them]
                & ~(attackedBy2[Us] | pos.pieces(Them))
                & attackedBy[Us][QUEEN];
+        safe |= pos.pieces(Us, ROOK);
 
         // Some other potential checks are also analysed, even from squares
         // currently occupied by the opponent own pieces, as long as the square
@@ -478,7 +479,7 @@ namespace {
         else if (b1 & attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
 
-        safe |= pos.pieces(Us, ROOK);
+        safe |= pos.pieces(Us, BISHOP, KNIGHT);
 
         // Enemy bishops safe and other checks
         if (b2 & attackedBy[Them][BISHOP] & safe)
