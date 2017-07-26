@@ -442,7 +442,8 @@ namespace {
         kingDanger =        kingAttackersCount[Them] * kingAttackersWeight[Them]
                     + 102 * kingAdjacentZoneAttacksCount[Them]
                     + 201 * popcount(kingOnlyDefended)
-                    + 143 * (popcount(b) + !!pos.pinned_pieces(Us))
+                    + 143 * popcount(b) + 
+                    +  70 * !!pos.pinned_pieces(Us)
                     - 848 * !pos.count<QUEEN>(Them)
                     -   9 * mg_value(score) / 8
                     +  40;
@@ -464,7 +465,7 @@ namespace {
         safe |=  attackedBy2[Them]
                & ~(attackedBy2[Us] | pos.pieces(Them))
                & attackedBy[Us][QUEEN];
-        safe |= pos.pieces(Us, ROOK);
+        safe |= pos.pieces(Us, QUEEN);
 
         // Some other potential checks are also analysed, even from squares
         // currently occupied by the opponent own pieces, as long as the square
@@ -479,7 +480,7 @@ namespace {
         else if (b1 & attackedBy[Them][ROOK] & other)
             score -= OtherCheck;
 
-        safe |= pos.pieces(Us, BISHOP, KNIGHT);
+        safe |= pos.pieces(Us, ROOK);
 
         // Enemy bishops safe and other checks
         if (b2 & attackedBy[Them][BISHOP] & safe)
