@@ -134,6 +134,9 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
+
+    // Squares attacked by queen through friendly rook or bishop
+    Bitboard queenMobility[COLOR_NB];
   };
 
   #define V(v) Value(v)
@@ -257,6 +260,8 @@ namespace {
     // are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
+    queenMobility[Us] = 0;
+
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
@@ -315,6 +320,13 @@ namespace {
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
+
+        if (Pt == ROOK || Pt == BISHOP)
+            if (pos.count<QUEEN>(Us) == 1)
+                queenMobility[Us] |= LineBB[pos.square<QUEEN>(Us)][s] & b;
+
+        if (Pt == QUEEN)
+            b |= queenMobility[Us] & forward_ranks_bb(Us, s);
 
         int mob = popcount(b & mobilityArea[Us]);
 
