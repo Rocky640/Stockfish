@@ -597,8 +597,8 @@ namespace {
     }
 
     // Increase penalty on opponent backwards and isolated which are unopposed
-    // if we have a rook.
-    if (pos.pieces(Us, ROOK))
+    // if we have a rook or a queen
+    if (pos.pieces(Us, ROOK, QUEEN))
         score += RookAndWeak * pe->weak_unopposed(Them);
 
     // Find squares where our pawns can push on the next move
