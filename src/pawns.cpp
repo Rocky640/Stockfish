@@ -42,6 +42,11 @@ namespace {
 
   // Doubled pawn penalty
   const Score Doubled = S(18, 38);
+  
+  Score PawnAdjust = S(0, 0);
+  int pawnsupport[3] = { 0, 17, 34};
+  int Seed[RANK_NB] = { 0, 13, 24, 18, 76, 100, 175, 330 };
+  TUNE(SetRange(-80, 80), PawnAdjust, pawnsupport, Seed);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -183,6 +188,8 @@ namespace {
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+
+        score += PawnAdjust;
     }
 
     return score;
@@ -198,14 +205,14 @@ namespace Pawns {
 
 void init() {
 
-  static const int Seed[RANK_NB] = { 0, 13, 24, 18, 76, 100, 175, 330 };
+  
 
   for (int opposed = 0; opposed <= 1; ++opposed)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
           for (int support = 0; support <= 2; ++support)
               for (Rank r = RANK_2; r < RANK_8; ++r)
   {
-      int v = 17 * support;
+      int v = pawnsupport[support];
       v += (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
 
       Connected[opposed][phalanx][support][r] = make_score(v, v * (r - 2) / 4);
