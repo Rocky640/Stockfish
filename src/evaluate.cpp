@@ -134,6 +134,7 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
+
   };
 
   #define V(v) Value(v)
@@ -626,10 +627,14 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up  = (Us == WHITE ? NORTH : SOUTH);
 
+    int outsidefactor = 1;
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
     b = pe->passed_pawns(Us);
+
+    if (b)
+        outsidefactor += !pos.pieces(Them, ROOK, QUEEN) + !pos.non_pawn_material(Them);
 
     while (b)
     {
@@ -696,7 +701,7 @@ namespace {
         if (!pos.pawn_passed(Us, s + Up) || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
             mbonus /= 2, ebonus /= 2;
 
-        score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
+        score += make_score(mbonus, ebonus) + PassedFile[file_of(s)] * outsidefactor;
     }
 
     if (T)
