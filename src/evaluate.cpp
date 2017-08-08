@@ -245,13 +245,20 @@ namespace {
   template<Tracing T> template<Color Us>
   void Evaluation<T>::initialize() {
 
-    const Color  Them = (Us == WHITE ? BLACK : WHITE);
-    const Square Up   = (Us == WHITE ? NORTH : SOUTH);
-    const Square Down = (Us == WHITE ? SOUTH : NORTH);
+    const Color  Them  = (Us == WHITE ? BLACK : WHITE);
+    const Square Up    = (Us == WHITE ? NORTH : SOUTH);
+    const Square Down  = (Us == WHITE ? SOUTH : NORTH);
+    const Square Left  = (Us == WHITE ? SOUTH_EAST : NORTH_WEST);
+    const Square Right = (Us == WHITE ? SOUTH_WEST : NORTH_EAST);
+    
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
-    // Find our pawns on the first two ranks, and those which are blocked
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    // Find squares from which a pawn could protect a piece
+    Bitboard b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING));
+    b = (shift<Left>(b) | shift<Right>(b));
+
+    // Find our pawns on the first two ranks, and those which are blocked (but not protecting)
+    b = pos.pieces(Us, PAWN) & (LowRanks | (shift<Down>(pos.pieces()) & ~b));
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
