@@ -309,11 +309,17 @@ namespace {
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][ALL_PIECES] |= attackedBy[Us][Pt] |= b;
 
-        if (b & kingRing[Them])
+        bb = b;
+
+        if (Pt == BISHOP || Pt == ROOK)
+            if (PseudoAttacks[Pt][s] & kingRing[Them])
+                bb = attacks_bb<Pt>(s, pos.pieces(Us, PAWN, KING) | pos.pieces(Them));
+
+        if (bb & kingRing[Them])
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
+            kingAdjacentZoneAttacksCount[Us] += popcount(bb & attackedBy[Them][KING]);
         }
 
         int mob = popcount(b & mobilityArea[Us]);
