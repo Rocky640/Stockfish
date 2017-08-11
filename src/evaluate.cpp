@@ -331,7 +331,7 @@ namespace {
                 score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * 2;
             else
             {
-                bb &= b & ~pos.pieces(Us);
+                bb &= b & (~pos.pieces(Us) | pos.pieces(Us, KNIGHT, BISHOP));
                 if (bb)
                    score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
             }
