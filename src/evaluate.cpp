@@ -316,7 +316,7 @@ namespace {
                 bb = attacks_bb<Pt>(s, pos.pieces(Us, PAWN, KING) | pos.pieces(Them));
 
         if (bb & kingRing[Them])
-        {
+        { 
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
