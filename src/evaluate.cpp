@@ -203,7 +203,6 @@ namespace {
   const Score KingProtector[] = { S(-3, -5), S(-4, -3), S(-3, 0), S(-1, 1) };
 
   // Assorted bonuses and penalties used by evaluation
-  const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
@@ -336,10 +335,6 @@ namespace {
                 if (bb)
                    score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
             }
-
-            // Bonus when behind a pawn
-            if (pe->behind_pawns(Us) & s)
-                score += MinorBehindPawn;
 
             // Penalty for pawns on the same color square as the bishop
             if (Pt == BISHOP)
@@ -716,7 +711,8 @@ namespace {
   template<Tracing T>  template<Color Us>
   Score Evaluation<T>::evaluate_space() {
 
-    const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Color Them  = (Us == WHITE ? BLACK : WHITE);
+    const Square Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard SpaceMask =
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
@@ -741,7 +737,10 @@ namespace {
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
-    return make_score(bonus * weight * weight / 16, 0);
+    // evaluate minor safely sheltered behind a pawn
+    behind = shift<Down>(pos.pieces(PAWN)) & pos.pieces(Us, KNIGHT, BISHOP) & safe;
+
+    return make_score(bonus * weight * weight / 16 + weight * popcount(behind), 0);
   }
 
 
