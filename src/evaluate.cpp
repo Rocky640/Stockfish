@@ -202,7 +202,6 @@ namespace {
   const Score KingProtector[] = { S(-3, -5), S(-4, -3), S(-3, 0), S(-1, 1) };
 
   // Assorted bonuses and penalties used by evaluation
-  const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
@@ -336,11 +335,6 @@ namespace {
                    score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
             }
 
-            // Bonus when behind a pawn
-            if (    relative_rank(Us, s) < RANK_5
-                && (pos.pieces(PAWN) & (s + pawn_push(Us))))
-                score += MinorBehindPawn;
-
             // Penalty for pawns on the same color square as the bishop
             if (Pt == BISHOP)
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
@@ -402,6 +396,8 @@ namespace {
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard WhiteSide   = Rank1BB | Rank2BB | Rank3BB | Rank4BB;
+  const Bitboard BlackSide   = Rank8BB | Rank7BB | Rank6BB | Rank5BB;
 
   const Bitboard KingFlank[FILE_NB] = {
     QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
@@ -412,8 +408,8 @@ namespace {
 
     const Color Them    = (Us == WHITE ? BLACK : WHITE);
     const Square Up     = (Us == WHITE ? NORTH : SOUTH);
-    const Bitboard Camp = (Us == WHITE ? ~Bitboard(0) ^ Rank6BB ^ Rank7BB ^ Rank8BB
-                                       : ~Bitboard(0) ^ Rank1BB ^ Rank2BB ^ Rank3BB);
+    const Bitboard Camp = (Us == WHITE ? WhiteSide | Rank5BB
+                                       : BlackSide | Rank4BB);
 
     const Square ksq = pos.square<KING>(Us);
     Bitboard kingOnlyDefended, b, b1, b2, safe, other;
@@ -716,10 +712,12 @@ namespace {
   template<Tracing T>  template<Color Us>
   Score Evaluation<T>::evaluate_space() {
 
-    const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Color Them       = (Us == WHITE ? BLACK : WHITE);
+    const Square Down      = (Us == WHITE ? SOUTH : NORTH);
+    const Bitboard Side    = (Us == WHITE ? WhiteSide : BlackSide);
     const Bitboard SpaceMask =
-      Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
-                  : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+      Us == WHITE ? CenterFiles & (WhiteSide ^ Rank1BB)
+                  : CenterFiles & (BlackSide ^ Rank8BB);
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
@@ -740,8 +738,11 @@ namespace {
     // ...count safe + (behind & safe) with a single popcount.
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
+    
+    // Find minors currently shielded behind a pawn
+    behind = shift<Down>(pos.pieces(PAWN)) & pos.pieces(Us, KNIGHT, BISHOP) & Side;
 
-    return make_score(bonus * weight * weight / 16, 0);
+    return make_score(bonus * weight * weight / 16 + 16 * popcount(behind), 0);
   }
 
 
