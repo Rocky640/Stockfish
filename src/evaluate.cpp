@@ -534,6 +534,7 @@ namespace {
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
+    Bitboard b, targets, wellDefended, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -552,7 +553,9 @@ namespace {
             score += ThreatByHangingPawn;
     }
 
+    wellDefended  = (attackedBy2[Them] & ~attackedBy2[Us]) | pe->dble_attacks(Them);
     targets   =   pos.pieces(Them) & attackedBy[Us][ALL_PIECES];
+    targets  &= ~(pos.pieces(Them, PAWN) & wellDefended);
 
     // Add a bonus according to the kind of attacking pieces
     if (targets)
@@ -566,6 +569,7 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
+        targets &= ~wellDefended;
         b = (targets | pos.pieces(Them, QUEEN)) & attackedBy[Us][ROOK];
         while (b)
         {
