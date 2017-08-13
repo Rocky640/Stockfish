@@ -713,9 +713,10 @@ namespace {
 
     const Color Them  = (Us == WHITE ? BLACK : WHITE);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
+    const Bitboard EdgeFiles = FileABB | FileHBB;
     const Bitboard SpaceMask =
-      Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
-                  : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+      Us == WHITE ? (Rank2BB | Rank3BB | Rank4BB) & ~EdgeFiles
+                  : (Rank7BB | Rank6BB | Rank5BB) & ~EdgeFiles;
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
@@ -737,7 +738,7 @@ namespace {
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
-    // evaluate minor safely sheltered behind a pawn
+    // Find our developped minor pieces safely sheltered behind a pawn
     behind = shift<Down>(pos.pieces(PAWN)) & pos.pieces(Us, KNIGHT, BISHOP) & safe;
 
     return make_score(bonus * weight * weight / 16 + weight * popcount(behind), 0);
