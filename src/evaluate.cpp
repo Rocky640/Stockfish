@@ -534,43 +534,30 @@ namespace {
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & attackedBy[Us][PAWN];
+    targets = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & attackedBy[Us][PAWN];
 
-    if (weak)
+    if (targets)
     {
         b = pos.pieces(Us, PAWN) & ( ~attackedBy[Them][ALL_PIECES]
                                     | attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        safeThreats = (shift<Right>(b) | shift<Left>(b)) & targets;
 
         score += ThreatBySafePawn * popcount(safeThreats);
 
-        if (weak ^ safeThreats)
+        if (targets ^ safeThreats)
             score += ThreatByHangingPawn;
     }
 
-    // Squares strongly protected by the opponent, either because they attack the
-    // square with a pawn, or because they attack the square twice and we don't.
-    stronglyProtected =  attackedBy[Them][PAWN]
-                       | (attackedBy2[Them] & ~attackedBy2[Us]);
-
-    // Non-pawn enemies, strongly protected
-    defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              & stronglyProtected;
-
-    // Enemies not strongly protected and under our attack
-    weak =   pos.pieces(Them)
-          & ~stronglyProtected
-          &  attackedBy[Us][ALL_PIECES];
+    targets   =   pos.pieces(Them) & attackedBy[Us][ALL_PIECES];
 
     // Add a bonus according to the kind of attacking pieces
-    if (defended | weak)
+    if (targets)
     {
-        b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        b = targets & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -579,7 +566,7 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
+        b = (targets | pos.pieces(Them, QUEEN)) & attackedBy[Us][ROOK];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -588,11 +575,11 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
-
-        b = weak & attackedBy[Us][KING];
+        b = targets & attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+
+        score += Hanging * popcount(targets & ~attackedBy[Them][ALL_PIECES]);
     }
 
     // Find squares where our pawns can push on the next move
