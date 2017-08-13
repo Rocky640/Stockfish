@@ -134,8 +134,7 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
-    
-    Bitboard MBP[COLOR_NB];
+
   };
 
   #define V(v) Value(v)
@@ -251,9 +250,6 @@ namespace {
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard LowRanks  = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
-    const Bitboard CampRanks = (Us == WHITE ? Rank1BB | Rank4BB: Rank8BB | Rank5BB) | LowRanks;
-
-    MBP[Us] = shift<Down>(pos.pieces(PAWN)) & CampRanks;
 
     // Find our pawns on the first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
@@ -342,7 +338,7 @@ namespace {
             }
 
             // Bonus when behind a pawn
-            if (MBP[Us] & s)
+            if (pe->behind_pawns(Us) & s)
                 score += MinorBehindPawn;
 
             // Penalty for pawns on the same color square as the bishop
