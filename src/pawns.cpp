@@ -97,6 +97,7 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
+    Bitboard halfbackward = 0;
     Square s;
     bool opposed, backward;
     Score score = SCORE_ZERO;
@@ -134,19 +135,28 @@ namespace {
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
-        if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
+        if (!(neighbours & ~phalanx) || lever || relative_rank(Us, s) >= RANK_5)
             backward = false;
         else
         {
             // Find the backmost rank with neighbours or stoppers
-            b = rank_bb(backmost_sq(Us, neighbours | stoppers));
+            b = rank_bb(backmost_sq(Us, (neighbours & ~phalanx) | stoppers));
 
             // The pawn is backward when it cannot safely progress to that rank:
             // either there is a stopper in the way on this rank, or there is a
             // stopper on adjacent file which controls the way to that rank.
             backward = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
 
-            assert(!(backward && (forward_ranks_bb(Them, s + Up) & neighbours)));
+            if (phalanx && backward)
+            {
+               // when any pawn push by a phalanx would make the other pawn backward
+               if (phalanx & halfbackward)
+                   score -= Backward[opposed];
+               else
+                   halfbackward |= s;
+            }
+
+            assert(!(backward && (forward_ranks_bb(Them, s) & neighbours)));
         }
 
         // Passed pawns will be properly scored in evaluation because we need
