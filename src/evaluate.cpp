@@ -533,6 +533,7 @@ namespace {
     const Square Left       = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
+    const Bitboard Advanced = (Us == WHITE ? Rank5BB | Rank6BB : Rank4BB | Rank3BB);
 
     Bitboard b, weak, defended, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
@@ -600,7 +601,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
+    b &=  (Advanced | ~attackedBy[Them][PAWN])
         & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
     // Add a bonus for each new pawn threats from those squares
