@@ -601,7 +601,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are not completely unsafe
-    b &=  (Advanced | ~attackedBy[Them][PAWN])
+    b &=  (~attackedBy[Them][PAWN] | (Advanced & ~pe->free_attacks(Them)))
         & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
     // Add a bonus for each new pawn threats from those squares
