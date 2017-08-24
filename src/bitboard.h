@@ -161,6 +161,12 @@ inline Bitboard shift(Bitboard b) {
         : 0;
 }
 
+template<Color c>
+inline Bitboard pawnshifts(Bitboard b) {
+    return c == WHITE ? shift<NORTH_EAST>(b) | shift<NORTH_WEST>(b)
+                      : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
+}
+
 
 /// adjacent_files_bb() returns a bitboard representing all the squares on the
 /// adjacent files of the given one.
