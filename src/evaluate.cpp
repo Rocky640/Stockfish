@@ -447,7 +447,9 @@ namespace {
 
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
-        safe &= ~attackedBy[Us][ALL_PIECES] | (kingOnlyDefended & attackedBy2[Them]);
+        safe &= ~attackedBy[Us][ALL_PIECES]
+               | (kingOnlyDefended & attackedBy2[Them])
+               | (~attackedBy2[Us] & pawnshifts<Us>(pos.pinned_pieces(Us) & pos.pieces(PAWN)));
 
         b1 = pos.attacks_from<  ROOK>(ksq);
         b2 = pos.attacks_from<BISHOP>(ksq);
