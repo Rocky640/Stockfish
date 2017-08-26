@@ -267,7 +267,7 @@ namespace {
         if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
             kingRing[Us] |= shift<Up>(b);
 
-        kingAttackersCount[Them] = popcount(b & pe->pawn_attacks(Them));
+        kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
         kingAdjacentZoneAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
     else
