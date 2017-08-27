@@ -162,28 +162,28 @@ namespace {
   // supported by a pawn. If the minor piece occupies an outpost square
   // then score is doubled.
   const Score Outpost[][2] = {
-    { S(22, 6), S(35,10) }, // Knight
+    { S(22, 6), S(38,10) }, // Knight
     { S( 9, 2), S(14, 4) }  // Bishop
   };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
-  const Score RookOnFile[] = { S(34, 13), S(45, 20) };
+  const Score RookOnFile[] = { S(29, 14), S(45, 20) };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
   const Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(5, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118)
+    S(0, 0), S(4, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118)
   };
 
   const Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(1, 33), S(40, 62), S(40, 59), S(0, 34), S(35, 48)
+    S(0, 0), S(1, 40), S(40, 62), S(40, 59), S(0, 34), S(35, 48)
   };
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
-  const Score ThreatByKing[] = { S(3, 63), S(9, 149) };
+  const Score ThreatByKing[] = { S(3, 65), S(9, 146) };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
