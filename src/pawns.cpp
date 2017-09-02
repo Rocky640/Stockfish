@@ -116,8 +116,8 @@ namespace {
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
-    Bitboard bishopBlockers = ((shift<Up>(ourPawns) & theirPawns) | (e->pawnAttacks[Us] & ourPawns)) & ~Edges;
-    Bitboard knightBlockers = ((shift<Up>(ourPawns) & theirPawns) | e->pawnAttacks[Us]) & ~Edges;
+    Bitboard bishopBlockers = ((shift<Up>(ourPawns) & theirPawns) | ourPawns) & ~Edges;
+    Bitboard knightBlockers = ((shift<Up>(ourPawns) & theirPawns) | ourPawns | e->pawnAttacks[Us]) & ~Edges;
 
     int minorSafe = 0;
 
