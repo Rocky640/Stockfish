@@ -43,7 +43,7 @@ namespace {
   // Doubled pawn penalty
   const Score Doubled = S(18, 38);
   
-  const Score MinorSafe = S(10, 7);
+  const Score MinorSafe = S(5, 3);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -96,6 +96,7 @@ namespace {
     const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Bitboard Edges = FileABB | FileHBB;
     const Bitboard Sides = FileABB | FileBBB | FileGBB | FileHBB;
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
@@ -114,6 +115,11 @@ namespace {
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+
+    Bitboard bishopBlockers = ((shift<Up>(ourPawns) & theirPawns) | (e->pawnAttacks[Us] & ourPawns)) & ~Edges;
+    Bitboard knightBlockers = ((shift<Up>(ourPawns) & theirPawns) | e->pawnAttacks[Us]) & ~Edges;
+
+    int minorSafe = 0;
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -171,13 +177,14 @@ namespace {
                     e->passedPawns[Us] |= s;
         }
         
-        // Side pawns which are safe from minor attacks. E.g black a7 c6, an white c5
-        // c6 protectes against knight attacks, and c5 screens some bishop attacks
+        // Side pawns which are safe from front minor attacks
         if (!supported && (Sides & s))
         {
-            b = PseudoAttacks[BISHOP][s] & FileBB[f + (f < FILE_C ? 2 : -2)];
-            if ((b & theirPawns) && (shift<Up>(b) & ourPawns))
-                score += MinorSafe;
+            //Safe from bishop (eg: a7 b6 or a7 c5 d6 or a7 c6 against c5 or a7 d5 against d4)
+            minorSafe += !!(PseudoAttacks[BISHOP][s] & bishopBlockers & DistanceBB[s][2]);
+
+            //Safe from knight
+            minorSafe += !!(PseudoAttacks[KNIGHT][s] & knightBlockers);
         }
 
         // Score this pawn
@@ -196,6 +203,8 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+
+    score += MinorSafe * minorSafe;
 
     return score;
   }
@@ -295,7 +304,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
 
   Bitboard pawns = pos.pieces(Us, PAWN);
   if (pawns)
-      while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
+      while (!(DistanceBB[ksq][minKingPawnDistance++] & pawns)) {}
 
   Value bonus = shelter_storm<Us>(pos, ksq);
 

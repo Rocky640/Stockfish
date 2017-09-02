@@ -33,7 +33,7 @@ Bitboard AdjacentFilesBB[FILE_NB];
 Bitboard ForwardRanksBB[COLOR_NB][RANK_NB];
 Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 Bitboard LineBB[SQUARE_NB][SQUARE_NB];
-Bitboard DistanceRingBB[SQUARE_NB][8];
+Bitboard DistanceBB[SQUARE_NB][8];
 Bitboard ForwardFileBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
@@ -178,8 +178,12 @@ void Bitboards::init() {
           if (s1 != s2)
           {
               SquareDistance[s1][s2] = std::max(distance<File>(s1, s2), distance<Rank>(s1, s2));
-              DistanceRingBB[s1][SquareDistance[s1][s2] - 1] |= s2;
+              DistanceBB[s1][SquareDistance[s1][s2] - 1] |= s2;
           }
+
+  for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
+      for (int d = 0; d < 7; ++d)
+          DistanceBB[s1][d + 1] |= DistanceBB[s1][d];
 
   int steps[][5] = { {}, { 7, 9 }, { 6, 10, 15, 17 }, {}, {}, {}, { 1, 7, 8, 9 } };
 
