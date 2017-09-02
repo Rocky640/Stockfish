@@ -42,6 +42,8 @@ namespace {
 
   // Doubled pawn penalty
   const Score Doubled = S(18, 38);
+  
+  const Score MinorSafe = S(10, 7);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -94,6 +96,7 @@ namespace {
     const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Bitboard Sides = FileABB | FileBBB | FileGBB | FileHBB;
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -166,6 +169,15 @@ namespace {
             while (b)
                 if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
                     e->passedPawns[Us] |= s;
+        }
+        
+        // Side pawns which are safe from minor attacks. E.g black a7 c6, an white c5
+        // c6 protectes against knight attacks, and c5 screens some bishop attacks
+        if (!supported && (Sides & s))
+        {
+            b = PseudoAttacks[BISHOP][s] & FileBB[f + (f < FILE_C ? 2 : -2)];
+            if ((b & theirPawns) && (shift<Up>(b) & ourPawns))
+                score += MinorSafe;
         }
 
         // Score this pawn
