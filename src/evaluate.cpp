@@ -165,6 +165,8 @@ namespace {
     { S(22, 6), S(33, 9) }, // Knight
     { S( 9, 2), S(14, 4) }  // Bishop
   };
+  
+  const Score SafePawnFromKnight = S(5, 3);
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
@@ -592,6 +594,10 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    // Bonus for our weak pawns which are immune for knight frontal attacks
+    if (pos.count<KNIGHT>(Them))
+        score += SafePawnFromKnight * pe->knight_safe(Us);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();

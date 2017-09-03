@@ -42,8 +42,6 @@ namespace {
 
   // Doubled pawn penalty
   const Score Doubled = S(18, 38);
-  
-  const Score MinorSafe = S(5, 3);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
@@ -96,8 +94,6 @@ namespace {
     const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
     const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
-    const Bitboard Edges = FileABB | FileHBB;
-    const Bitboard Sides = FileABB | FileBBB | FileGBB | FileHBB;
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -109,24 +105,22 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = e->knightSafe[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
-    Bitboard bishopBlockers = ((shift<Up>(ourPawns) & theirPawns) | ourPawns) & ~Edges;
-    Bitboard knightBlockers = ((shift<Up>(ourPawns) & theirPawns) | ourPawns | e->pawnAttacks[Us]) & ~Edges;
-
-    int minorSafe = 0;
+    Bitboard screeners = (shift<Up>(ourPawns) & theirPawns) | ourPawns | e->pawnAttacks[Us];
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
     {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
-        File f = file_of(s);
+        File f  = file_of(s);
+        Rank rr = relative_rank(Us, s);
 
         e->semiopenFiles[Us]   &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -143,7 +137,7 @@ namespace {
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
-        if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
+        if (!neighbours || lever || rr >= RANK_5)
             backward = false;
         else
         {
@@ -169,7 +163,7 @@ namespace {
             e->passedPawns[Us] |= s;
 
         else if (   stoppers == SquareBB[s + Up]
-                 && relative_rank(Us, s) >= RANK_5)
+                 && rr >= RANK_5)
         {
             b = shift<Up>(supported) & ~theirPawns;
             while (b)
@@ -177,19 +171,14 @@ namespace {
                     e->passedPawns[Us] |= s;
         }
         
-        // Side pawns which are safe from front minor attacks
-        if (!supported && (Sides & s))
-        {
-            //Safe from bishop (eg: a7 b6 or a7 c5 d6 or a7 c6 against c5 or a7 d5 against d4)
-            minorSafe += !!(PseudoAttacks[BISHOP][s] & bishopBlockers & DistanceBB[s][2]);
-
-            //Safe from knight
-            minorSafe += !!(PseudoAttacks[KNIGHT][s] & knightBlockers);
-        }
+        // Weak pawns which are safe from any frontal knight attacks
+        if (!supported && rr < RANK_5)
+            e->knightSafe[Us] += !(   PseudoAttacks[KNIGHT][s] & forward_ranks_bb(Us, s)
+                                   & ~screeners);
 
         // Score this pawn
         if (supported | phalanx)
-            score += Connected[opposed][!!phalanx][popcount(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][popcount(supported)][rr];
 
         else if (!neighbours)
             score -= Isolated[opposed];
@@ -201,10 +190,8 @@ namespace {
             score -= Doubled;
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[rr];
     }
-
-    score += MinorSafe * minorSafe;
 
     return score;
   }
