@@ -48,8 +48,9 @@ struct Entry {
     return semiopenFiles[c] & (leftSide ? (1 << f) - 1 : ~((1 << (f + 1)) - 1));
   }
 
-  int pawns_on_same_color_squares(Color c, Square s) const {
-    return pawnsOnSquares[c][!!(DarkSquares & s)];
+  int bishop_pawn_count(Color c, Square s) const {
+    // number of our same color pawns minus number of opponent other color pawns
+    return pawnsOnSquares[c][!!(DarkSquares & s)] - pawnsOnSquares[~c][!(DarkSquares & s)];
   }
 
   template<Color Us>
