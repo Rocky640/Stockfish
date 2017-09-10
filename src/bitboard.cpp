@@ -22,9 +22,11 @@
 
 #include "bitboard.h"
 #include "misc.h"
+#include <iostream>
 
 uint8_t PopCnt16[1 << 16];
 int SquareDistance[SQUARE_NB][SQUARE_NB];
+int KnightDistance[SQUARE_NB][SQUARE_NB];
 
 Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
@@ -220,6 +222,34 @@ void Bitboards::init() {
               BetweenBB[s1][s2] = attacks_bb(pt, s1, SquareBB[s2]) & attacks_bb(pt, s2, SquareBB[s1]);
           }
   }
+
+  Bitboard b1, b2;
+  for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
+  {
+      int d = 0;
+      Bitboard covered = SquareBB[s1];
+      b1 = PseudoAttacks[KNIGHT][s1];
+
+      while (b1)
+      {
+          d += 1;
+          b2 = b1;
+          b1 = 0;
+          while (b2)
+          {
+              Square s2 = pop_lsb(&b2);
+              if (!(covered & s2))
+              {
+                  covered |= s2;
+                  KnightDistance[s1][s2] = d;
+                  b1 |= PseudoAttacks[KNIGHT][s2];
+              }
+          }
+      }
+  }
+  sync_cout << KnightDistance[SQ_A1][SQ_H8] << sync_endl;
+  sync_cout << KnightDistance[SQ_E4][SQ_H8] << sync_endl;
+  sync_cout << KnightDistance[SQ_B1][SQ_H8] << sync_endl;
 }
 
 
