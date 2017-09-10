@@ -110,6 +110,9 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    // Attacks by pawn, king, knight or bishop
+    Bitboard nonMajorAttacks[COLOR_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and (only for a king on its first rank) the
@@ -457,10 +460,10 @@ namespace {
             kingDanger += QueenCheck;
 
         // For minors and rooks, also consider the square safe if attacked twice,
-        // and only defended by our queen or rook.
+        // and only defended by our queen or only defended by our rook and attacked only by majors.
         safe |=  attackedBy2[Them]
                & ~(attackedBy2[Us] | pos.pieces(Them))
-               & (attackedBy[Us][QUEEN] | attackedBy[Us][ROOK]);
+               & (attackedBy[Us][QUEEN] | (attackedBy[Us][ROOK] & ~nonMajorAttacks[Them]));
 
         // Some other potential checks are also analysed, even from squares
         // currently occupied by the opponent own pieces, as long as the square
@@ -840,6 +843,9 @@ namespace {
 
     score += evaluate_pieces<WHITE, KNIGHT>() - evaluate_pieces<BLACK, KNIGHT>();
     score += evaluate_pieces<WHITE, BISHOP>() - evaluate_pieces<BLACK, BISHOP>();
+    nonMajorAttacks[WHITE] = attackedBy[WHITE][ALL_PIECES];
+    nonMajorAttacks[BLACK] = attackedBy[BLACK][ALL_PIECES];
+
     score += evaluate_pieces<WHITE, ROOK  >() - evaluate_pieces<BLACK, ROOK  >();
     score += evaluate_pieces<WHITE, QUEEN >() - evaluate_pieces<BLACK, QUEEN >();
 
