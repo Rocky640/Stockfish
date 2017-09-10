@@ -204,6 +204,7 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
+  const Score KnightTricks        = S(  2,  2);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
@@ -336,6 +337,14 @@ namespace {
             if (    relative_rank(Us, s) < RANK_5
                 && (pos.pieces(PAWN) & (s + pawn_push(Us))))
                 score += MinorBehindPawn;
+
+            // Bonus according to distance to queen or king
+            if (Pt == KNIGHT)
+            {
+                if (pos.count<QUEEN>(Them))
+                    score += KnightTricks * (4 - KnightDistance[s][pos.squares<QUEEN>(Them)[0]]);
+                score += KnightTricks * (4 - KnightDistance[s][pos.square<KING>(Them)]);
+            }
 
             // Penalty for pawns on the same color square as the bishop
             if (Pt == BISHOP)
