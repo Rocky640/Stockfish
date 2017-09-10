@@ -247,9 +247,6 @@ void Bitboards::init() {
           }
       }
   }
-  sync_cout << KnightDistance[SQ_A1][SQ_H8] << sync_endl; //6
-  sync_cout << KnightDistance[SQ_E4][SQ_H8] << sync_endl; //3
-  sync_cout << KnightDistance[SQ_B1][SQ_H8] << sync_endl; //5
 }
 
 
