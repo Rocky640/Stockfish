@@ -183,7 +183,7 @@ namespace {
         else if (backward)
         {
             score -= Backward[opposed];
-            if (!(theirPawns & (s + Up)) && more_than_one(backward))
+            if (!(theirPawns & (s + Up)) && more_than_one(backward & PseudoAttacks[KNIGHT][s]))
                 score -= DblBackward;
         }
 
