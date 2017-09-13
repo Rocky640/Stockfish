@@ -234,6 +234,14 @@ namespace {
   const Value LazyThreshold  = Value(1500);
   const Value SpaceThreshold = Value(12222);
 
+  // Bitboard used for king evaluation
+  const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
+  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
+  const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
+
+  const Bitboard KingFlank[FILE_NB] = {
+    QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
+  };
 
   // initialize() computes king and pawn attacks, and the king ring bitboard
   // for a given color. This is done at the beginning of the evaluation.
@@ -245,16 +253,20 @@ namespace {
     const Square Up   = (Us == WHITE ? NORTH : SOUTH);
     const Square Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+    const Bitboard BackRank = (Us == WHITE ? Rank1BB : Rank8BB);
+    const Bitboard Camp = LowRanks | (Us == WHITE ? Rank4BB : Rank5BB);
+
+    Square ksq = pos.square<KING>(Us);
 
     // Find our pawns on the first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+    mobilityArea[Us] = ~(b | ksq | pe->pawn_attacks(Them));
 
     // Initialise the attack bitboards with the king and pawn information
-    b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
+    b = attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
 
     attackedBy2[Us]            = b & attackedBy[Us][PAWN];
@@ -264,10 +276,10 @@ namespace {
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
     {
         kingRing[Us] = b;
-        if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
+        if (BackRank & ksq)
             kingRing[Us] |= shift<Up>(b);
 
-        kingAttackersCount[Them] = popcount(b & pe->pawn_attacks(Them));
+        kingAttackersCount[Them] = popcount(KingFlank[file_of(ksq)] & Camp & pos.pieces(Them, PAWN));
         kingAdjacentZoneAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
     else
@@ -394,14 +406,6 @@ namespace {
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
-
-  const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
-  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
-  const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
-
-  const Bitboard KingFlank[FILE_NB] = {
-    QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
-  };
 
   template<Tracing T>  template<Color Us>
   Score Evaluation<T>::evaluate_king() {
