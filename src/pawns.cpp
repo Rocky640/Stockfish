@@ -35,7 +35,8 @@ namespace {
   const Score Isolated[] = { S(27, 30), S(13, 18) };
 
   // Backward pawn penalty by opposed flag
-  const Score Backward[] = { S(40, 26), S(24, 12) };
+  const Score Backward[2] = { S(40, 26), S(24, 12) };
+  const Score DblBackward = S(10, 6);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -100,9 +101,9 @@ namespace {
     const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
-    Bitboard lever, leverPush;
+    Bitboard lever, leverPush, backward;
     Square s;
-    bool opposed, backward;
+    bool opposed;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
 
@@ -139,7 +140,7 @@ namespace {
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
         if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
-            backward = false;
+            backward = 0;
         else
         {
             // Find the backmost rank with neighbours or stoppers
@@ -180,7 +181,11 @@ namespace {
             score -= Isolated[opposed];
 
         else if (backward)
+        {
             score -= Backward[opposed];
+            if (!(theirPawns & (s + Up)) && more_than_one(backward))
+                score -= DblBackward;
+        }
 
         if (doubled && !supported)
             score -= Doubled;
