@@ -312,12 +312,14 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
         else if (   Pt == BISHOP
+                 && (PseudoAttacks[BISHOP][s] & pos.square<KING>(Them))
                  && !(LineBB[s][pos.square<KING>(Them)] & ~(pos.pieces(KNIGHT, ROOK  ) | pos.pieces(Them, QUEEN))))
         {
                 kingAttackersCount[Us]++;
                 kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
         }
         else if (   Pt == ROOK
+                 && (PseudoAttacks[ROOK][s] & pos.square<KING>(Them))
                  && !(LineBB[s][pos.square<KING>(Them)] & ~(pos.pieces(KNIGHT, BISHOP) | pos.pieces(Them, QUEEN))))
         {
                 kingAttackersCount[Us]++;
