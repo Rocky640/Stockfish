@@ -313,14 +313,14 @@ namespace {
         }
         else if (   Pt == BISHOP
                  && (PseudoAttacks[BISHOP][s] & pos.square<KING>(Them))
-                 && !(LineBB[s][pos.square<KING>(Them)] & ~(pos.pieces(KNIGHT, ROOK  ) | pos.pieces(Them, QUEEN))))
+                 && !(BetweenBB[s][pos.square<KING>(Them)] & pos.pieces(PAWN, BISHOP)))
         {
                 kingAttackersCount[Us]++;
                 kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
         }
         else if (   Pt == ROOK
                  && (PseudoAttacks[ROOK][s] & pos.square<KING>(Them))
-                 && !(LineBB[s][pos.square<KING>(Them)] & ~(pos.pieces(KNIGHT, BISHOP) | pos.pieces(Them, QUEEN))))
+                 && !(BetweenBB[s][pos.square<KING>(Them)] & pos.pieces(PAWN, ROOK)))
         {
                 kingAttackersCount[Us]++;
                 kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
