@@ -123,6 +123,7 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank rr = relative_rank(Us, s);
 
         e->semiopenFiles[Us]   &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -139,7 +140,7 @@ namespace {
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
-        if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
+        if (!neighbours || lever || rr >= RANK_5)
             backward = 0;
         else
         {
@@ -164,8 +165,7 @@ namespace {
             && popcount(phalanx)   >= popcount(leverPush))
             e->passedPawns[Us] |= s;
 
-        else if (   stoppers == SquareBB[s + Up]
-                 && relative_rank(Us, s) >= RANK_5)
+        else if (stoppers == SquareBB[s + Up] && rr >= RANK_5)
         {
             b = shift<Up>(supported) & ~theirPawns;
             while (b)
@@ -175,7 +175,7 @@ namespace {
 
         // Score this pawn
         if (supported | phalanx)
-            score += Connected[opposed][!!phalanx][popcount(supported)][relative_rank(Us, s)];
+            score += Connected[opposed][!!phalanx][popcount(supported)][rr];
 
         else if (!neighbours)
             score -= Isolated[opposed];
@@ -183,7 +183,9 @@ namespace {
         else if (backward)
         {
             score -= Backward[opposed];
-            if (!(theirPawns & (s + Up)) && more_than_one(backward & PseudoAttacks[KNIGHT][s]))
+            if (   rr == RANK_3
+                && !(theirPawns & (s + Up)) 
+                && more_than_one(backward & PseudoAttacks[KNIGHT][s]))
                 score -= DblBackward;
         }
 
@@ -191,7 +193,7 @@ namespace {
             score -= Doubled;
 
         if (lever)
-            score += Lever[relative_rank(Us, s)];
+            score += Lever[rr];
     }
 
     return score;
