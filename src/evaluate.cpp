@@ -282,6 +282,7 @@ namespace {
   Score Evaluation<T>::evaluate_pieces() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Square Up  = (Us == WHITE ? NORTH : SOUTH);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
@@ -324,7 +325,14 @@ namespace {
             // Bonus for outpost squares
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * 2;
+            {
+                // Double the bonus if that piece occupies the outpost square.
+                // Triple the bonus if it also block a pawn on a semi open file
+                int factor = 2 + !!(  (pos.pieces(PAWN) & (s + Up))
+                                    && pe->semiopen_file(Them, file_of(s)));
+                score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * factor;
+                    
+            }
             else
             {
                 bb &= b & ~pos.pieces(Us);
