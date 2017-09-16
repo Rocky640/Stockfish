@@ -111,7 +111,7 @@ namespace {
 
     e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
-    e->kingSquares[Us]   = SQ_NONE;
+    e->kingSquares[Us][0] = e->kingSquares[Us][1] = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
@@ -242,7 +242,7 @@ Entry* probe(const Position& pos) {
 /// the king is on, as well as the two closest files.
 
 template<Color Us>
-Value Entry::shelter_storm(const Position& pos, Square ksq) {
+Value Entry::shelter_storm(const Position& pos, Square ksq, bool attacked) {
 
   const Color Them = (Us == WHITE ? BLACK : WHITE);
 
@@ -263,7 +263,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
       Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
 
       int d = std::min(f, FILE_H - f);
-      safety -=  ShelterWeakness[f == file_of(ksq)][d][rkUs]
+      safety -= (ShelterWeakness[f == file_of(ksq)][d][rkUs] >> !attacked)
                + StormDanger
                  [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
                   rkUs   == RANK_1                                          ? Unopposed :
@@ -279,30 +279,30 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
 /// when king square changes, which is about 20% of total king_safety() calls.
 
 template<Color Us>
-Score Entry::do_king_safety(const Position& pos, Square ksq) {
+Score Entry::do_king_safety(const Position& pos, Square ksq, bool attacked) {
 
-  kingSquares[Us] = ksq;
-  castlingRights[Us] = pos.can_castle(Us);
+  kingSquares[Us][attacked] = ksq;
+  castlingRights[Us][attacked] = pos.can_castle(Us);
   int minKingPawnDistance = 0;
 
   Bitboard pawns = pos.pieces(Us, PAWN);
   if (pawns)
       while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
 
-  Value bonus = shelter_storm<Us>(pos, ksq);
+  Value bonus = shelter_storm<Us>(pos, ksq, attacked);
 
   // If we can castle use the bonus after the castling if it is bigger
   if (pos.can_castle(MakeCastling<Us, KING_SIDE>::right))
-      bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_G1)));
+      bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_G1), attacked));
 
   if (pos.can_castle(MakeCastling<Us, QUEEN_SIDE>::right))
-      bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_C1)));
+      bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_C1), attacked));
 
   return make_score(bonus, -16 * minKingPawnDistance);
 }
 
 // Explicit template instantiation
-template Score Entry::do_king_safety<WHITE>(const Position& pos, Square ksq);
-template Score Entry::do_king_safety<BLACK>(const Position& pos, Square ksq);
+template Score Entry::do_king_safety<WHITE>(const Position& pos, Square ksq, bool attacked);
+template Score Entry::do_king_safety<BLACK>(const Position& pos, Square ksq, bool attacked);
 
 } // namespace Pawns

@@ -53,25 +53,25 @@ struct Entry {
   }
 
   template<Color Us>
-  Score king_safety(const Position& pos, Square ksq) {
-    return  kingSquares[Us] == ksq && castlingRights[Us] == pos.can_castle(Us)
-          ? kingSafety[Us] : (kingSafety[Us] = do_king_safety<Us>(pos, ksq));
+  Score king_safety(const Position& pos, Square ksq, bool attacked) {
+    return  kingSquares[Us][attacked] == ksq && castlingRights[Us][attacked] == pos.can_castle(Us)
+          ? kingSafety[Us][attacked] : (kingSafety[Us][attacked] = do_king_safety<Us>(pos, ksq, attacked));
   }
 
   template<Color Us>
-  Score do_king_safety(const Position& pos, Square ksq);
+  Score do_king_safety(const Position& pos, Square ksq, bool attacked);
 
   template<Color Us>
-  Value shelter_storm(const Position& pos, Square ksq);
+  Value shelter_storm(const Position& pos, Square ksq, bool attacked);
 
   Key key;
   Score score;
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
-  Square kingSquares[COLOR_NB];
-  Score kingSafety[COLOR_NB];
-  int castlingRights[COLOR_NB];
+  Square kingSquares[COLOR_NB][2];
+  Score kingSafety[COLOR_NB][2];
+  int castlingRights[COLOR_NB][2];
   int semiopenFiles[COLOR_NB];
   int pawnsOnSquares[COLOR_NB][COLOR_NB]; // [color][light/dark squares]
   int asymmetry;

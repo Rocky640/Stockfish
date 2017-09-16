@@ -413,13 +413,13 @@ namespace {
 
     const Square ksq = pos.square<KING>(Us);
     Bitboard kingOnlyDefended, undefended, b, b1, b2, safe, other;
-    int kingDanger;
+    bool attacked = kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them));
 
     // King shelter and enemy pawns storm
-    Score score = pe->king_safety<Us>(pos, ksq);
+    Score score = pe->king_safety<Us>(pos, ksq, attacked);
 
     // Main king safety evaluation
-    if (kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them)))
+    if (attacked)
     {
         // Find the attacked squares which are defended only by our king...
         kingOnlyDefended =   attackedBy[Them][ALL_PIECES]
@@ -436,14 +436,14 @@ namespace {
         // later into a king danger score. The initial value is based on the
         // number and types of the enemy's attacking pieces, the number of
         // attacked and weak squares around our king, the absence of queen and
-        // the quality of the pawn shelter (current 'score' value).
-        kingDanger =        kingAttackersCount[Them] * kingAttackersWeight[Them]
-                    + 102 * kingAdjacentZoneAttacksCount[Them]
-                    + 191 * popcount(kingOnlyDefended | undefended)
-                    + 143 * !!pos.pinned_pieces(Us)
-                    - 848 * !pos.count<QUEEN>(Them)
-                    -   9 * mg_value(score) / 8
-                    +  40;
+        // the shelter/storm penalty (current 'score' value).
+        int kingDanger =    kingAttackersCount[Them] * kingAttackersWeight[Them]
+                        + 102 * kingAdjacentZoneAttacksCount[Them]
+                        + 191 * popcount(kingOnlyDefended | undefended)
+                        + 143 * !!pos.pinned_pieces(Us)
+                        - 848 * !pos.count<QUEEN>(Them)
+                        -   9 * mg_value(score) / 8
+                        +  40;
 
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
