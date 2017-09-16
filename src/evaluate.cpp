@@ -313,7 +313,7 @@ namespace {
         }
         else if (Pt == BISHOP || Pt == ROOK)
         {
-            if (   (bb = PseudoAttacks[Pt][s] & attackedBy[Them][KING])
+            if (   (bb = PseudoAttacks[Pt][s] & kingRing[Them])
                 && !(BetweenBB[s][frontmost_sq(Us, bb)] & pos.pieces(PAWN, Pt)))
             {
                 kingAttackersCount[Us]++;
