@@ -313,6 +313,8 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+        if (Pt == BISHOP)
+            mob += !!(b & pos.pieces(Us, PAWN) & attackedBy[Them][PAWN]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
