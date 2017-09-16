@@ -314,7 +314,7 @@ namespace {
         else if (Pt == BISHOP || Pt == ROOK)
         {
             if (   (bb = PseudoAttacks[Pt][s] & kingRing[Them])
-                && !(BetweenBB[s][frontmost_sq(Us, bb)] & pos.pieces(PAWN, Pt)))
+                && !(BetweenBB[s][frontmost_sq(Us, bb)] & (pos.pieces(PAWN, Pt) | pos.pieces(Us))))
             {
                 kingAttackersCount[Us]++;
                 kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
