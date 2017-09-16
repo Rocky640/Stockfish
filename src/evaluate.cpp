@@ -315,8 +315,10 @@ namespace {
         {
             if (   (bb = PseudoAttacks[Pt][s] & attackedBy[Them][KING])
                 && !(BetweenBB[s][frontmost_sq(Us, bb)] & pos.pieces(PAWN, Pt)))
+            {
                 kingAttackersCount[Us]++;
                 kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
+            }
         }
 
         int mob = popcount(b & mobilityArea[Us]);
