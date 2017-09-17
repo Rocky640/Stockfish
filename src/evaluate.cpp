@@ -157,14 +157,9 @@ namespace {
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
 
-  // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
-  // pieces if they can reach an outpost square, bigger if that square is
-  // supported by a pawn. If the minor piece occupies an outpost square
-  // then score is doubled.
-  const Score Outpost[][2] = {
-    { S(22, 6), S(36,12) }, // Knight
-    { S( 9, 2), S(15, 5) }  // Bishop
-  };
+  // Outpost[knight/bishop] contains bonuses for minor pieces relating to closest
+  // outpost square. Bonus is increased if piece occupies the outpost, or is supported by pawn.
+  const Score Outpost[] = { S(11, 3), S(5, 1) };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
@@ -285,6 +280,7 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
+    const Square Up = (Us == WHITE ? NORTH : SOUTH);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -325,12 +321,21 @@ namespace {
             // Bonus for outpost squares
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * 2;
+            {
+                int factor = 2 + !!(attackedBy[Us][PAWN] & s) 
+                               + !!(pe->other_pawns(Them) & (s + Up));
+                score += Outpost[Pt == BISHOP] * factor;
+                    
+            }
             else
             {
+                // Single bonus if that piece pressures the outpost square.
                 bb &= b & ~pos.pieces(Us);
                 if (bb)
-                   score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
+                {
+                   int factor = 1 + !!(attackedBy[Us][PAWN] & bb);
+                   score += Outpost[Pt == BISHOP] * factor;
+                }
             }
 
             // Bonus when behind a pawn
