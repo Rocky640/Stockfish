@@ -159,7 +159,7 @@ namespace {
 
   // Outpost[knight/bishop] contains bonuses for minor pieces relating to closest
   // outpost square. Bonus is increased if piece occupies the outpost, or is supported by pawn.
-  const Score Outpost[] = { S(11, 3), S(5, 1) };
+  const Score Outpost[] = { S(11, 4), S(5, 2) };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
@@ -322,7 +322,7 @@ namespace {
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
             {
-                int factor = 2 + !!(attackedBy[Us][PAWN] & s) 
+                int factor = 4 + 2 * !!(attackedBy[Us][PAWN] & s) 
                                + !!(pe->other_pawns(Them) & (s + Up));
                 score += Outpost[Pt == BISHOP] * factor;
                     
@@ -333,7 +333,7 @@ namespace {
                 bb &= b & ~pos.pieces(Us);
                 if (bb)
                 {
-                   int factor = 1 + !!(attackedBy[Us][PAWN] & bb);
+                   int factor = 2 + !!(attackedBy[Us][PAWN] & bb);
                    score += Outpost[Pt == BISHOP] * factor;
                 }
             }
