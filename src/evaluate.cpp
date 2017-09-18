@@ -569,13 +569,17 @@ namespace {
     // Add a bonus according to the kind of attacking pieces
     if (defended | weak)
     {
+        
+        Square closestEnemy = backmost_sq(Us, pos.pieces(Them) ^ pos.pieces(Them, PAWN));
+        Rank rdelta = relative_rank(Us, closestEnemy);
+
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
         while (b)
         {
             Square s = pop_lsb(&b);
             score += ThreatByMinor[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank * (int) (relative_rank(Them, s) + rdelta);
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
@@ -584,7 +588,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank * ((int)relative_rank(Them, s) + rdelta);
         }
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
