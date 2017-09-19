@@ -166,10 +166,6 @@ namespace {
     { S( 9, 2), S(15, 5) }  // Bishop
   };
 
-  // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
-  // friendly pawn on the rook file.
-  const Score RookOnFile[] = { S(20, 7), S(45, 20) };
-
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
@@ -205,6 +201,7 @@ namespace {
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
   const Score RookOnPawn          = S(  8, 24);
+  const Score RookOnFile          = S( 20,  7);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
   const Score OtherCheck          = S( 10, 10);
@@ -283,6 +280,8 @@ namespace {
   Score Evaluation<T>::evaluate_pieces() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard HalfBoard = (Us == WHITE ? Rank5BB | Rank6BB | Rank7BB | Rank8BB :
+                                              Rank4BB | Rank3BB | Rank2BB | Rank1BB);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
@@ -363,9 +362,13 @@ namespace {
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
 
-            // Bonus when on an open or semi-open file
+            // Bonus when on an open or semi-open file, according to safe squares
             if (pe->semiopen_file(Us, file_of(s)))
-                score += RookOnFile[!!pe->semiopen_file(Them, file_of(s))];
+            {
+                mob = popcount(  file_bb(s) & b & HalfBoard
+                               & ~(attackedBy[Them][KNIGHT] | attackedBy[Them][BISHOP] | attackedBy[Them][PAWN]));
+                score += RookOnFile * mob;
+            }
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
