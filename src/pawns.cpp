@@ -94,10 +94,12 @@ namespace {
   template<Color Us>
   Score evaluate(const Position& pos, Pawns::Entry* e) {
 
-    const Color  Them  = (Us == WHITE ? BLACK      : WHITE);
-    const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
-    const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
-    const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Color  Them    = (Us == WHITE ? BLACK      : WHITE);
+    const Square Up      = (Us == WHITE ? NORTH      : SOUTH);
+    const Square Down    = (Us == WHITE ? SOUTH      : NORTH);
+    const Square Right   = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
+    const Square Left    = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Bitboard Edges = FileABB | FileHBB;
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -108,8 +110,11 @@ namespace {
 
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
+    Bitboard rammed     = shift<Down>(theirPawns) & ourPawns;
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = 0;
+    e->weakUnopposed[Us] = e->closedSpace[Us]     = 0;
+
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
@@ -187,6 +192,17 @@ namespace {
 
         if (lever)
             score += Lever[relative_rank(Us, s)];
+        else if ((rammed & s) && !phalanx)
+        {
+            int closed = 0;
+            Bitboard rearPawns = ourPawns & pawn_attack_span(Them, s);
+            closed += (f == FILE_A || (   !(rearPawns & ~rammed & file_bb(f - 1))
+                                       && !(stoppers  & ~rammed & file_bb(f - 1))));
+            closed += (f == FILE_H || (   !(rearPawns & ~rammed & file_bb(f + 1))
+                                       && !(stoppers  & ~rammed & file_bb(f + 1))));
+            if (closed == 2)
+                e->closedSpace[Us] |= forward_file_bb(Them, s);
+        }
     }
 
     return score;

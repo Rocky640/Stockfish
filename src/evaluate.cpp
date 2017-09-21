@@ -313,6 +313,9 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
+        if (Pt == ROOK)
+            b &= ~(pe->closed_space(Us) & rank_bb(s));
+
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
