@@ -317,6 +317,12 @@ namespace {
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
+        if (Pt == BISHOP)
+            score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
+
+        if (attackedBy[Them][PAWN] & s)
+            continue;
+
         // Bonus for this piece as a king protector
         score += KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
 
