@@ -214,7 +214,7 @@ namespace {
   const Score ThreatBySafePawn    = S(182,175);
   const Score ThreatByRank        = S( 16,  3);
   const Score Hanging             = S( 48, 27);
-  const Score WeakUnopposedPawn   = S(  5, 25);
+  const Score WeakUnopposedPawn   = S(  2, 12);
   const Score ThreatByPawnPush    = S( 38, 22);
   const Score HinderPassedPawn    = S(  7,  0);
   const Score TrappedBishopA1H1   = S( 50, 50);
@@ -385,6 +385,9 @@ namespace {
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, pinners))
                 score -= WeakQueen;
         }
+
+        if (Pt == ROOK || Pt == QUEEN)
+            score += WeakUnopposedPawn * pe->weak_unopposed(Them);
     }
 
     if (T)
@@ -593,10 +596,6 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
-
-    // Bonus for opponent unopposed weak pawns
-    if (pos.count<ROOK>(Us) + pos.count<QUEEN>(Us) > 1)
-        score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
