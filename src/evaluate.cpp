@@ -110,6 +110,8 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    Bitboard centered[COLOR_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and (only for a king on its first rank) the
@@ -254,6 +256,9 @@ namespace {
     // are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
+    // When computing attacks for bishops and rook, will xray through friendly centered pieces
+    centered[Us] = Center & (pos.pieces(Us) ^ pos.pieces(Us, PAWN));
+
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
@@ -296,8 +301,8 @@ namespace {
     while ((s = *pl++) != SQ_NONE)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, ROOK, QUEEN))
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ (pos.pieces(Us, QUEEN) | centered[Us]))
+          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ (pos.pieces(Us, ROOK, QUEEN) | centered[Us]))
                          : pos.attacks_from<Pt>(s);
 
         if (pos.pinned_pieces(Us) & s)
