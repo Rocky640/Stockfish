@@ -286,6 +286,7 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard BishopCenterMask = (Us == WHITE ? Rank3BB : Rank6BB) | FileDBB | FileEBB;
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -341,9 +342,9 @@ namespace {
 
             if (Pt == BISHOP)
             {
-                // Bonus if no pawns on the bishop diagonal / center file,
-                if (!(attackedBy[Them][PAWN] & s))
-                    score += OpenCenter * !(PseudoAttacks[BISHOP][s] & (FileDBB | FileEBB) & pos.pieces(PAWN));
+                // Bonus if no pawns on the bishop diagonal / center file
+                if (LongDiagBB[s] && !(attackedBy[Them][PAWN] & s))
+                    score += OpenCenter * !(LongDiagBB[s] & BishopCenterMask & pos.pieces(PAWN));
 
                 // Penalty for pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
@@ -399,7 +400,6 @@ namespace {
 
     return score;
   }
-
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
 
