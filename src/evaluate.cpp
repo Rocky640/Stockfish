@@ -343,7 +343,7 @@ namespace {
             {
                 // Bonus if no pawns on the bishop diagonal / center file,
                 if (!(attackedBy[Them][PAWN] & s))
-                    score += OpenCenter * !(PseudoAttacks[s][BISHOP] & (FileDBB | FileEBB) & pos.pieces(PAWN));
+                    score += OpenCenter * !(PseudoAttacks[BISHOP][s] & (FileDBB | FileEBB) & pos.pieces(PAWN));
 
                 // Penalty for pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
