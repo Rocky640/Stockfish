@@ -165,6 +165,8 @@ namespace {
     { S(22, 6), S(36,12) }, // Knight
     { S( 9, 2), S(15, 5) }  // Bishop
   };
+  
+  const Score OpenCenter[] = { S( 11, 0), S(22, 0)};
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
@@ -204,7 +206,6 @@ namespace {
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
-  const Score OpenCenter          = S( 22,  0);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
@@ -343,8 +344,9 @@ namespace {
             if (Pt == BISHOP)
             {
                 // Bonus if no pawns on the bishop diagonal / center file
-                if (LongDiagBB[s] && !(attackedBy[Them][PAWN] & s))
-                    score += OpenCenter * !(LongDiagBB[s] & BishopCenterMask & pos.pieces(PAWN));
+                if (LongDiagBB[s] && !(attackedBy[Them][PAWN] & s)
+                                  && !(LongDiagBB[s] & BishopCenterMask & pos.pieces(PAWN)))
+                    score += OpenCenter[!!(LongDiagonals & s)];
 
                 // Penalty for pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
