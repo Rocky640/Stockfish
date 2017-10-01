@@ -235,6 +235,14 @@ namespace {
   const Value LazyThreshold  = Value(1500);
   const Value SpaceThreshold = Value(12222);
 
+  // Bitboards used by evaluation
+  const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
+  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
+  const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
+
+  const Bitboard KingFlank[FILE_NB] = {
+    QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
+  };
 
   // initialize() computes king and pawn attacks, and the king ring bitboard
   // for a given color. This is done at the beginning of the evaluation.
@@ -313,8 +321,22 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
+        bb = b;
 
+        if (Pt == BISHOP)
+        {
+            // Add a few more squares in view of the mobility calculation
+            // by removing at most one centered friendly blocker in each direction.
+            // E.g White Bg2, pawn f3: no new squares added, because f3 is not in the mobilityArea
+            // E.g White Bg2, Nf3    : e4, d5, etc might be added if not controlled by black pawns
+            //                         or occupied by our pieces
+            // E.g White Bg2, pawn e4: d5, c6 etc might be added if e4 is not blocked
+            if (~(attackedBy[Them][PAWN] & s))
+               bb |=  attacks_bb<BISHOP>(s, pos.pieces() & ~(b & mobilityArea[Us] & CenterFiles))
+                    & ~pos.pieces(Us);
+        }
+
+        int mob = popcount(bb & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         // Bonus for this piece as a king protector
@@ -395,14 +417,6 @@ namespace {
 
 
   // evaluate_king() assigns bonuses and penalties to a king of a given color
-
-  const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
-  const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
-  const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
-
-  const Bitboard KingFlank[FILE_NB] = {
-    QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
-  };
 
   template<Tracing T>  template<Color Us>
   Score Evaluation<T>::evaluate_king() {
