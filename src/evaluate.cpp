@@ -215,6 +215,7 @@ namespace {
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
   const Score LongRangedBishop    = S( 22,  0);
+  const Score TrappedBishop       = S( 75, 75);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
@@ -294,8 +295,11 @@ namespace {
   Score Evaluation<T>::evaluate_pieces() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard OutpostRanks   = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                                 : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard BishopTrapMask = (Us == WHITE ?  Rank6BB | Rank7BB | Rank8BB
+                                                  : Rank3BB | Rank2BB | Rank1BB) & (FileABB | FileHBB);
+    const Square Up     = (Us == WHITE ? NORTH : SOUTH);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -359,6 +363,10 @@ namespace {
                     && !(attackedBy[Them][PAWN] & s)
                     && !(Center & PseudoAttacks[BISHOP][s] & pos.pieces(PAWN)))
                     score += LongRangedBishop;
+                    
+                // Penalty if trapped on an edge file by a friendly blocked pawn in the enemy territory
+                if ((attackedBy[Us][PAWN] & BishopTrapMask & s) && (pos.pieces() & PawnAttacks[Us][s - Up]))
+                    score -= TrappedBishop;
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
