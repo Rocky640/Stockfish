@@ -354,10 +354,9 @@ namespace {
                 // Penalty for pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
 
-                // Bonus for bishop on a long diagonal without pawns in the center
-                if (    (LongDiagonals & s)
-                    && !(attackedBy[Them][PAWN] & s)
-                    && !(Center & PseudoAttacks[BISHOP][s] & pos.pieces(PAWN)))
+                // Bonus for bishop which attacks both center squares
+                if (   relative_rank(Us, s) < RANK_5
+                    && more_than_one(Center & b & ~pos.pieces(PAWN)))
                     score += LongRangedBishop;
             }
 
