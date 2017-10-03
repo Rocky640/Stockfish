@@ -357,7 +357,7 @@ namespace {
                 // Bonus for bishop on a long diagonal without pawns in the center
                 if (    (LongDiagonals & s)
                     && !(attackedBy[Them][PAWN] & s)
-                    && !(Center & PseudoAttacks[BISHOP][s] & pos.pieces(PAWN)))
+                    && !(Center & PseudoAttacks[BISHOP][s] & (pos.pieces(PAWN) ^ pe->weak_unopposed(Them))))
                     score += LongRangedBishop;
             }
 
@@ -607,7 +607,7 @@ namespace {
 
     // Bonus for opponent unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
-        score += WeakUnopposedPawn * pe->weak_unopposed(Them);
+        score += WeakUnopposedPawn * popcount(pe->weak_unopposed(Them));
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
