@@ -336,9 +336,12 @@ namespace {
             // Bonus for outpost squares
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * 2;
+                // Allocate bonus if the piece occupies an outpost square. Double if piece is active
+                score +=  Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)]
+                        * (1 + (popcount(b & mobilityArea[Us] & forward_ranks_bb(Us, s))) > 2);
             else
             {
+                // Allocate single bonus if the piece cab reach an outpost square
                 bb &= b & ~pos.pieces(Us);
                 if (bb)
                    score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
