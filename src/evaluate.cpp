@@ -335,10 +335,15 @@ namespace {
         {
             // Bonus for outpost squares
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
+            
+            
             if (bb & s)
-                score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)] * 2;
+                // Allocate double bonus if the piece occupies an outpost square and can retreat
+                score +=  Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)]
+                        * (1 + !!(b & mobilityArea[Us] & forward_ranks_bb(Them, s)));
             else
             {
+                // Allocate single bonus if the piece can reach an outpost square
                 bb &= b & ~pos.pieces(Us);
                 if (bb)
                    score += Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & bb)];
