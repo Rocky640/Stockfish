@@ -338,7 +338,7 @@ namespace {
             if (bb & s)
                 // Allocate bonus if the piece occupies an outpost square. Double if piece is active
                 score +=  Outpost[Pt == BISHOP][!!(attackedBy[Us][PAWN] & s)]
-                        * (1 + (popcount(b & mobilityArea[Us] & forward_ranks_bb(Us, s))) > 2);
+                        * (1 + (popcount(b & mobilityArea[Us] & forward_ranks_bb(Us, s))) > 3);
             else
             {
                 // Allocate single bonus if the piece cab reach an outpost square
