@@ -31,9 +31,10 @@
 
 namespace {
 
-  const Bitboard QueenSide   =  FileABB | FileBBB | FileCBB | FileDBB;
-  const Bitboard CenterFiles =  FileCBB | FileDBB | FileEBB | FileFBB;
-  const Bitboard KingSide    =  FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard QueenSide   =   FileABB | FileBBB | FileCBB | FileDBB;
+  const Bitboard CenterFiles =   FileCBB | FileDBB | FileEBB | FileFBB;
+  const Bitboard KingSide    =   FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard BishopCenter = (Rank4BB | Rank5BB) & CenterFiles;
 
   const Bitboard KingFlank[FILE_NB] = {
     QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
@@ -294,7 +295,6 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
-    const Bitboard BishopCenter = (FileDBB | FileEBB) & OutpostRanks;
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -353,10 +353,9 @@ namespace {
                 // Penalty for pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
 
-                // Bonus for bishop on a long diagonal (or diagonal above)
-                // if it can "see" both center squares
+                // Bonus for bishop if it can "see" 2 empty squares in the "BishopCenter"
                 if (  !(attackedBy[Them][PAWN] & s)
-                    && (more_than_one((attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s) & BishopCenter)))
+                    && (more_than_one(BishopCenter & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s))))
                     score += LongRangedBishop;
             }
 
