@@ -32,10 +32,12 @@
 namespace {
 
   const Bitboard LongDiagonals = 0x8142241818244281ULL; // A1..H8 | H1..A8
-  const Bitboard Center        = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
   const Bitboard QueenSide     = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles   = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide      = FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard Center        = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+  const Bitboard LargeCenter   = CenterFiles & (Rank3BB | Rank4BB | Rank5BB | Rank6BB);
+  
 
   const Bitboard KingFlank[FILE_NB] = {
     QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
@@ -215,6 +217,7 @@ namespace {
   const Score MinorBehindPawn     = S( 16,  0);
   const Score BishopPawns         = S(  8, 12);
   const Score LongRangedBishop    = S( 22,  0);
+  const Score EdgedBishop         = S( 22,  0);
   const Score RookOnPawn          = S(  8, 24);
   const Score TrappedRook         = S( 92,  0);
   const Score WeakQueen           = S( 50, 10);
@@ -359,6 +362,9 @@ namespace {
                     && !(attackedBy[Them][PAWN] & s)
                     && !(Center & PseudoAttacks[BISHOP][s] & pos.pieces(PAWN)))
                     score += LongRangedBishop;
+                
+                if (! (LargeCenter & b & mobilityArea[Us]))
+                    score -= EdgedBishop;
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
