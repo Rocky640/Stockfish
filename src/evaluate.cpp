@@ -363,7 +363,7 @@ namespace {
                     && !(Center & PseudoAttacks[BISHOP][s] & pos.pieces(PAWN)))
                     score += LongRangedBishop;
                 
-                if (! (LargeCenter & b & mobilityArea[Us]))
+                if (! (LargeCenter & (b | s) & mobilityArea[Us]))
                     score -= EdgedBishop;
             }
 
