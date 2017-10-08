@@ -119,6 +119,8 @@ namespace {
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
+    
+    Bitboard attackedBy2NoQ[COLOR_NB];
 
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
@@ -299,6 +301,7 @@ namespace {
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
+    int mob;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -324,7 +327,8 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
+        mob = (Pt == QUEEN ? popcount(b & mobilityArea[Us] & ~attackedBy2NoQ[Them])
+                           : popcount(b & mobilityArea[Us]));
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -857,6 +861,10 @@ namespace {
     score += evaluate_pieces<WHITE, KNIGHT>() - evaluate_pieces<BLACK, KNIGHT>();
     score += evaluate_pieces<WHITE, BISHOP>() - evaluate_pieces<BLACK, BISHOP>();
     score += evaluate_pieces<WHITE, ROOK  >() - evaluate_pieces<BLACK, ROOK  >();
+
+    attackedBy2NoQ[WHITE] = attackedBy2[WHITE];
+    attackedBy2NoQ[BLACK] = attackedBy2[BLACK];
+
     score += evaluate_pieces<WHITE, QUEEN >() - evaluate_pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
