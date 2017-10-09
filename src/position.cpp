@@ -912,10 +912,10 @@ void Position::undo_move(Move m) {
 template<bool Do>
 void Position::do_castling(Color us, Square from, Square& to, Square& rfrom, Square& rto) {
 
-  bool kingSide = to > from;
+  bool kingSideCastling = to > from;
   rfrom = to; // Castling is encoded as "king captures friendly rook"
-  rto = relative_square(us, kingSide ? SQ_F1 : SQ_D1);
-  to = relative_square(us, kingSide ? SQ_G1 : SQ_C1);
+  rto = relative_square(us, kingSideCastling ? SQ_F1 : SQ_D1);
+  to  = relative_square(us, kingSideCastling ? SQ_G1 : SQ_C1);
 
   // Remove both pieces first since squares could overlap in Chess960
   remove_piece(make_piece(us, KING), Do ? from : to);

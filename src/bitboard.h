@@ -60,6 +60,15 @@ const Bitboard Rank6BB = Rank1BB << (8 * 5);
 const Bitboard Rank7BB = Rank1BB << (8 * 6);
 const Bitboard Rank8BB = Rank1BB << (8 * 7);
 
+const Bitboard LongDiagonals    = 0x8142241818244281ULL; // A1..H8 | H1..A8
+const Bitboard CenterFiles      = FileDBB | FileEBB;
+const Bitboard Center           = CenterFiles & (Rank4BB | Rank5BB);
+
+const Bitboard QueenSide        = FileABB | FileBBB | FileCBB | FileDBB;
+const Bitboard LargeCenterFiles = FileCBB |     CenterFiles   | FileFBB;
+const Bitboard KingSide         = FileEBB | FileFBB | FileGBB | FileHBB;
+
+
 extern int SquareDistance[SQUARE_NB][SQUARE_NB];
 
 extern Bitboard SquareBB[SQUARE_NB];

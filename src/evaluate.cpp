@@ -31,14 +31,8 @@
 
 namespace {
 
-  const Bitboard LongDiagonals = 0x8142241818244281ULL; // A1..H8 | H1..A8
-  const Bitboard Center        = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
-  const Bitboard QueenSide     = FileABB | FileBBB | FileCBB | FileDBB;
-  const Bitboard CenterFiles   = FileCBB | FileDBB | FileEBB | FileFBB;
-  const Bitboard KingSide      = FileEBB | FileFBB | FileGBB | FileHBB;
-
   const Bitboard KingFlank[FILE_NB] = {
-    QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
+    QueenSide, QueenSide, QueenSide, LargeCenterFiles, LargeCenterFiles, KingSide, KingSide, KingSide
   };
 
   namespace Trace {
@@ -301,6 +295,7 @@ namespace {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
+    int mob;
 
     attackedBy[Us][Pt] = 0;
 
@@ -323,8 +318,11 @@ namespace {
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
-
-        int mob = popcount(b & mobilityArea[Us]);
+       
+        if (Pt == BISHOP || Pt == KNIGHT)
+            mob = popcount(b & mobilityArea[Us] & ~pe->lockedAreas[Us]);
+        else
+            mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 

@@ -94,13 +94,15 @@ namespace {
   template<Color Us>
   Score evaluate(const Position& pos, Pawns::Entry* e) {
 
-    const Color  Them  = (Us == WHITE ? BLACK      : WHITE);
-    const Square Up    = (Us == WHITE ? NORTH      : SOUTH);
-    const Square Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
-    const Square Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Color  Them      = (Us == WHITE ? BLACK      : WHITE);
+    const Square Up        = (Us == WHITE ? NORTH      : SOUTH);
+    const Square Right     = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
+    const Square Left      = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Square RightThem = (Us == BLACK ? NORTH_EAST : SOUTH_WEST);
+    const Square LeftThem  = (Us == BLACK ? NORTH_WEST : SOUTH_EAST);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
-    Bitboard lever, leverPush;
+    Bitboard lever, leverPush, locked;
     Square s;
     bool opposed, backward;
     Score score = SCORE_ZERO;
@@ -109,10 +111,11 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = locked = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
+    e->dbleAttacks[Them] = shift<RightThem>(theirPawns) & shift<LeftThem>(theirPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -151,6 +154,16 @@ namespace {
             backward = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
 
             assert(!(backward && (forward_ranks_bb(Them, s + Up) & neighbours)));
+            
+            // A pawn is locked if not a lever, has some neighbours, is opposed and
+            // a) is backward OR
+            // b) if front square is blocked, or fully controlled by opponent
+
+            if (   opposed
+                && (   backward
+                    || (theirPawns & (s + Up))
+                    || (!phalanx && (e->dbleAttacks[Them] & (s + Up)))))
+                locked |= s;
         }
 
         // Passed pawns will be properly scored in evaluation because we need
@@ -188,6 +201,19 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+    
+    // Analyse the locked wings
+    b = locked & QueenSide;
+    if (popcount(b) > 2)
+        e->lockedAreas[Us] |= QueenSide & ~CenterFiles;
+
+    b = locked & CenterFiles;
+    if (popcount(b) > 3)
+       e->lockedAreas[Us] |= CenterFiles;
+
+    b = locked & KingSide;
+    if (popcount(b) > 2)
+       e->lockedAreas[Us] |= KingSide & ~CenterFiles;
 
     return score;
   }
