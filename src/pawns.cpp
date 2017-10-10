@@ -207,7 +207,7 @@ namespace {
     if (popcount(b) > 2)
         e->lockedAreas[Us] |= QueenSide & ~CenterFiles;
 
-    b = locked & CenterFiles;
+    b = locked & LargeCenterFiles;
     if (popcount(b) > 3)
        e->lockedAreas[Us] |= CenterFiles;
 
