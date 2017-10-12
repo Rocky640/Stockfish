@@ -225,7 +225,7 @@ namespace {
   const Score ThreatByRank        = S( 16,  3);
   const Score Hanging             = S( 48, 27);
   const Score WeakUnopposedPawn   = S(  5, 25);
-  const Score ThreatByPawnPush    = S( 38, 22);
+  const Score ThreatByPawnPush    = S( 19, 11);
   const Score HinderPassedPawn    = S(  7,  0);
   const Score TrappedBishopA1H1   = S( 50, 50);
 
@@ -537,6 +537,7 @@ namespace {
 
     const Color Them        = (Us == WHITE ? BLACK      : WHITE);
     const Square Up         = (Us == WHITE ? NORTH      : SOUTH);
+    const Square Down       = (Us == WHITE ? SOUTH      : NORTH);
     const Square Left       = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
@@ -613,12 +614,13 @@ namespace {
     // Keep only the squares which are not completely unsafe
     b &= (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
-    // Add a bonus for each new pawn threats from those squares on non-pawns
+    // Find new pawn threats from those squares on non-pawns
     b =  (shift<Left>(b) | shift<Right>(b))
        &  pos.pieces(Them)
        & ~(pos.pieces(PAWN) | attackedBy[Us][PAWN]);
 
-    score += ThreatByPawnPush * popcount(b);
+    // Double the bonus if square is not defended by their pawn
+    score += ThreatByPawnPush * popcount(b | shift<Down>(b & ~attackedBy[Them][PAWN]));
 
     if (T)
         Trace::add(THREAT, Us, score);
