@@ -236,10 +236,10 @@ namespace {
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
   // Penalties for enemy's safe checks
-  const int QueenCheck  = 780;
+  const int QueenCheck[2]  = {780, 1000};
   const int RookCheck   = 880;
   const int BishopCheck = 435;
-  const int KnightCheck = 790;
+  const int KnightCheck[2] = {790, 1000};
 
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
@@ -462,8 +462,9 @@ namespace {
         b2 = pos.attacks_from<BISHOP>(ksq);
 
         // Enemy queen safe checks
-        if ((b1 | b2) & attackedBy[Them][QUEEN] & safe)
-            kingDanger += QueenCheck;
+        b = (b1 | b2) & attackedBy[Them][QUEEN] & safe;
+        if (b)
+            kingDanger += QueenCheck[more_than_one(b)];
 
         // For minors and rooks, also consider the square safe if attacked twice,
         // and only defended by our queen.
@@ -494,7 +495,7 @@ namespace {
         // Enemy knights safe and other checks
         b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
         if (b & safe)
-            kingDanger += KnightCheck;
+            kingDanger += KnightCheck[more_than_one(b)];
 
         else if (b & other)
             score -= OtherCheck;
