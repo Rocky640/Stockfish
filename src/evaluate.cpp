@@ -326,8 +326,8 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        mob = (Pt == QUEEN ? popcount(b & mobilityArea[Us] & ~attackedBy2NoQ[Them])
-                           : popcount(b & mobilityArea[Us]));
+         mob = (Pt == QUEEN ? popcount(b & mobilityArea[Us] & (attackedBy2[Us] | ~attackedBy2NoQ[Them]))
+                            : popcount(b & mobilityArea[Us]));
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
