@@ -35,13 +35,13 @@ namespace {
   const Score Island = S(13, 18);
 
   // Backward pawn penalty
-  const Score Backward = S(24, 12);
+  const Score Backward = S(11, -6);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
 
   // Doubled pawn penalty
-  const Score Doubled = S(18, 38);
+  const Score Doubled = S(5, 20);
 
   // Lever bonus by rank
   const Score Lever[RANK_NB] = {
