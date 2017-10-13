@@ -31,8 +31,8 @@ namespace {
   #define V Value
   #define S(mg, eg) make_score(mg, eg)
 
-  // Isolated pawn penalty
-  const Score Isolated = S(13, 18);
+  // Island pawn penalty
+  const Score Island = S(13, 18);
 
   // Backward pawn penalty
   const Score Backward = S(24, 12);
@@ -177,7 +177,7 @@ namespace {
             score += Connected[opposed][!!phalanx][popcount(supported)][relative_rank(Us, s)];
 
         else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
+            e->weakUnopposed[Us] += !opposed;
 
         else if (backward)
             score -= Backward, e->weakUnopposed[Us] += !opposed;
@@ -188,6 +188,8 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+
+    score -= Island * Islands[e->semiopenFiles[Us]];
 
     return score;
   }

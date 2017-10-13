@@ -25,6 +25,7 @@
 
 uint8_t PopCnt16[1 << 16];
 int SquareDistance[SQUARE_NB][SQUARE_NB];
+int Islands[256];
 
 Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
@@ -220,6 +221,17 @@ void Bitboards::init() {
               BetweenBB[s1][s2] = attacks_bb(pt, s1, SquareBB[s2]) & attacks_bb(pt, s2, SquareBB[s1]);
           }
   }
+
+  // NEW, precompute number of islands based on the semi open file signature
+  // Example: White has pawns on a, c, d and f and h file. 
+  // The semi open file signature is, in binary (01001010).
+  // Islands is called with parameter (01001010) and will return the number of disjoint groups
+  // for the inverse b'=10110101 (the inverse represents the files with a pawn).
+  // For the example, it will return 4
+  
+  for (Bitboard b = 0; b < 256; ++b)
+      Islands[b^0xFF] = popcount(b & ~(b >> 1));
+
 }
 
 
