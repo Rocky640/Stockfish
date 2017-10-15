@@ -598,7 +598,7 @@ namespace {
 
         b = (pos.pieces(Them, QUEEN) | weak) & ~pos.pieces(PAWN) & attackedBy[Us][QUEEN];
         while (b)
-            score += ThreatByRankQ * (int)relative_rank(Them, pop_lsb(&b));
+            score += ThreatByRankQ * (int)relative_rank(Us, pop_lsb(&b));
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
