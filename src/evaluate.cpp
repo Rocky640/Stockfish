@@ -223,6 +223,7 @@ namespace {
   const Score ThreatByHangingPawn = S( 71, 61);
   const Score ThreatBySafePawn    = S(192,175);
   const Score ThreatByRank        = S( 16,  3);
+  const Score ThreatByRankQ       = S(  8,  1);
   const Score Hanging             = S( 48, 27);
   const Score WeakUnopposedPawn   = S(  5, 25);
   const Score ThreatByPawnPush    = S( 38, 22);
@@ -597,7 +598,7 @@ namespace {
 
         b = (pos.pieces(Them, QUEEN) | weak) & ~pos.pieces(PAWN) & attackedBy[Us][QUEEN];
         while (b)
-            score += ThreatByRank * (int)relative_rank(Them, pop_lsb(&b));
+            score += ThreatByRankQ * (int)relative_rank(Them, pop_lsb(&b));
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
