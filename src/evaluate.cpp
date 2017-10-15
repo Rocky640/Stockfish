@@ -595,6 +595,15 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
+        b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][QUEEN];
+        while (b)
+        {
+            Square s = pop_lsb(&b);
+            //score += ThreatByRook[type_of(pos.piece_on(s))];
+            if (type_of(pos.piece_on(s)) != PAWN)
+                score += ThreatByRank * (int)relative_rank(Them, s);
+        }
+
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
         b = weak & attackedBy[Us][KING];
