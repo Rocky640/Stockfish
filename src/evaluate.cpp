@@ -637,11 +637,12 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Square Up  = (Us == WHITE ? NORTH : SOUTH);
 
-    Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
+    Bitboard b, bb, bk, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
+    bk = adjacent_files_bb(file_of(pos.square<KING>(Us))) & ~attackedBy[Them][ALL_PIECES];
     b = pe->passed_pawns(Us);
-
+    
     while (b)
     {
         Square s = pop_lsb(&b);
@@ -667,6 +668,9 @@ namespace {
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
                 ebonus -= distance(pos.square<KING>(Us), blockSq + Up) * rr;
+            
+            if (!bk && (forward_file_bb(Us, s) & pos.pieces(Us, KING)))
+                ebonus -= 3 * rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
