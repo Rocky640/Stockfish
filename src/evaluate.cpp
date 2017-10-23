@@ -669,7 +669,7 @@ namespace {
                 d -= distance(pos.square<KING>(Us), blockSq + Up);
 
             // Double the distance bonus/penalty in very late endgame
-            ebonus += (1 + !kingRing[Us]) * d * rr;
+            ebonus += (1 + (pos.count<PAWN>() < 3)) * d * rr;
 
             
             // If the pawn is free to advance, then increase the bonus
