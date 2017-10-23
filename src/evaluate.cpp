@@ -661,17 +661,15 @@ namespace {
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            int d = distance(pos.square<KING>(  Us), blockSq) * 2;
+            int d =  distance(pos.square<KING>(Them), blockSq) * 5
+                   - distance(pos.square<KING>(  Us), blockSq) * 2;
             
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
-                d += distance(pos.square<KING>(Us), blockSq + Up);
-            
-            if (!kingRing[Us])
-                d *= 2;
+                d -= distance(pos.square<KING>(Us), blockSq + Up);
 
-            
-            ebonus += (distance(pos.square<KING>(Them), blockSq) * 5 - d) * rr;
+            // Double the distance bonus/penalty in very late endgame
+            ebonus += (1 + !kingRing[Us]) * d * rr;
 
             
             // If the pawn is free to advance, then increase the bonus
