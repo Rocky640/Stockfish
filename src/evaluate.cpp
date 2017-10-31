@@ -606,11 +606,18 @@ namespace {
     }
     
     // Bonus for each opponent piece type which is single defender of 2 weak attacked pieces
-    b = weak & ~attackedBy[2][Them];
-
-    for (PieceType Pt = KNIGHT; Pt <= QUEEN; ++Pt)
-        if (more_than_one(attackedBy[Them][Pt] & b))
-            score += Overloaded[Pt - 2];
+    b = weak & ~(pos.pieces(PAWN) | attackedBy[2][Them]);
+    if (b)
+    {
+        if (pos.count<KNIGHT>(Them) == 1 && more_than_one(attackedBy[Them][KNIGHT] & b))
+            score += Overloaded[KNIGHT - 2];
+        if (more_than_one(attackedBy[Them][BISHOP] & b))
+            score += Overloaded[BISHOP - 2];
+        if (pos.count<ROOK>(Them) == 1  && more_than_one(attackedBy[Them][ROOK] & b))
+            score += Overloaded[ROOK - 2];
+        if (more_than_one(attackedBy[Them][QUEEN] & b))
+            score += Overloaded[BISHOP - 2];
+    }
 
     // Bonus for opponent unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
