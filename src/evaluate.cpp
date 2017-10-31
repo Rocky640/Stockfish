@@ -193,6 +193,9 @@ namespace {
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[] = { S(3, 62), S(9, 138) };
+  
+  // Overloaded[PieceType-2] contains a bonus for the attacker for each overloaded piece of the defender
+  const Score Overloaded[] = { S(10, 10), S(5, 5), S(5, 5), S(15, 15) };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
@@ -601,6 +604,13 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+    
+    // Bonus for each opponent piece type which is single defender of 2 weak attacked pieces
+    b = weak & ~attackedBy[2][Them];
+
+    for (PieceType Pt = KNIGHT; Pt <= QUEEN; ++Pt)
+        if (more_than_one(attackedBy[Them][Pt] & b))
+            score += Overloaded[Pt - 2];
 
     // Bonus for opponent unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
