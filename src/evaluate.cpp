@@ -591,7 +591,7 @@ namespace {
     }
 
     // Bonus for opponent unopposed weak pawns
-    if (pos.pieces(Us, ROOK, QUEEN))
+    if (pos.pieces(Us, ROOK, QUEEN) || (pos.count<BISHOP>(Us) == 2))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
     // Find squares where our pawns can push on the next move
