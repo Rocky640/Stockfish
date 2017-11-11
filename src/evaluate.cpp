@@ -323,7 +323,7 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
         if (Pt == BISHOP)
-            mob = popcount(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & b & mobilityArea[Us]);
+            mob = popcount(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & mobilityArea[Us]);
         else
             mob = popcount(b & mobilityArea[Us]);
 
