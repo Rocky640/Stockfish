@@ -102,7 +102,7 @@ namespace {
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
     Square s;
-    bool opposed, backward, controlled;
+    bool opposed, backward;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
 
@@ -135,24 +135,25 @@ namespace {
         neighbours = ourPawns   & adjacent_files_bb(f);
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
-        controlled =    more_than_one(stoppers & PseudoAttacks[KNIGHT][s])
-                     && relative_rank(Us, s) < RANK_4;
 
-        // A pawn is backward when it is behind all pawns of the same color on the
-        // adjacent files and cannot be safely advanced.
-        if (!neighbours || lever || relative_rank(Us, s) >= RANK_5)
+        // A pawn is backward if it is the backmost relative to it neighbours,
+        // and it cannot move safely to the same rank as its closest front neighbour.
+        if (    !(neighbours ^ phalanx)
+             || lever
+             || relative_rank(Us, s) >= RANK_5
+             || (phalanx && !more_than_one(leverPush)))
             backward = false;
         else
         {
-            // Find the backmost rank with neighbours or stoppers
-            b = rank_bb(backmost_sq(Us, neighbours | stoppers));
+            // Find the backmost rank with non phalanx neighbours or stoppers
+            b = rank_bb(backmost_sq(Us, (neighbours ^ phalanx) | stoppers));
 
             // The pawn is backward when it cannot safely progress to that rank:
             // either there is a stopper in the way on this rank, or there is a
             // stopper on adjacent file which controls the way to that rank.
             backward = (b | shift<Up>(b & adjacent_files_bb(f))) & stoppers;
 
-            assert(!(backward && (forward_ranks_bb(Them, s + Up) & neighbours)));
+            assert(!(backward && (forward_ranks_bb(Them, s) & neighbours)));
         }
 
         // Passed pawns will be properly scored in evaluation because we need
@@ -174,16 +175,13 @@ namespace {
                     e->passedPawns[Us] |= s;
         }
 
-        // Score this pawn
-	if (controlled) phalanx = 0;
-
         if (supported | phalanx)
             score += Connected[opposed][!!phalanx][popcount(supported)][relative_rank(Us, s)];
 
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
-        else if (backward)
+        if (backward)
             score -= Backward, e->weakUnopposed[Us] += !opposed;
 
         if (doubled && !supported)
