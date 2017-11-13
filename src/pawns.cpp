@@ -34,8 +34,8 @@ namespace {
   // Isolated pawn penalty
   const Score Isolated = S(13, 18);
 
-  // Backward pawn penalty (full / semi)
-  const Score Backward[2] = { S(24, 12), S(12, 6) };
+  // Backward pawn penalty (normal / phalanx)
+  const Score Backward[2] = { S(24, 12), S(30, 18) };
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
