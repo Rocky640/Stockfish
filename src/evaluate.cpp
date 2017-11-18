@@ -593,14 +593,26 @@ namespace {
     // Bonus for opponent unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
-
-    // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
+    
+    
+    
+    // Find the opponent attacking pawns
+    b = pos.pieces(Us);
+    b = (shift<Right>(b) | shift<Left>(b)) & pos.pieces(Them, PAWN);
+    
+    // Find squares where our pawns can push on the next move, possibly after the
+    // square is vacated by an opponent attacking pawn capturing one of our men,
+    // or because it is occupied by an opponent men attacked by a phalanx pawn
+    b  = shift<Up>(pos.pieces(Us, PAWN)) & (~pos.pieces() | b | attackedBy[Us][PAWN]);
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
+
+    // Find the square in front of pawns protected by a rook.
+    // The pawn push will either be supported, or will open the rook for more attacks.
+    defended = shift<Up>(pos.pieces(Us, PAWN) & attackedBy[Us][ROOK]);
 
     // Keep only the squares which are not completely unsafe
     b &= ~attackedBy[Them][PAWN]
-        & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
+        & (defended | attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
     // Add a bonus for each new pawn threats from those squares
     b =  (shift<Left>(b) | shift<Right>(b))
