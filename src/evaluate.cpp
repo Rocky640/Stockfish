@@ -463,7 +463,7 @@ namespace {
         // currently occupied by the opponent own pieces, as long as the square
         // is not attacked by our pawns, and is not occupied by a blocked pawn.
         other = ~(   attackedBy[Us][PAWN]
-                  | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
+                  | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces())));
 
         // Enemy rooks safe and other checks
         if (b1 & attackedBy[Them][ROOK] & safe)
