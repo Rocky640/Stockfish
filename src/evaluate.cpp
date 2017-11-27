@@ -226,7 +226,7 @@ namespace {
   const Score Hanging               = S( 48, 27);
   const Score WeakUnopposedPawn     = S(  5, 25);
   const Score ThreatByPawnPush      = S( 38, 22);
-  const Score ThreatByAttackOnQueen = S( 38, 22);
+  const Score ThreatByAttackOnQueen = S( 30, 18);
   const Score HinderPassedPawn      = S(  7,  0);
   const Score TrappedBishopA1H1     = S( 50, 50);
 
@@ -621,7 +621,7 @@ namespace {
     b =  (attackedBy[Us][BISHOP] & attackedBy[Them][QUEEN_DIAGONAL])
        | (attackedBy[Us][ROOK  ] & attackedBy[Them][QUEEN] & ~attackedBy[Them][QUEEN_DIAGONAL]);
 
-    score += ThreatByAttackOnQueen * popcount(b & safeThreats);
+    score += ThreatByAttackOnQueen * !!(b & safeThreats);
 
     if (T)
         Trace::add(THREAT, Us, score);
