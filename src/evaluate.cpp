@@ -621,7 +621,7 @@ namespace {
     b =  (attackedBy[Us][BISHOP] & attackedBy[Them][QUEEN_DIAGONAL])
        | (attackedBy[Us][ROOK  ] & attackedBy[Them][QUEEN] & ~attackedBy[Them][QUEEN_DIAGONAL]);
 
-    score += ThreatByAttackOnQueen * !!(b & safeThreats);
+    score += ThreatByAttackOnQueen * popcount(b & safeThreats);
 
     if (T)
         Trace::add(THREAT, Us, score);
