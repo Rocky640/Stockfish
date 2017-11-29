@@ -226,6 +226,7 @@ namespace {
   const Score Hanging               = S( 48, 27);
   const Score WeakUnopposedPawn     = S(  5, 25);
   const Score ThreatByPawnPush      = S( 38, 22);
+  const Score ThreatBySafePawnPush  = S( 48, 32);
   const Score ThreatByAttackOnQueen = S( 38, 22);
   const Score HinderPassedPawn      = S(  7,  0);
   const Score TrappedBishopA1H1     = S( 50, 50);
@@ -605,16 +606,30 @@ namespace {
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
+    // Super safe pawn push
+    safeThreats = b & ~attackedBy[Them][PAWN] & attackedBy[Us][PAWN];
+
     // Keep only the squares which are not completely unsafe
     b &= ~attackedBy[Them][PAWN]
         & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
-
+if (b) {
     // Add a bonus for each new pawn threats from those squares
-    b =  (shift<Left>(b) | shift<Right>(b))
+    safeThreats =  (shift<Left>(safeThreats) | shift<Right>(safeThreats))
        &  pos.pieces(Them)
        & ~attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    b =  (shift<Left>(b) | shift<Right>(b))
+       &  pos.pieces(Them)
+       & ~attackedBy[Us][PAWN];
+       
+    score +=   ThreatByPawnPush * popcount(b ^ safeThreats)
+             + ThreatBySafePawnPush * popcount(safeThreats);
+    
+
+}
+    
+
+    
 
     // Add a bonus for safe slider attack threats on opponent queen
     safeThreats = ~pos.pieces(Us) & ~attackedBy2[Them] & attackedBy2[Us];
