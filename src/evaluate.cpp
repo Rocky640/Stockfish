@@ -536,7 +536,7 @@ namespace {
     const Square Right      = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, weak, defended, stronglyProtected, safeThreats, actualThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -617,11 +617,19 @@ namespace {
     score += ThreatByPawnPush * popcount(b);
 
     // Add a bonus for safe slider attack threats on opponent queen
-    safeThreats = ~pos.pieces(Us) & ~attackedBy2[Them] & attackedBy2[Us];
-    b =  (attackedBy[Us][BISHOP] & attackedBy[Them][QUEEN_DIAGONAL])
-       | (attackedBy[Us][ROOK  ] & attackedBy[Them][QUEEN] & ~attackedBy[Them][QUEEN_DIAGONAL]);
+    // (next move threats or actual)
 
-    score += ThreatByAttackOnQueen * popcount(b & safeThreats);
+    safeThreats = ~pos.pieces(Us) & ~attackedBy2[Them] & attackedBy2[Us];
+    actualThreats = ~attackedBy2[Them] & attackedBy[Us][ALL_PIECES];
+
+    b  = (  (pos.pieces(Us, BISHOP) & actualThreats)
+          | (attackedBy[Us][BISHOP] & safeThreats))
+         & attackedBy[Them][QUEEN_DIAGONAL];
+    b |= (  (pos.pieces(Us, ROOK) & actualThreats)
+          | (attackedBy[Us][ROOK] & safeThreats))
+         & (attackedBy[Them][QUEEN] & ~attackedBy[Them][QUEEN_DIAGONAL]);
+
+    score += ThreatByAttackOnQueen * popcount(b);
 
     if (T)
         Trace::add(THREAT, Us, score);
