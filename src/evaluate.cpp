@@ -190,11 +190,11 @@ namespace {
     S(0, 0), S(0, 25), S(40, 62), S(40, 59), S(0, 34), S(35, 48)
   };
 
-  // ThreatByKing[on one/on many] contains bonuses for king attacks on
+  // ThreatByKing[on one/on many][late endgame] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[][2] = {
-      { S(3, 62), S(9, 138) },
-      { S(3,100), S(9, 200) }
+      { S(3, 62), S(9, 100) },
+      { S(9,138), S(9, 200) }
   };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
