@@ -192,7 +192,10 @@ namespace {
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
-  const Score ThreatByKing[] = { S(3, 62), S(9, 138) };
+  const Score ThreatByKing[][2] = {
+      { S(3, 62), S(9, 138) },
+      { S(3,100), S(9, 200) }
+  };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
@@ -587,7 +590,7 @@ namespace {
 
         b = weak & attackedBy[Us][KING];
         if (b)
-            score += ThreatByKing[more_than_one(b)];
+            score += ThreatByKing[more_than_one(b)][pos.non_pawn_material(Them) < RookValueEg];
     }
 
     // Bonus for opponent unopposed weak pawns
