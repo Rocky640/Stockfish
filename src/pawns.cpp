@@ -52,14 +52,14 @@ namespace {
   // Weakness of our pawn shelter in front of the king by [isKingFile][distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawns or our pawn is behind our king.
   const Value ShelterWeakness[][int(FILE_NB) / 2][RANK_NB] = {
-    { { V( 97), V(17), V( 9), V(44), V( 84), V( 87), V( 99) }, // Not On King file
-      { V(106), V( 6), V(33), V(86), V( 87), V(104), V(112) },
-      { V(101), V( 2), V(65), V(98), V( 58), V( 89), V(115) },
-      { V( 73), V( 7), V(54), V(73), V( 84), V( 83), V(111) } },
-    { { V(104), V(20), V( 6), V(27), V( 86), V( 93), V( 82) }, // On King file
-      { V(123), V( 9), V(34), V(96), V(112), V( 88), V( 75) },
-      { V(120), V(25), V(65), V(91), V( 66), V( 78), V(117) },
-      { V( 81), V( 2), V(47), V(63), V( 94), V( 93), V(104) } }
+    { { V( 99), V(17), V( 9), V(44), V( 84), V( 87), V( 99) }, // Not On King file
+      { V(108), V( 6), V(33), V(86), V( 87), V(104), V(112) },
+      { V(103), V( 2), V(65), V(98), V( 58), V( 89), V(115) },
+      { V( 75), V( 7), V(54), V(73), V( 84), V( 83), V(111) } },
+    { { V(106), V(20), V( 6), V(27), V( 86), V( 93), V( 82) }, // On King file
+      { V(125), V( 9), V(34), V(96), V(112), V( 88), V( 75) },
+      { V(122), V(25), V(65), V(91), V( 66), V( 78), V(117) },
+      { V( 83), V( 2), V(47), V(63), V( 94), V( 93), V(104) } }
   };
 
   // Danger of enemy pawns moving toward our king by [type][distance from edge][rank].
@@ -70,10 +70,10 @@ namespace {
       { V( 0),  V(  60), V( 144), V(39), V(13) },
       { V( 0),  V(  65), V( 141), V(41), V(34) },
       { V( 0),  V(  53), V( 127), V(56), V(14) } },
-    { { V( 4),  V(  73), V( 132), V(46), V(31) },  // Unopposed
-      { V( 1),  V(  64), V( 143), V(26), V(13) },
-      { V( 1),  V(  47), V( 110), V(44), V(24) },
-      { V( 0),  V(  72), V( 127), V(50), V(31) } },
+    { { V( 6),  V(  73), V( 132), V(46), V(31) },  // Unopposed
+      { V( 3),  V(  64), V( 143), V(26), V(13) },
+      { V( 3),  V(  47), V( 110), V(44), V(24) },
+      { V( 2),  V(  72), V( 127), V(50), V(31) } },
     { { V( 0),  V(   0), V(  79), V(23), V( 1) },  // BlockedByPawn
       { V( 0),  V(   0), V( 148), V(27), V( 2) },
       { V( 0),  V(   0), V( 161), V(16), V( 1) },
@@ -83,8 +83,6 @@ namespace {
       { V(23),  V(  29), V(  96), V(41), V(15) },
       { V(21),  V(  23), V( 116), V(41), V(15) } }
   };
-  
-  const Score PawnLessKing = S(20, 80);
 
   // Max bonus for king safety. Corresponds to start position with all the pawns
   // in front of the king and no enemy pawn on the horizon.
@@ -301,9 +299,10 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   if (pos.can_castle(MakeCastling<Us, QUEEN_SIDE>::right))
       bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_C1)));
 
-  bool haspawns = pos.pieces(PAWN) & KingFlank[file_of(ksq)];
+  // endgame bonus for king on a flank with many pawns
+  int kingflank = popcount(pos.pieces(PAWN) & KingFlank[file_of(ksq)]);
 
-  return make_score(bonus, -16 * minKingPawnDistance) - (PawnLessKing * !haspawns);
+  return make_score(bonus, 10 * kingflank -16 * minKingPawnDistance);
 }
 
 // Explicit template instantiation
