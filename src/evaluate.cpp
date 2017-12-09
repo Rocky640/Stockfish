@@ -494,8 +494,8 @@ namespace {
         other &= ~(   attackedBy[Us][PAWN]
                    | (pos.pieces(Them, PAWN) & shift<Up>(pos.pieces(PAWN))));
 
-        // Use a one time bonus for pinned pieces, and same for those other squares.
-        kingDanger += 143 * (bool(pos.pinned_pieces(Us)) + bool(other));
+        // Use same bonus for pinned squares and those other squares
+        kingDanger += 143 * popcount(pos.pinned_pieces(Us) | other);
 
         // Transform the kingDanger units into a Score, and substract it from the evaluation
         if (kingDanger > 0)
