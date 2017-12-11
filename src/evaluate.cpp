@@ -238,9 +238,9 @@ namespace {
 
   // Penalties for enemy's safe checks
   const int QueenCheck  = 780;
-  const int RookCheck   = 880;
-  const int BishopCheck = 435;
-  const int KnightCheck = 790;
+  const int RookCheck   = 880-143;
+  const int BishopCheck = 435-143;
+  const int KnightCheck = 790-143;
 
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
@@ -442,7 +442,7 @@ namespace {
               & ~attackedBy2[Us]
               & (attackedBy[Us][KING] | attackedBy[Us][QUEEN] | ~attackedBy[Us][ALL_PIECES]);
 
-        kingDanger = otherChecks = 0;
+        kingDanger = 0;
 
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
@@ -455,27 +455,22 @@ namespace {
         if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
             kingDanger += QueenCheck;
 
-        b1 &= attackedBy[Them][ROOK];
-        b2 &= attackedBy[Them][BISHOP];
+        // Compute all safe and unsafe checks by rook or minors in the otherChecks
+        otherChecks  = b1 &= attackedBy[Them][ROOK];
+        otherChecks |= b2 &= attackedBy[Them][BISHOP];
 
         // Enemy rooks checks
         if (b1 & safe)
             kingDanger += RookCheck;
-        else
-            otherChecks |= b1;
 
         // Enemy bishops checks
         if (b2 & safe)
             kingDanger += BishopCheck;
-        else
-            otherChecks |= b2;
 
         // Enemy knights checks
-        b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
+        otherChecks |= b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
         if (b & safe)
             kingDanger += KnightCheck;
-        else
-            otherChecks |= b;
 
         // Unsafe or occupied checking squares will also be considered,
         // as long as the square is not defended by our pawns,
