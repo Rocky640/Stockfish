@@ -236,12 +236,6 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
 
-  // Penalties for enemy's safe checks
-  const int QueenSafeCheck  = 780;
-  const int RookSafeCheck   = 880-143;
-  const int BishopSafeCheck = 435-143;
-  const int KnightSafeCheck = 790-143;
-
   // Threshold for lazy and space evaluation
   const Value LazyThreshold  = Value(1500);
   const Value SpaceThreshold = Value(12222);
@@ -427,7 +421,7 @@ namespace {
                                         : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard weak, b, b1, b2, safe, checkingSquares;
+    Bitboard weak, b, bQ, bR, bB, bN, safe;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
@@ -435,51 +429,43 @@ namespace {
     // Main king safety evaluation
     if (kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them)))
     {
+
+        // Consider potential rays of attacks against our king
+        bR = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+        bB = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+        bN = pos.attacks_from<KNIGHT>(ksq);
+
+        // Find possible checking squares by the enemy pieces
+        bQ  = (bR | bB) & attackedBy[Them][QUEEN];
+        bR &= attackedBy[Them][ROOK];
+        bB &= attackedBy[Them][BISHOP];
+        bN &= attackedBy[Them][KNIGHT];
+
         // Attacked squares defended at most once by our queen or king
         weak =  attackedBy[Them][ALL_PIECES]
               & ~attackedBy2[Us]
               & (attackedBy[Us][KING] | attackedBy[Us][QUEEN] | ~attackedBy[Us][ALL_PIECES]);
 
-        int kingDanger = 0;
-
-        // Analyse the safe enemy's checks which are possible on next move
+        // Enemy's safe and reachable squares
         safe  = ~pos.pieces(Them);
         safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
 
-        b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
-        b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+        // Find all the rook or minor checks which are in the enemy mobility area
+        // (some of these squares might be unsafe or unavailable on the next move).
+        b = (bR | bB | bN) & mobilityArea[Them];
 
-        // Enemy queen safe checks
-        if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
-            kingDanger += QueenSafeCheck;
-
-        // Collect all safe and unsafe checks by rook or minors in the checkingSquares
-        checkingSquares  = b1 &= attackedBy[Them][ROOK];
-        checkingSquares |= b2 &= attackedBy[Them][BISHOP];
-        checkingSquares |= b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
-
-        // Enemy rooks safe checks
-        if (b1 & safe)
-            kingDanger += RookSafeCheck;
-
-        // Enemy bishops checks
-        if (b2 & safe)
-            kingDanger += BishopSafeCheck;
-
-        // Enemy knights checks
-        if (b & safe)
-            kingDanger += KnightSafeCheck;
-
-        // Keep only checkingSquares which are in the enemy mobility area
-        checkingSquares &= mobilityArea[Them];
-
-        kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
-                     + 102 * kingAdjacentZoneAttacksCount[Them]
-                     + 191 * popcount(kingRing[Us] & weak)
-                     + 143 * popcount(pos.pinned_pieces(Us) | checkingSquares)
-                     - 848 * !pos.count<QUEEN>(Them)
-                     -   9 * mg_value(score) / 8
-                     +  40;
+        // Compute the kingDanger formula
+        int kingDanger =        kingAttackersCount[Them] * kingAttackersWeight[Them]
+                        + 102 * kingAdjacentZoneAttacksCount[Them]
+                        + 191 * popcount(kingRing[Us] & weak)
+                        + 780 * bool(bQ & safe & ~attackedBy[Us][QUEEN])
+                        + 737 * bool(bR & safe)
+                        + 292 * bool(bB & safe)
+                        + 647 * bool(bN & safe)
+                        + 143 * popcount(b | pos.pinned_pieces(Us))
+                        - 848 * !pos.count<QUEEN>(Them)
+                        -   9 * mg_value(score) / 8
+                        +  40;
 
         // Transform the kingDanger units into a Score, and substract it from the evaluation
         if (kingDanger > 0)
