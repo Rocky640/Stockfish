@@ -256,14 +256,27 @@ namespace {
     const Color     Them = (Us == WHITE ? BLACK : WHITE);
     const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     const Direction Down = (Us == WHITE ? SOUTH : NORTH);
+    const Direction Left  = (Them == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Direction Right = (Them == WHITE ? NORTH_EAST : SOUTH_WEST);
+    
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+    Bitboard b;
 
-    // Find our pawns on the first two ranks, and those which are blocked
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    // a) Attacks by safe or by unchallenged opponent pawns
+    b = pos.pieces(Them, PAWN) & (pe->pawn_attacks(Them) | ~pe->pawn_attacks(Us));
+    b = shift<Left>(b) | shift<Right>(b);
 
-    // Squares occupied by those pawns, by our king, or controlled by enemy pawns
-    // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+    // b) our pawn attacked pawns
+    b |= pe->pawn_attacks(Them) & pos.pieces(Us, PAWN);
+
+    // c) Our pawns on the first two ranks, and those which are blocked
+    b |= pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+
+    // d) Our King
+    b |= pos.square<KING>(Us);
+    
+    // a/b/c/d are excluded from the mobility area.
+    mobilityArea[Us] = ~b;
 
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
