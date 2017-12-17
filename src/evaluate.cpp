@@ -262,20 +262,20 @@ namespace {
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
     Bitboard b;
 
-    // a) Attacks by safe or by unchallenged opponent pawns
+    // a) Attacks by safe or by unchallenged opponent pawns...
     b = pos.pieces(Them, PAWN) & (pe->pawn_attacks(Them) | ~pe->pawn_attacks(Us));
     b = shift<Left>(b) | shift<Right>(b);
 
-    // b) our pawn attacked pawns
-    b |= pe->pawn_attacks(Them) & pos.pieces(Us, PAWN);
+    // b) our pawn attacked pawns...
+    //b |= pe->pawn_attacks(Them) & pos.pieces(Us, PAWN);
 
-    // c) Our pawns on the first two ranks, and those which are blocked
+    // c) our pawns on the first two ranks, and those which are blocked...
     b |= pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
-    // d) Our King
+    // d) our king...
     b |= pos.square<KING>(Us);
     
-    // a/b/c/d are excluded from the mobility area.
+    // ...all the boave squares are excluded from our mobility area.
     mobilityArea[Us] = ~b;
 
     // Initialise the attack bitboards with the king and pawn information
