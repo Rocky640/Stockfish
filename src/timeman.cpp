@@ -52,6 +52,9 @@ namespace {
         else
             ratio *= 1.5;
 
+        if (movesToGo > 1)
+            ratio = std::min(0.75, ratio);
+
         ratio *= 1 + inc / (myTime * 8.5);
     }
     // Otherwise we increase usage of remaining time as the game goes on
@@ -64,12 +67,9 @@ namespace {
     int time = int(std::min(1.0, ratio) * std::max(0, myTime - moveOverhead));
 
     if (type == OptimumTime && ponder)
-        time *= 1.25;
+        time = 5 * time / 4;
 
-    if (type == MaxTime)
-        time -= 10; // Keep always at least 10 millisecs on the clock
-
-    return std::max(0, time);
+    return time;
   }
 
 } // namespace

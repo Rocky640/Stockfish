@@ -52,6 +52,7 @@ public:
   explicit Thread(size_t);
   virtual ~Thread();
   virtual void search();
+  void clear();
   void idle_loop();
   void start_searching();
   void wait_for_search_finished();
@@ -60,7 +61,7 @@ public:
   Material::Table materialTable;
   Endgames endgames;
   size_t PVIdx;
-  int selDepth;
+  int selDepth, nmp_ply, pair;
   std::atomic<uint64_t> nodes, tbHits;
 
   Position rootPos;
@@ -68,6 +69,7 @@ public:
   Depth rootDepth, completedDepth;
   CounterMoveHistory counterMoves;
   ButterflyHistory mainHistory;
+  CapturePieceToHistory captureHistory;
   ContinuationHistory contHistory;
 };
 
@@ -81,8 +83,8 @@ struct MainThread : public Thread {
   void search() override;
   void check_time();
 
-  bool easyMovePlayed, failedLow;
-  double bestMoveChanges;
+  bool failedLow;
+  double bestMoveChanges, previousTimeReduction;
   Value previousScore;
   int callsCnt;
 };
