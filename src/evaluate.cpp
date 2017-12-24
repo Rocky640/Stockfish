@@ -447,7 +447,8 @@ namespace {
     Score score = pe->king_safety<Us>(pos, ksq);
 
     // Main king safety evaluation
-    if (tropism > 5 || (kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them))))
+    if (   kingRing[Us]
+        && (tropism > 5 || (kingAttackersCount[Them] > (1 - pos.count<QUEEN>(Them)))))
     {
         // Attacked squares defended at most once by our queen or king
         weak =  attackedBy[Them][ALL_PIECES]
