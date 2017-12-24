@@ -476,8 +476,8 @@ namespace {
             unsafeChecks |= b;
 
         // Unsafe or occupied checking squares will also be considered, as long as
-        // the square is in the attacker's mobility area.
-        unsafeChecks &= mobilityArea[Them];
+        // the square is in the attacker's mobility area or some defender can be taken.
+        unsafeChecks &= mobilityArea[Them] | pos.pieces(Us);
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
@@ -487,7 +487,7 @@ namespace {
                      -   9 * mg_value(score) / 8
                      +  40;
 
-        // Transform the kingDanger units into a Score, and substract it from the evaluation
+        // Transform the kingDanger units into a Score, and subtract it from the evaluation
         if (kingDanger > 0)
             score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
     }
