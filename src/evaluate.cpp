@@ -29,6 +29,8 @@
 #include "material.h"
 #include "pawns.h"
 
+
+
 namespace {
 
   const Bitboard Center      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
@@ -166,6 +168,34 @@ namespace {
       S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
+
+  
+  int BishopMobMgA[8][4] = {
+      {862,862,862,862},
+      {862,862,862,862},
+      {862,862,862,862},
+      {862,862,862,862},
+      {862,862,862,862},
+      {862,862,862,862},
+      {862,862,862,862},
+      {862,862,862,862}
+  };
+  
+  int BishopMobMgB[8][4] = {
+      {794,794,794,794},
+      {794,794,794,794},
+      {794,794,794,794},
+      {794,794,794,794},
+      {794,794,794,794},
+      {794,794,794,794},
+      {794,794,794,794},
+      {794,794,794,794}
+  };
+  
+  int BishopMobEgA = 91;
+  int BishopMobEgB = 240;
+  TUNE(SetRange(320, 1280), BishopMobMgA, BishopMobMgB);
+  TUNE(SetRange(0, 480), BishopMobEgA, BishopMobEgB);
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they can reach an outpost square, bigger if that square is
@@ -332,7 +362,20 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        if (Pt == BISHOP)
+        {
+            Rank r = relative_rank(Us, s);
+            int f = std::min(file_of(s), ~file_of(s)); 
+            int mg1 = BishopMobMgA[r][f];
+            int mg2 = BishopMobMgB[r][f];
+            
+            int eg1 = mg1 + BishopMobEgA;
+            int eg2 = mg2 + BishopMobEgB;
+            float lg = std::log(mob + 1);
+            mobility[Us] += make_score(int((mg1 * lg - mg2) / 16.0), int((eg1 * lg - eg2) / 16.0));
+        }
+        else
+            mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         // Bonus for this piece as a king protector
         score += KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
