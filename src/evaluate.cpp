@@ -23,6 +23,7 @@
 #include <cstring>   // For std::memset
 #include <iomanip>
 #include <sstream>
+#include <cmath>
 
 #include "bitboard.h"
 #include "evaluate.h"
