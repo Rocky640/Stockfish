@@ -162,7 +162,6 @@ namespace {
         if (!(ourPawns & forward_file_bb(Us, s)))
         {
             if (   !(stoppers ^ lever ^ leverPush)
-                && !(ourPawns & forward_file_bb(Us, s))
                 && popcount(supported) >= popcount(lever)
                 && popcount(phalanx)   >= popcount(leverPush))
                 e->passedPawns[Us] |= s;
