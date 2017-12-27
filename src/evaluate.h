@@ -34,7 +34,7 @@ const Value Tempo = Value(20); // Must be visible to search
 extern Score Contempt;
 
 std::string trace(const Position& pos);
-
+void init();
 Value evaluate(const Position& pos);
 }
 

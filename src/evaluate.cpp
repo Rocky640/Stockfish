@@ -166,6 +166,10 @@ namespace {
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
   
+  // Bishops have different mobility scores based on square.
+  // This table will be pre-computed using a formula based on BishopMobMgA and BishopMobMgB
+  Score MobilityBonusBishop[8][4][16];
+
   const int BishopMobMgA[8][4] = {
     {867, 860, 920, 934 },
     {876, 896, 818, 893 },
@@ -176,7 +180,7 @@ namespace {
     {884, 823, 863, 855 },
     {785, 882, 858, 852 }
   };
-  
+
   const int BishopMobMgB[8][4] = {
     {776, 762, 747, 771 },
     {797, 818, 789, 807 },
@@ -357,17 +361,9 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         if (Pt == BISHOP)
-        {
-            Rank r = relative_rank(Us, s);
-            int f = std::min(file_of(s), ~file_of(s)); 
-            int mg1 = BishopMobMgA[r][f];
-            int mg2 = BishopMobMgB[r][f];
-            
-            int eg1 = mg1 + BishopMobEgA;
-            int eg2 = mg2 + BishopMobEgB;
-            float lg = std::log(mob + 1);
-            mobility[Us] += make_score(int((mg1 * lg - mg2) / 16.0), int((eg1 * lg - eg2) / 16.0));
-        }
+            mobility[Us] += MobilityBonusBishop[relative_rank(Us, s)]
+                                               [std::min(file_of(s), ~file_of(s))]
+                                               [mob];
         else
             mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -934,6 +930,26 @@ namespace {
 } // namespace
 
 Score Eval::Contempt = SCORE_ZERO;
+
+/// init() fill the bishop mobility tables based on a formula 
+void Eval::init()
+{
+  for (int mob = 0; mob < 15; ++mob)
+  {
+     float lg = std::log(mob + 1);
+     for (Rank r = RANK_1; r <= RANK_8; ++r)
+         for (File f = FILE_A; f <= FILE_D; ++f)
+         {
+             int mg1  = BishopMobMgA[r][f];
+             int mg2  = BishopMobMgB[r][f];
+            int eg1  = mg1 + BishopMobEgA;
+             int eg2  = mg2 + BishopMobEgB;
+
+             MobilityBonusBishop[r][f][mob] = make_score(int((mg1 * lg - mg2) / 16.0),
+                                                         int((eg1 * lg - eg2) / 16.0));
+         }
+  }
+}
 
 /// evaluate() is the evaluator for the outer world. It returns a static evaluation
 /// of the position from the point of view of the side to move.
