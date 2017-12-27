@@ -562,7 +562,7 @@ namespace {
           & ~stronglyProtected
           &  attackedBy[Us][ALL_PIECES];
 
-    Bitboard fixedTargets = shift<Up>(pos.pieces() & pos.pieces(Them, PAWN));
+    Bitboard fixedPawnTargets = shift<Up>(pos.pieces()) & pos.pieces(Them, PAWN);
 
     // Add a bonus according to the kind of attacking pieces
     if (defended | weak)
@@ -571,7 +571,7 @@ namespace {
         while (b)
         {
             Square s = pop_lsb(&b);
-            score += ThreatByMinor[type_of(pos.piece_on(s)) - bool(fixedTargets & s)];
+            score += ThreatByMinor[type_of(pos.piece_on(s)) - bool(fixedPawnTargets & s)];
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
@@ -580,7 +580,7 @@ namespace {
         while (b)
         {
             Square s = pop_lsb(&b);
-            score += ThreatByRook[type_of(pos.piece_on(s)) - bool(fixedTargets & s)];
+            score += ThreatByRook[type_of(pos.piece_on(s)) - bool(fixedPawnTargets & s)];
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
