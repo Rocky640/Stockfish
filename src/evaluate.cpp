@@ -128,6 +128,8 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     Bitboard kingRing[COLOR_NB];
 
+    Bitboard lowMobility = 0;
+
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
     int kingAttackersCount[COLOR_NB];
@@ -220,6 +222,7 @@ namespace {
   const Score WeakQueen             = S( 50, 10);
   const Score CloseEnemies          = S(  7,  0);
   const Score PawnlessFlank         = S( 20, 80);
+  const Score ThreatOnLowMobility   = S(  0, 10);
   const Score ThreatByHangingPawn   = S( 71, 61);
   const Score ThreatBySafePawn      = S(192,175);
   const Score ThreatByRank          = S( 16,  3);
@@ -264,6 +267,8 @@ namespace {
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+
+    lowMobility |= pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
 
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -333,6 +338,8 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+        if (mob < 3 || more_than_one(b & mobilityArea[Us] & pos.pieces(Us)))
+           lowMobility |= s;
 
         // Bonus for this piece as a king protector
         score += KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
@@ -566,6 +573,7 @@ namespace {
     if (defended | weak)
     {
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        score += ThreatOnLowMobility * popcount(b & lowMobility);
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -575,6 +583,7 @@ namespace {
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
+        score += ThreatOnLowMobility * popcount(b & lowMobility);
         while (b)
         {
             Square s = pop_lsb(&b);
