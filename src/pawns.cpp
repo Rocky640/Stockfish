@@ -109,10 +109,12 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] 
+                       = e->weakUnopposed[Us] = e->weakStopperAttacks[Them] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
+    e->dbleAttacks[Us]   = shift<Right>(ourPawns) & shift<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -157,19 +159,27 @@ namespace {
         // full attack info to evaluate them. Include also not passed pawns
         // which could become passed after one or two pawn pushes when are
         // not attacked more times than defended.
-        if (   !(stoppers ^ lever ^ leverPush)
-            && !(ourPawns & forward_file_bb(Us, s))
-            && popcount(supported) >= popcount(lever)
-            && popcount(phalanx)   >= popcount(leverPush))
-            e->passedPawns[Us] |= s;
-
-        else if (   stoppers == SquareBB[s + Up]
-                 && relative_rank(Us, s) >= RANK_5)
+        if (!(ourPawns & forward_file_bb(Us, s)))
         {
-            b = shift<Up>(supported) & ~theirPawns;
-            while (b)
-                if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
-                    e->passedPawns[Us] |= s;
+            if (   !(stoppers ^ lever ^ leverPush)
+                && !(ourPawns & forward_file_bb(Us, s))
+                && popcount(supported) >= popcount(lever)
+                && popcount(phalanx)   >= popcount(leverPush))
+                e->passedPawns[Us] |= s;
+
+            else if (   stoppers == SquareBB[s + Up]
+                     && relative_rank(Us, s) >= RANK_5)
+            {
+                b = shift<Up>(supported) & ~theirPawns;
+                while (b)
+                    if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
+                        e->passedPawns[Us] |= s;
+            }
+
+            // If there is only one stopper, and our pawn is quite advanced,
+            // find interesting squares to deviate the stopper
+            if (relative_rank(Us, s) >= RANK_5 && !more_than_one(stoppers))
+                e->weakStopperAttacks[Them] |= PawnAttacks[Them][lsb(stoppers)] & ~file_bb(s);
         }
 
         // Score this pawn
@@ -234,6 +244,10 @@ Entry* probe(const Position& pos) {
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
   e->asymmetry = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
+
+  e->safeAttacks[WHITE] = e->dbleAttacks[WHITE] | (e->pawnAttacks[WHITE] & ~e->weakStopperAttacks[WHITE]);
+  e->safeAttacks[BLACK] = e->dbleAttacks[BLACK] | (e->pawnAttacks[BLACK] & ~e->weakStopperAttacks[BLACK]);
+
   return e;
 }
 
