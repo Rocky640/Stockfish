@@ -178,7 +178,7 @@ namespace {
 
             // If there is only one stopper, and our pawn is quite advanced,
             // find interesting squares to deviate the stopper
-            if (relative_rank(Us, s) >= RANK_5 && !more_than_one(stoppers))
+            if (relative_rank(Us, s) >= RANK_5 && stoppers && !more_than_one(stoppers))
                 e->weakStopperAttacks[Them] |= PawnAttacks[Them][lsb(stoppers)] & ~file_bb(s);
         }
 
