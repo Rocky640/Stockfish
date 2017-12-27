@@ -23,6 +23,7 @@
 #include <cstring>   // For std::memset
 #include <iomanip>
 #include <sstream>
+#include <cmath>
 
 #include "bitboard.h"
 #include "evaluate.h"
@@ -154,9 +155,7 @@ namespace {
   const Score MobilityBonus[][32] = {
     { S(-75,-76), S(-57,-54), S( -9,-28), S( -2,-10), S(  6,  5), S( 14, 12), // Knights
       S( 22, 26), S( 29, 29), S( 36, 29) },
-    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
-      S( 55, 54), S( 63, 57), S( 63, 65), S( 68, 73), S( 81, 78), S( 81, 86),
-      S( 91, 88), S( 98, 97) },
+    {  }, // Bishops
     { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rooks
       S(  9,112), S( 16,118), S( 30,132), S( 29,142), S( 32,155), S( 38,165),
       S( 46,166), S( 48,169), S( 58,171) },
@@ -166,6 +165,31 @@ namespace {
       S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
+  
+  const int BishopMobMgA[8][4] = {
+    {867, 860, 920, 934 },
+    {876, 896, 818, 893 },
+    {867, 874, 838, 838 },
+    {881, 854, 896, 860 },
+    {803, 817, 875, 848 },
+    {907, 823, 897, 806 },
+    {884, 823, 863, 855 },
+    {785, 882, 858, 852 }
+  };
+  
+  const int BishopMobMgB[8][4] = {
+    {776, 762, 747, 771 },
+    {797, 818, 789, 807 },
+    {803, 794, 777, 789 },
+    {759, 808, 786, 835 },
+    {800, 779, 787, 788 },
+    {803, 755, 813, 798 },
+    {761, 783, 785, 806 },
+    {843, 798, 807, 794 }
+  };
+
+  const int BishopMobEgA = 105;
+  const int BishopMobEgB = 251;
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they can reach an outpost square, bigger if that square is
@@ -332,7 +356,20 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        if (Pt == BISHOP)
+        {
+            Rank r = relative_rank(Us, s);
+            int f = std::min(file_of(s), ~file_of(s)); 
+            int mg1 = BishopMobMgA[r][f];
+            int mg2 = BishopMobMgB[r][f];
+            
+            int eg1 = mg1 + BishopMobEgA;
+            int eg2 = mg2 + BishopMobEgB;
+            float lg = std::log(mob + 1);
+            mobility[Us] += make_score(int((mg1 * lg - mg2) / 16.0), int((eg1 * lg - eg2) / 16.0));
+        }
+        else
+            mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         // Bonus for this piece as a king protector
         score += KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
