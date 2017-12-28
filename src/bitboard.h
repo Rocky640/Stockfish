@@ -60,6 +60,12 @@ const Bitboard Rank6BB = Rank1BB << (8 * 5);
 const Bitboard Rank7BB = Rank1BB << (8 * 6);
 const Bitboard Rank8BB = Rank1BB << (8 * 7);
 
+const Bitboard WhiteCamp = Rank1BB | Rank2BB | Rank3BB | Rank4BB;
+const Bitboard QueenSide = FileABB | FileBBB | FileCBB | FileDBB;
+const Bitboard Quads[] ={  WhiteCamp & QueenSide,  WhiteCamp & ~QueenSide,
+                          ~WhiteCamp & QueenSide, ~WhiteCamp & ~QueenSide };
+extern Bitboard Quadrant[SQUARE_NB];
+
 extern int SquareDistance[SQUARE_NB][SQUARE_NB];
 
 extern Bitboard SquareBB[SQUARE_NB];
