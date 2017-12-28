@@ -34,7 +34,8 @@ namespace Pawns {
 struct Entry {
 
   Score pawns_score() const { return score; }
-  Bitboard pawn_attacks(Color c) const { return safeAttacks[c]; }
+  Bitboard pawn_attacks(Color c) const { return pawnAttacks[c]; }
+  Bitboard safe_attacks(Color c) const { return safeAttacks[c]; }
   Bitboard passed_pawns(Color c) const { return passedPawns[c]; }
   Bitboard pawn_attacks_span(Color c) const { return pawnAttacksSpan[c]; }
   int weak_unopposed(Color c) const { return weakUnopposed[c]; }

@@ -540,7 +540,7 @@ namespace {
         b = pos.pieces(Us, PAWN) & ( ~attackedBy[Them][ALL_PIECES]
                                     | attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak & pe->safe_attacks(Us);
 
         score += ThreatBySafePawn * popcount(safeThreats);
 
@@ -550,7 +550,7 @@ namespace {
 
     // Squares strongly protected by the opponent, either because they attack the
     // square with a pawn, or because they attack the square twice and we don't.
-    stronglyProtected =  attackedBy[Them][PAWN]
+    stronglyProtected =  pe->safe_attacks(Them)
                        | (attackedBy2[Them] & ~attackedBy2[Us]);
 
     // Non-pawn enemies, strongly protected
