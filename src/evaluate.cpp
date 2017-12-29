@@ -35,6 +35,8 @@ namespace {
   const Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   const Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   const Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
+  const Bitboard WhiteSide   = Rank1BB | Rank2BB | Rank3BB | Rank4BB;
+  const Bitboard BlackSide   = Rank8BB | Rank7BB | Rank6BB | Rank5BB;
 
   const Bitboard KingFlank[FILE_NB] = {
     QueenSide, QueenSide, QueenSide, CenterFiles, CenterFiles, KingSide, KingSide, KingSide
@@ -297,6 +299,9 @@ namespace {
     const Color Them = (Us == WHITE ? BLACK : WHITE);
     const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard OuterRanks   = (Us == WHITE ? BlackSide
+                                               : WhiteSide);
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -335,7 +340,7 @@ namespace {
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         if (Pt > KNIGHT)
-            if (!(b & QueenSide) || !(b & KingSide))
+            if (!(b & OuterRanks))
                 score -= OneSided;
 
         // Bonus for this piece as a king protector
@@ -426,9 +431,9 @@ namespace {
   template<Tracing T>  template<Color Us>
   Score Evaluation<T>::evaluate_king() {
 
-    const Color     Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard  Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
-                                        : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
+    const Color    Them = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard Camp = (Us == WHITE ? WhiteSide | Rank5BB
+                                       : BlackSide | Rank4BB);
 
     const Square ksq = pos.square<KING>(Us);
     Bitboard weak, b, b1, b2, safe, unsafeChecks;
@@ -727,9 +732,8 @@ namespace {
   Score Evaluation<T>::evaluate_space() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard SpaceMask =
-      Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
-                  : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+    const Bitboard SpaceMask = (Us == WHITE ? CenterFiles & (WhiteSide ^ Rank1BB)
+                                            : CenterFiles & (BlackSide ^ Rank8BB));
 
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
