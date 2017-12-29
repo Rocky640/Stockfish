@@ -334,7 +334,7 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
-        if (!(b & ~Quadrant[s]))
+        if (!(b & mobilityArea[Us] & ~Quadrant[s]))
             score -= QuadrantMobility;
 
         // Bonus for this piece as a king protector
