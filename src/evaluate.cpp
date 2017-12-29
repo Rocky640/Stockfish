@@ -340,7 +340,7 @@ namespace {
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         if (Pt > KNIGHT)
-            if (!(b & OuterRanks))
+            if (!(b & OuterRanks & mobilityArea[Us]))
                 score -= OneSided;
 
         // Bonus for this piece as a king protector
