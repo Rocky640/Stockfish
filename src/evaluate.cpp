@@ -256,20 +256,19 @@ namespace {
     const Color     Them = (Us == WHITE ? BLACK : WHITE);
     const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     const Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    const Bitboard LowPawnRanks  = (Us == WHITE ? Rank2BB | Rank3BB
-                                                : Rank7BB | Rank6BB);
-    const Bitboard LowMinorRanks = (Us == WHITE ? Rank1BB | Rank2BB
-                                                : Rank8BB | Rank7BB);
+    const Bitboard LowPawnRanks = (Us == WHITE ? Rank2BB | Rank3BB
+                                               : Rank7BB | Rank6BB);
+    const Bitboard LowMinorRank = (Us == WHITE ? Rank1BB : Rank8BB);
 
-    // Find our pawns on the first two ranks, and those which are blocked
+    // Find our pawns on their first two ranks, and those which are blocked
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowPawnRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
     mobilityArea[Us][1] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
-    // For knights and bishop, also exclude any friendly piece on rank 1 or 2
-    mobilityArea[Us][0] = mobilityArea[Us][1] & ~(pos.pieces(Us) & LowMinorRanks);
+    // For knights and bishop, also exclude any friendly piece on rank 1
+    mobilityArea[Us][0] = mobilityArea[Us][1] & ~(pos.pieces(Us) & LowMinorRank);
 
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
