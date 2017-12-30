@@ -107,7 +107,7 @@ namespace {
     const Position& pos;
     Material::Entry* me;
     Pawns::Entry* pe;
-    Bitboard mobilityArea[COLOR_NB];
+    Bitboard mobilityArea[COLOR_NB][2];
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
@@ -256,14 +256,20 @@ namespace {
     const Color     Them = (Us == WHITE ? BLACK : WHITE);
     const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     const Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+    const Bitboard LowPawnRanks  = (Us == WHITE ? Rank2BB | Rank3BB
+                                                : Rank7BB | Rank6BB);
+    const Bitboard LowMinorRanks = (Us == WHITE ? Rank1BB | Rank2BB
+                                                : Rank8BB | Rank7BB);
 
     // Find our pawns on the first two ranks, and those which are blocked
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowPawnRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+    mobilityArea[Us][1] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+
+    // For knights and bishop, also exclude any friendly piece on rank 1 or 2
+    mobilityArea[Us][0] = mobilityArea[Us][1] & ~(pos.pieces(Us) & LowMinorRanks);
 
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -330,7 +336,7 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
+        int mob = popcount(b & mobilityArea[Us][Pt < ROOK]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -477,7 +483,7 @@ namespace {
 
         // Unsafe or occupied checking squares will also be considered, as long as
         // the square is in the attacker's mobility area.
-        unsafeChecks &= mobilityArea[Them];
+        unsafeChecks &= mobilityArea[Them][0];
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
