@@ -483,7 +483,7 @@ namespace {
 
         // Unsafe or occupied checking squares will also be considered, as long as
         // the square is in the attacker's mobility area.
-        unsafeChecks &= mobilityArea[Them][0];
+        unsafeChecks &= mobilityArea[Them][1];
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
