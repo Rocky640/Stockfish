@@ -223,7 +223,6 @@ void init() {
 /// have to recompute all when the same pawns configuration occurs again.
 
 Entry* probe(const Position& pos) {
-
   Key key = pos.pawn_key();
   Entry* e = pos.this_thread()->pawnsTable[key];
 
@@ -232,8 +231,13 @@ Entry* probe(const Position& pos) {
 
   e->key = key;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
-  e->asymmetry = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
-  e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
+  //0x18 is counting D and E 
+  //0x3c is counting C, D, E and F
+
+  e->closedCenterFiles
+                = popcount(0x3c & ~(e->semiopenFiles[WHITE] | e->semiopenFiles[BLACK]));
+  e->asymmetry  = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
+  e->openFiles  = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   return e;
 }
 

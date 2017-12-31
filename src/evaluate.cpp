@@ -745,7 +745,8 @@ namespace {
 
     // ...count safe + (behind & safe) with a single popcount.
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
+    int weight =   pos.count<ALL_PIECES>(Us) - pos.count<PAWN>(Us)
+                 + 2 * (pe->closed_center_files() - pe->open_files());
 
     return make_score(bonus * weight * weight / 16, 0);
   }
