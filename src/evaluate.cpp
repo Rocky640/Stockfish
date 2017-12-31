@@ -396,7 +396,8 @@ namespace {
                 Square ksq = pos.square<KING>(Us);
 
                 if (   (ShortSideBB[file_of(ksq)] & s)
-                    && !pe->semiopen_side(Us, file_of(ksq)))
+                    && !pe->semiopen_side(Us, file_of(ksq))
+                    && forward_file_bb(Us, s) & pos.pieces(Us, PAWN))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
