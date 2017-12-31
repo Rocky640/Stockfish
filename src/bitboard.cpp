@@ -167,7 +167,7 @@ void Bitboards::init() {
   for (File f = FILE_A; f <= FILE_D; ++f)
       ShortSideBB[f] = (f == FILE_A ? 0 : ShortSideBB[f - 1] | FileBB[f - 1]);
   for (File f = FILE_H; f >= FILE_E; --f)
-      ShortSideBB[f] = (f == FILE_H ? FileHBB : ShortSideBB[f + 1] | FileBB[f]);
+      ShortSideBB[f] = (f == FILE_H ? 0 : ShortSideBB[f + 1] | FileBB[f + 1]);
   
   for (Rank r = RANK_1; r < RANK_8; ++r)
       ForwardRanksBB[WHITE][r] = ~(ForwardRanksBB[BLACK][r + 1] = ForwardRanksBB[BLACK][r] | RankBB[r]);

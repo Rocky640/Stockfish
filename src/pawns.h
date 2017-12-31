@@ -46,7 +46,7 @@ struct Entry {
   }
 
   int semiopen_side(Color c, File f) const {
-    return semiopenFiles[c] & ShortSideBB[f] & ~file_bb(f);
+    return semiopenFiles[c] & ShortSideBB[f];
   }
 
   int pawns_on_same_color_squares(Color c, Square s) const {
