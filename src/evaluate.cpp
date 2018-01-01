@@ -390,14 +390,16 @@ namespace {
             if (pe->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
 
-            // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
             {
+                // Penalty when in front of friendly pawn, or trapped by king on closed wing,
+                // even more if the king cannot castle
                 Square ksq = pos.square<KING>(Us);
-
-                if (   (ShortSideBB[file_of(ksq)] & s)
-                    && !pe->semiopen_side(Us, file_of(ksq))
-                    && forward_file_bb(Us, s) & pos.pieces(Us, PAWN))
+                if (forward_file_bb(Them, s) & pos.pieces(Us, PAWN))
+                    score -= (TrappedRook - make_score(mob * 22, 0));
+                else if (   (ShortSideBB[file_of(ksq)] & s)
+                         && !pe->semiopen_side(Us, file_of(ksq))
+                         && (forward_file_bb(Us, s) & pos.pieces(Us, PAWN)))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
