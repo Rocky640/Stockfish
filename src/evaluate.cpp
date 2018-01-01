@@ -396,7 +396,7 @@ namespace {
                 // even more if the king cannot castle
                 Square ksq = pos.square<KING>(Us);
                 if (forward_file_bb(Them, s) & pos.pieces(Us, PAWN))
-                    score -= (TrappedRook - make_score(mob * 22, 0));
+                    score -= (TrappedRook - make_score(mob * 22, 0)) * 2;
                 else if (   (ShortSideBB[file_of(ksq)] & s)
                          && !pe->semiopen_side(Us, file_of(ksq)))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
