@@ -392,13 +392,12 @@ namespace {
 
             else if (mob <= 3)
             {
-                // Penalty when in front of friendly pawn, or trapped by king on closed wing,
-                // even more if the king cannot castle
-                Square ksq = pos.square<KING>(Us);
+                // Penalty when in front of friendly pawn, (more if blocked many pawns)
+                // or trapped by king on closed wing, (more if the king cannot castle)
                 if (forward_file_bb(Them, s) & pos.pieces(Us, PAWN))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * 2;
-                else if (   (ShortSideBB[file_of(ksq)] & s)
-                         && !pe->semiopen_side(Us, file_of(ksq)))
+                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + more_than_one(b & pos.pieces(Us, KING, PAWN)));
+                else if (   (ShortSideBB[file_of(pos.square<KING>(Us))] & s)
+                         && !pe->semiopen_side(Us, file_of(pos.square<KING>(Us))))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
