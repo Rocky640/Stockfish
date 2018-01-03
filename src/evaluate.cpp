@@ -253,9 +253,11 @@ namespace {
   template<Tracing T> template<Color Us>
   void Evaluation<T>::initialize() {
 
-    const Color     Them = (Us == WHITE ? BLACK : WHITE);
-    const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
-    const Direction Down = (Us == WHITE ? SOUTH : NORTH);
+    const Color     Them =  (Us == WHITE ? BLACK : WHITE);
+    const Direction Up   =  (Us == WHITE ? NORTH : SOUTH);
+    const Direction Down =  (Us == WHITE ? SOUTH : NORTH);
+    const Direction Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
+    const Direction Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
     // Find our pawns on the first two ranks, and those which are blocked
@@ -266,8 +268,11 @@ namespace {
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
     // Initialise the attack bitboards with the king and pawn information
+    b = pos.pinned_pieces(Us) & pos.pieces(Us, PAWN);
+    b = (shift<Left>(b) | shift<Right>(b)) & pos.pieces(Us);
+    attackedBy[Us][PAWN] = pe->dble_attacks(Us) | (pe->pawn_attacks(Us) ^ b);
+
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
-    attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
 
     attackedBy2[Us]            = b & attackedBy[Us][PAWN];
     attackedBy[Us][ALL_PIECES] = b | attackedBy[Us][PAWN];
