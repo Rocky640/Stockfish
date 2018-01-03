@@ -404,8 +404,7 @@ namespace {
         if (Pt == QUEEN)
         {
             // Penalty if any relative pin or discovered safe attack against the queen
-            b  =  pos.pieces(Them, ROOK, BISHOP) | pos.pieces(Them, QUEEN);
-            b &= ~attackedBy[Us][ALL_PIECES];
+            b = pos.pieces(Them, ROOK, BISHOP) & ~attackedBy[Us][ALL_PIECES];
 
             Bitboard pinners;
             if (pos.slider_blockers(b, s, pinners))
