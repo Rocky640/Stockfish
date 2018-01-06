@@ -234,7 +234,7 @@ namespace {
   #undef V
 
   // KingAttackWeights[PieceType] contains king attack weights by piece type
-  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 78, 56, 45, 11 };
+  const int KingAttackWeights[PIECE_TYPE_NB] = { 0, 5, 78, 56, 45, 11 };
 
   // Penalties for enemy's safe checks
   const int QueenSafeCheck  = 780;
@@ -479,6 +479,13 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
+        b = weak & attackedBy2[Them] & attackedBy[Them][PAWN];
+        if (b) 
+        {
+            kingAttackersWeight[Us] += KingAttackWeights[PAWN];
+            kingAdjacentZoneAttacksCount[Us] += bool(b & attackedBy[Them][KING]);
+        }
+
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
                      + 191 * popcount(kingRing[Us] & weak)
@@ -487,7 +494,7 @@ namespace {
                      -   9 * mg_value(score) / 8
                      +  40;
 
-        // Transform the kingDanger units into a Score, and substract it from the evaluation
+        // Transform the kingDanger units into a Score, and subtract it from the evaluation
         if (kingDanger > 0)
             score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
     }
