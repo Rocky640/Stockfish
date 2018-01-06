@@ -480,7 +480,7 @@ namespace {
         unsafeChecks &= mobilityArea[Them];
 
         // Adjust the attackers count with the pawn threats
-        kingAttackersCount[Them] += popcount(b & pe->pawn_attacks(Them));
+        kingAttackersCount[Them] += popcount(kingRing[Us] & attackedBy[Them][PAWN]);
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
