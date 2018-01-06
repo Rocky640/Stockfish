@@ -482,8 +482,8 @@ namespace {
         b = weak & attackedBy2[Them] & attackedBy[Them][PAWN];
         if (b) 
         {
-            kingAttackersWeight[Us] += KingAttackWeights[PAWN];
-            kingAdjacentZoneAttacksCount[Us] += bool(b & attackedBy[Them][KING]);
+            kingAttackersWeight[Them] += KingAttackWeights[PAWN];
+            kingAdjacentZoneAttacksCount[Them] += bool(b & attackedBy[Us][KING]);
         }
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
