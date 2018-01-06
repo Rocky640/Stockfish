@@ -486,7 +486,7 @@ namespace {
                      -   9 * mg_value(score) / 8
                      +  40;
 
-        // Transform the kingDanger units into a Score, and substract it from the evaluation
+        // Transform the kingDanger units into a Score, and subtract it from the evaluation
         if (kingDanger > 0)
             score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
     }
@@ -528,7 +528,7 @@ namespace {
     const Direction Right    = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard  TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, weak, defended, safeThreats, stronglyProtected;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -539,9 +539,9 @@ namespace {
         b = pos.pieces(Us, PAWN) & ( ~attackedBy[Them][ALL_PIECES]
                                     | attackedBy[Us][ALL_PIECES]);
 
-        safeThreats = (shift<Right>(b) | shift<Left>(b)) & weak;
+        b = (shift<Right>(b) | shift<Left>(b) | pos.pieces(Them, QUEEN)) & weak;
 
-        score += ThreatBySafePawn * popcount(safeThreats);
+        score += ThreatBySafePawn * popcount(b);
     }
 
     // Squares strongly protected by the opponent, either because they attack the
