@@ -480,12 +480,11 @@ namespace {
 
         // Increase the bishop attacking weights if not challenged by same colour bishop
         b = kingRing[Us] & attackedBy[Them][BISHOP];
-        if (    (b & DarkSquares) 
-            && !(attackedBy[Them][BISHOP] & attackedBy[Us][BISHOP] & DarkSquares))
-            kingAttackersWeight[Them] += 20;
-        if (    (b & ~DarkSquares) 
-            && !(attackedBy[Them][BISHOP] & attackedBy[Us][BISHOP] & ~DarkSquares))
-            kingAttackersWeight[Them] += 20;
+        b1 = (attackedBy[Them][BISHOP] | pos.pieces(Them, BISHOP)) & attackedBy[Us][BISHOP];
+        if ((b &  DarkSquares) && !(b1 &  DarkSquares))
+            kingAttackersWeight[Them] += 10;
+        if ((b & ~DarkSquares) && !(b1 & ~DarkSquares))
+            kingAttackersWeight[Them] += 10;
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
