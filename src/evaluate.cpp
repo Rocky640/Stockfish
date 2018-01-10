@@ -479,12 +479,12 @@ namespace {
         unsafeChecks &= mobilityArea[Them];
 
         // Increase the bishop attacking weights if not challenged by same colour bishop
-        b = kingRing[Them] & attackedBy[Them][BISHOP];
-        if (   (b & DarkSquares) 
-            && (attackedBy[Them][BISHOP] & ~attackedBy[Us][BISHOP] & DarkSquares))
+        b = kingRing[Us] & attackedBy[Them][BISHOP];
+        if (    (b & DarkSquares) 
+            && !(attackedBy[Them][BISHOP] & attackedBy[Us][BISHOP] & DarkSquares))
             kingAttackersWeight[Them] += 20;
-        if (   (b & ~DarkSquares) 
-            && (attackedBy[Them][BISHOP] & ~attackedBy[Us][BISHOP] & ~DarkSquares))
+        if (    (b & ~DarkSquares) 
+            && !(attackedBy[Them][BISHOP] & attackedBy[Us][BISHOP] & ~DarkSquares))
             kingAttackersWeight[Them] += 20;
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
