@@ -478,6 +478,15 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
+        // Increase the bishop attacking weights if not challenged by same colour bishop
+        b = kingRing[Them] & attackedBy[Them][BISHOP];
+        if (   (b & DarkSquares) 
+            && (attackedBy[Them][BISHOP] & ~attackedBy[Us][BISHOP] & DarkSquares))
+            kingAttackersWeight[Them] += 20;
+        if (   (b & ~DarkSquares) 
+            && (attackedBy[Them][BISHOP] & ~attackedBy[Us][BISHOP] & ~DarkSquares))
+            kingAttackersWeight[Them] += 20;
+
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
                      + 191 * popcount(kingRing[Us] & weak)
