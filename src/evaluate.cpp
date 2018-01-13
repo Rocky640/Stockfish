@@ -109,6 +109,7 @@ namespace {
     Pawns::Entry* pe;
     Bitboard mobilityArea[COLOR_NB];
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
+    Score space[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type. Special "piece types" which are
@@ -489,7 +490,7 @@ namespace {
         // Transform the kingDanger units into a Score, and substract it from the evaluation
         if (kingDanger > 0)
         {
-            int mobilityDanger = mg_value(mobility[Them] - mobility[Us]);
+            int mobilityDanger = mg_value((mobility[Them] + space[Them]) - (mobility[Us] + space[Us]));
             kingDanger = std::max(0, kingDanger + mobilityDanger);
             score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
         }
@@ -747,7 +748,7 @@ namespace {
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
-    return make_score(bonus * weight * weight / 16, 0);
+    return (space[Us] = make_score(bonus * weight * weight / 16, 0));
   }
 
 
@@ -856,6 +857,10 @@ namespace {
 
     score += mobility[WHITE] - mobility[BLACK];
 
+    if (pos.non_pawn_material() >= SpaceThreshold)
+        score +=  evaluate_space<WHITE>()
+                - evaluate_space<BLACK>();
+
     score +=  evaluate_king<WHITE>()
             - evaluate_king<BLACK>();
 
@@ -864,10 +869,6 @@ namespace {
 
     score +=  evaluate_passed_pawns<WHITE>()
             - evaluate_passed_pawns<BLACK>();
-
-    if (pos.non_pawn_material() >= SpaceThreshold)
-        score +=  evaluate_space<WHITE>()
-                - evaluate_space<BLACK>();
 
     score += evaluate_initiative(eg_value(score));
 
@@ -886,8 +887,7 @@ namespace {
         Trace::add(PAWN, pe->pawns_score());
         Trace::add(MOBILITY, mobility[WHITE], mobility[BLACK]);
         if (pos.non_pawn_material() >= SpaceThreshold)
-            Trace::add(SPACE, evaluate_space<WHITE>()
-                            , evaluate_space<BLACK>());
+            Trace::add(SPACE, space[WHITE], space[BLACK]);
         Trace::add(TOTAL, score);
     }
 
