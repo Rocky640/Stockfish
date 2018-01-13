@@ -854,7 +854,9 @@ namespace {
     score += evaluate_pieces<WHITE, ROOK  >() - evaluate_pieces<BLACK, ROOK  >();
     score += evaluate_pieces<WHITE, QUEEN >() - evaluate_pieces<BLACK, QUEEN >();
 
-    score += mobility[WHITE] - mobility[BLACK];
+    int pawnweight = 32 + 8 - pos.count<PAWN>();
+    score += make_score((mg_value(mobility[WHITE] - mobility[BLACK]) * pawnweight) / 32,
+                        (eg_value(mobility[WHITE] - mobility[BLACK]) * pawnweight) / 32);
 
     score +=  evaluate_king<WHITE>()
             - evaluate_king<BLACK>();
