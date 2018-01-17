@@ -222,6 +222,7 @@ namespace {
   const Score PawnlessFlank         = S( 20, 80);
   const Score ThreatBySafePawn      = S(192,175);
   const Score ThreatByRank          = S( 16,  3);
+  const Score MultiThreatQueen      = S( 40, 40);
   const Score Hanging               = S( 48, 27);
   const Score WeakUnopposedPawn     = S(  5, 25);
   const Score ThreatByPawnPush      = S( 38, 22);
@@ -582,6 +583,11 @@ namespace {
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
+        
+        b = weak & attackedBy[Us][QUEEN];
+        if (more_than_one(b))
+            score += MultiThreatQueen;
+        
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
