@@ -486,7 +486,7 @@ namespace {
                      -   9 * mg_value(score) / 8
                      +  40;
 
-        // Transform the kingDanger units into a Score, and substract it from the evaluation
+        // Transform the kingDanger units into a Score, and subtract it from the evaluation
         if (kingDanger > 0)
         {
             int mobilityDanger = mg_value(mobility[Them] - mobility[Us]);
@@ -731,9 +731,8 @@ namespace {
     // SpaceMask. A square is unsafe if it is attacked by an enemy
     // pawn, or if it is undefended and attacked by an enemy piece.
     Bitboard safe =   SpaceMask
-                   & ~pos.pieces(Us, PAWN)
-                   & ~attackedBy[Them][PAWN]
-                   & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
+                   & ~(pos.pieces(Us, PAWN) | attackedBy[Them][PAWN])
+                   &  attackedBy[Us][ALL_PIECES];
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
