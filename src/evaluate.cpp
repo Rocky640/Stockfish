@@ -727,12 +727,10 @@ namespace {
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
 
-    // Find the safe squares for our pieces inside the area defined by
-    // SpaceMask. A square is unsafe if it is attacked by an enemy
-    // pawn, or if it is undefended and attacked by an enemy piece.
+    // Find the safe squares which can be used by our pieces in the
+    // SpaceMask area.
     Bitboard safe =   SpaceMask
-                   & ~(pos.pieces(Us, PAWN) | attackedBy[Them][PAWN])
-                   &  attackedBy[Us][ALL_PIECES];
+                   & ~(pos.pieces(Us, PAWN) | attackedBy[Them][ALL_PIECES]);
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
