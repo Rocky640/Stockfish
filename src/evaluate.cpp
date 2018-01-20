@@ -223,6 +223,7 @@ namespace {
   const Score ThreatBySafePawn      = S(192,175);
   const Score ThreatByRank          = S( 16,  3);
   const Score Hanging               = S( 48, 27);
+  const Score MinorControl          = S(  0, 20);
   const Score WeakUnopposedPawn     = S(  5, 25);
   const Score ThreatByPawnPush      = S( 38, 22);
   const Score ThreatByAttackOnQueen = S( 38, 22);
@@ -589,6 +590,11 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
+
+    // Evaluate square control
+    b =  (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP])
+        & attackedBy[Them][ALL_PIECES] & mobilityArea[Us];
+    score += MinorControl * popcount(b);
 
     // Bonus for opponent unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
