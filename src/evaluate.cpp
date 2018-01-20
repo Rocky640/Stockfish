@@ -593,7 +593,7 @@ namespace {
 
     // Evaluate square control by minors for squares not already controlled by our pawns
     b =   (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP])
-        & (attackedBy[Them][ROOK] | attackedBy[Us][QUEEN])
+        & (attackedBy[Them][ROOK] | attackedBy[Them][QUEEN])
         & mobilityArea[Them];
     score += MinorControl * popcount(b);
 
