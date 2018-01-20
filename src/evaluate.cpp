@@ -591,9 +591,10 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Evaluate square control
-    b =  (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP])
-        & attackedBy[Them][ALL_PIECES] & mobilityArea[Them];
+    // Evaluate square control by minors for squares not already controlled by our pawns
+    b =   (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP])
+        & (attackedBy[Them][ROOK] | attackedBy[Us][QUEEN])
+        & mobilityArea[Them];
     score += MinorControl * popcount(b);
 
     // Bonus for opponent unopposed weak pawns
