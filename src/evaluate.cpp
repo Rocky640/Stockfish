@@ -593,7 +593,7 @@ namespace {
 
     // Evaluate square control
     b =  (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP])
-        & attackedBy[Them][ALL_PIECES] & mobilityArea[Us];
+        & attackedBy[Them][ALL_PIECES] & mobilityArea[Them];
     score += MinorControl * popcount(b);
 
     // Bonus for opponent unopposed weak pawns
