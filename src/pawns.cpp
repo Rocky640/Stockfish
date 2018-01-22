@@ -165,7 +165,8 @@ namespace {
             e->passedPawns[Us] |= s;
 
         else if (   stoppers == SquareBB[s + Up]
-                 && relative_rank(Us, s) >= RANK_5)
+                 && relative_rank(Us, s) >= RANK_5
+                 && supported)
             e->candidatePassers[Us] |= s;
 
         // Score this pawn

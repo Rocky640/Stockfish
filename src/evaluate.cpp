@@ -652,7 +652,7 @@ namespace {
         // New condition, make sure push square is free and defended only once
         // also, give bonus if we have already a lever on the front stopper
         if (   (pawnPush[Us] | pos.pieces(Us, PAWN))
-            & ~(pe->dble_attacks(Them) | attackedBy2[Them])
+            & ~pe->dble_attacks(Them)
             & PawnAttacks[Them][s + Up])
             b |= s;
     }
