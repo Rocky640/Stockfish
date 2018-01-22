@@ -644,16 +644,17 @@ namespace {
     {
         Square s = pop_lsb(&bb);
         // Original condition should give same bench, was just requiring not occupied by pawn
-         if (  shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces(Them, PAWN)
-             & ~pe->dble_attacks(Them)
-             & PawnAttacks[Them][s + Up])
-            b |= s;
+        // if (  shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces(Them, PAWN)
+        //     & ~pe->dble_attacks(Them)
+        //     & PawnAttacks[Them][s + Up])
+        //    b |= s;
 
-        // New condition, make sure push square is free and check also for actual lever
-        //if (   (pawnpush[Us] | pos.pieces(Us, PAWN))
-          //  & ~(pe->dbleAttacks(Them) | attackedBy2[Them])
-           // & PawnAttacks[Them][s + Up])
-            //b |= s;
+        // New condition, make sure push square is free and defended only once
+        // also, give bonus if we have already a lever on the front stopper
+        if (   (pawnPush[Us] | pos.pieces(Us, PAWN))
+            & ~(pe->dble_attacks(Them) | attackedBy2[Them])
+            & PawnAttacks[Them][s + Up])
+            b |= s;
     }
 
     while (b)
