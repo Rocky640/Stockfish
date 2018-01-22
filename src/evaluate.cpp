@@ -144,6 +144,9 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAdjacentZoneAttacksCount[WHITE].
     int kingAdjacentZoneAttacksCount[COLOR_NB];
+
+    Bitboard pawnPush[COLOR_NB];
+
   };
 
   #define V(v) Value(v)
@@ -263,6 +266,10 @@ namespace {
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+
+    // Find squares where our pawns can push on the next move
+    pawnPush[Us]  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
+    pawnPush[Us] |= shift<Up>(pawnPush[Us] & LowRanks) & ~pos.pieces();
 
     // Initialise the attack bitboards with the king and pawn information
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -527,10 +534,8 @@ namespace {
   Score Evaluation<T>::evaluate_threats() {
 
     const Color     Them     = (Us == WHITE ? BLACK      : WHITE);
-    const Direction Up       = (Us == WHITE ? NORTH      : SOUTH);
     const Direction Left     = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
     const Direction Right    = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
-    const Bitboard  TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
     Bitboard b, weak, defended, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
@@ -594,12 +599,8 @@ namespace {
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
-    // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
-    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
-
-    // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
+    // Find our pawn push which are not completely unsafe
+    b = pawnPush[Us] & ~attackedBy[Them][PAWN]
         & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
     // Add a bonus for each new pawn threats from those squares
@@ -634,8 +635,26 @@ namespace {
 
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
-
     b = pe->passed_pawns(Us);
+
+    // Analyse some candidates and verify that they qualify as good candidates:
+    // we require that some adjacent pawn can safely attack their front stopper with a push
+    bb = pe->candidate_passers(Us);
+    while (bb)
+    {
+        Square s = pop_lsb(&bb);
+        // Original condition should give same bench, was just requiring not occupied by pawn
+         if (  shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces(Them, PAWN)
+             & ~pe->dble_attacks(Them)
+             & PawnAttacks[Them][s + Up])
+            b |= s;
+
+        // New condition, make sure push square is free and check also for actual lever
+        //if (   (pawnpush[Us] | pos.pieces(Us, PAWN))
+          //  & ~(pe->dbleAttacks(Them) | attackedBy2[Them])
+           // & PawnAttacks[Them][s + Up])
+            //b |= s;
+    }
 
     while (b)
     {

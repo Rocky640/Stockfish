@@ -109,10 +109,11 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = e->candidatePassers[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
+    e->dbleAttacks[Us]   = shift<Right>(ourPawns) & shift<Left>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -154,7 +155,7 @@ namespace {
         }
 
         // Passed pawns will be properly scored in evaluation because we need
-        // full attack info to evaluate them. Include also not passed pawns
+        // full attack info to evaluate them.Include also not passed pawns
         // which could become passed after one or two pawn pushes when are
         // not attacked more times than defended.
         if (   !(stoppers ^ lever ^ leverPush)
@@ -165,12 +166,7 @@ namespace {
 
         else if (   stoppers == SquareBB[s + Up]
                  && relative_rank(Us, s) >= RANK_5)
-        {
-            b = shift<Up>(supported) & ~theirPawns;
-            while (b)
-                if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
-                    e->passedPawns[Us] |= s;
-        }
+            e->candidatePassers[Us] |= s;
 
         // Score this pawn
         if (supported | phalanx)
