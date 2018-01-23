@@ -631,11 +631,15 @@ namespace {
 
     const Color     Them = (Us == WHITE ? BLACK : WHITE);
     const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    const Bitboard Advanced  = (Us == WHITE ? Rank5BB | Rank6BB | Rank7BB
+                                            : Rank4BB | Rank3BB | Rank2BB);
 
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
     b = pe->passed_pawns(Us);
+    if (more_than_one(b & Advanced))
+        b &= Advanced;
 
     while (b)
     {
