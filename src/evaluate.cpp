@@ -657,7 +657,7 @@ namespace {
             Square blockSq2 = (relative_rank(Us, s) == RANK_7 ? blockSq : blockSq + Up);
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq ) * 5 * rr
+            ebonus +=  distance(pos.square<KING>(Them), blockSq2) * 5 * rr
                      - distance(pos.square<KING>(  Us), blockSq2) * 3 * rr;
 
             // If the pawn is free to advance, then increase the bonus
