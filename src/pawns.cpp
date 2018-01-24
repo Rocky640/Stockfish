@@ -175,12 +175,15 @@ namespace {
         // Score this pawn
         if (supported | phalanx)
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
+        else
+        {
+            e->weakUnopposed[Us] += !opposed;
+            if (!neighbours)
+                score -= Isolated; 
 
-        else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
-
-        else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed;
+            else if (backward)
+                score -= Backward;
+        }
 
         if (doubled && !supported)
             score -= Doubled;
