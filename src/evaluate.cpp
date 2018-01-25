@@ -207,6 +207,16 @@ namespace {
     S(  9, 10), S( 2, 10), S( 1, -8), S(-20,-12),
     S(-20,-12), S( 1, -8), S( 2, 10), S(  9, 10)
   };
+  
+  //distance between king and target square
+  int D5[RANK_NB] = {0,50,100,150,200,250,300,350}; //for opponent king
+  int D2[RANK_NB] = {0,20,40,60,80,100,120,140};    //for our king
+
+  //factors for rank_4,5,6 and 7
+  int R5[4] = {20, 60, 120, 200}; //for opponent king
+  int R2[4] = {20, 60, 120, 200}; //for our king
+
+  TUNE(D5, D2, R5, R2);
 
   // KingProtector[PieceType-2] contains a bonus according to distance from king
   const Score KingProtector[] = { S(-3, -5), S(-4, -3), S(-3, 0), S(-1, 1) };
@@ -656,12 +666,12 @@ namespace {
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
-                     - distance(pos.square<KING>(  Us), blockSq) * 2 * rr;
+            ebonus +=  (D5[distance(pos.square<KING>(Them), blockSq)] * R5[relative_rank(Us, s)-RANK_4]
+                     - D2[distance(pos.square<KING>(  Us), blockSq)] * R2[relative_rank(Us, s)-RANK_4])/100;
 
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
-                ebonus -= distance(pos.square<KING>(Us), blockSq + Up) * rr;
+                ebonus -= (D2[distance(pos.square<KING>(Us), blockSq + Up)] * R2[relative_rank(Us, s)-RANK_4]) / 200;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
