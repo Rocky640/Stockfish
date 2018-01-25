@@ -660,7 +660,7 @@ namespace {
                 ebonus +=  std::min(distance(pos.square<KING>(Them), blockSq), 
                                     distance(pos.square<KING>(Them), blockSq + Up)) * 5 * rr
                          - distance(pos.square<KING>(  Us), blockSq) * 2 * rr
-                         - distance(pos.square<KING>(  Us), blockSq + Up) * 2 * rr;
+                         - distance(pos.square<KING>(  Us), blockSq + Up) * rr;
             else
                 ebonus +=  distance(pos.square<KING>(Them), blockSq) * 5 * rr
                          - distance(pos.square<KING>(  Us), blockSq) * 2 * rr;
