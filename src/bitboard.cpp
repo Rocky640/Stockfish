@@ -27,6 +27,7 @@ uint8_t PopCnt16[1 << 16];
 int SquareDistance[SQUARE_NB][SQUARE_NB];
 
 Bitboard SquareBB[SQUARE_NB];
+Bitboard RectBB[SQUARE_NB][SQUARE_NB];
 Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
 Bitboard AdjacentFilesBB[FILE_NB];
@@ -175,11 +176,19 @@ void Bitboards::init() {
 
   for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
       for (Square s2 = SQ_A1; s2 <= SQ_H8; ++s2)
+      {
           if (s1 != s2)
           {
               SquareDistance[s1][s2] = std::max(distance<File>(s1, s2), distance<Rank>(s1, s2));
               DistanceRingBB[s1][SquareDistance[s1][s2] - 1] |= s2;
           }
+          for (Square s3 = SQ_A1; s3 <= SQ_H8; ++s3)
+              if (   file_of(s3) >= std::min(file_of(s1), file_of(s2))
+                  && file_of(s3) <= std::max(file_of(s1), file_of(s2))
+                  && rank_of(s3) >= std::min(rank_of(s1), rank_of(s2))
+                  && rank_of(s3) <= std::max(rank_of(s1), rank_of(s2)))
+                  RectBB[s1][s2] |= s3;
+      }
 
   int steps[][5] = { {}, { 7, 9 }, { 6, 10, 15, 17 }, {}, {}, {}, { 1, 7, 8, 9 } };
 

@@ -662,6 +662,11 @@ namespace {
             // If blockSq is not the queening square then consider also a second push
             if (relative_rank(Us, blockSq) != RANK_8)
                 ebonus -= distance(pos.square<KING>(Us), blockSq + Up) * rr;
+            
+            // If our king controls some squares in the taxicab path from their king to the block square
+            // increase our bonus, and even more if our king is in the path.
+            if (RectBB[pos.square<KING>(Them)][blockSq] & attackedBy[Us][KING])
+                ebonus += (RectBB[pos.square<KING>(Them)][blockSq] & pos.square<KING>(Us) ? Value(60) : Value(30));
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
