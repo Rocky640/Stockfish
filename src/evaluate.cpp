@@ -216,7 +216,7 @@ namespace {
   int R5[4] = {20, 60, 120, 200}; //for opponent king
   int R2[4] = {20, 60, 120, 200}; //for our king
 
-  TUNE(D5, D2, R5, R2);
+  TUNE(SetRange(0, 700), D5, D2, R5, R2);
 
   // KingProtector[PieceType-2] contains a bonus according to distance from king
   const Score KingProtector[] = { S(-3, -5), S(-4, -3), S(-3, 0), S(-1, 1) };
