@@ -109,7 +109,8 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us]   = e->pawnAttacksSpan[Us] = e->laterallyExposed[Us] = 0;
+    e->weakUnopposed[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
@@ -135,6 +136,9 @@ namespace {
         neighbours = ourPawns   & adjacent_files_bb(f);
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
+
+        if (!supported & opposed)
+            e->laterallyExposed[Us] |= attacks_bb<ROOK>(s, pos.pieces(PAWN)) & rank_bb(s);
 
         // A pawn is backward when it is behind all pawns of the same color on the
         // adjacent files and cannot be safely advanced.
@@ -188,6 +192,7 @@ namespace {
         if (lever)
             score += Lever[relative_rank(Us, s)];
     }
+    e->laterallyExposed[Us] &= ~(e->pawnAttacks[Us] | theirPawns);
 
     return score;
   }

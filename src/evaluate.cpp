@@ -128,6 +128,8 @@ namespace {
     // f7, g7, h7, f6, g6 and h6.
     Bitboard kingRing[COLOR_NB];
 
+    Bitboard nonLateral[COLOR_NB];
+
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
     int kingAttackersCount[COLOR_NB];
@@ -224,6 +226,7 @@ namespace {
   const Score ThreatByRank          = S( 16,  3);
   const Score Hanging               = S( 48, 27);
   const Score WeakUnopposedPawn     = S(  5, 25);
+  const Score LateralEntries        = S(  5, 15);
   const Score ThreatByPawnPush      = S( 38, 22);
   const Score ThreatByAttackOnQueen = S( 38, 22);
   const Score HinderPassedPawn      = S(  7,  0);
@@ -265,6 +268,7 @@ namespace {
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
     // Initialise the attack bitboards with the king and pawn information
+    nonLateral[Us] = 0;
     b = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
 
@@ -320,7 +324,10 @@ namespace {
         attackedBy[Us][ALL_PIECES] |= attackedBy[Us][Pt] |= b;
 
         if (Pt == QUEEN)
+        {
             attackedBy[Us][QUEEN_DIAGONAL] |= b & PseudoAttacks[BISHOP][s];
+            nonLateral[Us] |= b & ~rank_bb(s);
+        }
 
         if (b & kingRing[Them])
         {
@@ -381,6 +388,8 @@ namespace {
 
         if (Pt == ROOK)
         {
+            nonLateral[Us] |= b & ~rank_bb(s);
+
             // Bonus for aligning with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
@@ -590,9 +599,11 @@ namespace {
             score += ThreatByKing[more_than_one(b)];
     }
 
-    // Bonus for opponent unopposed weak pawns
+    // Bonus for existence opponent unopposed weak pawns, and for lateral attacking points
     if (pos.pieces(Us, ROOK, QUEEN))
-        score += WeakUnopposedPawn * pe->weak_unopposed(Them);
+        score +=  WeakUnopposedPawn * pe->weak_unopposed(Them)
+                + LateralEntries    * popcount(  pe->laterally_exposed(Them) & nonLateral[Us] 
+                                               & ~(attackedBy[Them][BISHOP] | attackedBy[Them][KNIGHT]));
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
