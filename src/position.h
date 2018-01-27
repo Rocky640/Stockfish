@@ -259,7 +259,7 @@ inline Square Position::ep_square() const {
 
 // helper used by evaluation to get a distance between a king of color c and a blocking square s
 inline int Position::king_distance(Color c, Square s) const {
-  return std::min(distance(square<KING>(c), s), 5);
+  return std::min(distance(square<KING>(c), s), 4);
 }
 
 inline int Position::can_castle(CastlingRight cr) const {
