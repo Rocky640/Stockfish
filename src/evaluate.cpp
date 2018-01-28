@@ -633,18 +633,6 @@ namespace {
 
     Square ksq = pos.square<KING>(kingColor);
     int d = distance(ksq, s);
-    if (d <= 1) return d;
- 
-    // Squares where king can come closer to s on the next move
-    Bitboard target1 = DistanceRingBB[s][d - 2] & DistanceRingBB[ksq][0];
-
-    // Squares near the pawn that can be reached after d moves
-    Bitboard target2 = DistanceRingBB[ksq][d - 2] & DistanceRingBB[s][0];
-
-    Bitboard safe = ~(attackedBy[~kingColor][ALL_PIECES] | pos.pieces(kingColor));
-
-    // If king can't come closer at some point, increase the distance evaluation by 1
-    d += !(safe & target1) || !(safe & target2);
 
     // If king is a defender and is on the wrong side of the pawn, increase by 1
     d += bool(defender && (forward_ranks_bb(kingColor, s) & ksq));
