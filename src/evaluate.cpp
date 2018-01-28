@@ -184,21 +184,21 @@ namespace {
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
-  const Score ThreatByMinor[PIECE_TYPE_NB] = {
+  Score ThreatByMinor[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 33), S(45, 43), S(46, 47), S(72, 107), S(48, 118)
   };
 
-  const Score ThreatByRook[PIECE_TYPE_NB] = {
+  Score ThreatByRook[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 25), S(40, 62), S(40, 59), S(0, 34), S(35, 48)
   };
 
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
-  const Score ThreatByKing[] = { S(3, 62), S(9, 138) };
+  Score ThreatByKing[] = { S(3, 62), S(9, 138) };
 
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
-  const Value Passed[][RANK_NB] = {
+  Value Passed[][RANK_NB] = {
     { V(0), V(5), V( 5), V(31), V(73), V(166), V(252) },
     { V(0), V(7), V(14), V(38), V(73), V(166), V(252) }
   };
@@ -210,7 +210,12 @@ namespace {
   };
 
   // Rank factor applied on some bonus for passed pawn on rank 4 or beyond
-  const int RankFactor[RANK_NB] = {0, 0, 0, 2, 6, 11, 16};
+  int RankFactor[RANK_NB] = {0, 0, 1, 20, 60, 110, 160};
+  
+  // Other factors used when passed pawn blocking square is not blocked by the enemy
+  int kFactor[5] = {180, 80, 60, 40, 20};
+
+  
 
   // KingProtector[PieceType-2] contains a bonus according to distance from king
   const Score KingProtector[] = { S(-3, -5), S(-4, -3), S(-3, 0), S(-1, 1) };
@@ -224,15 +229,17 @@ namespace {
   const Score WeakQueen             = S( 50, 10);
   const Score CloseEnemies          = S(  7,  0);
   const Score PawnlessFlank         = S( 20, 80);
-  const Score ThreatBySafePawn      = S(192,175);
+  Score ThreatBySafePawn      = S(192,175);
   const Score ThreatByRank          = S( 16,  3);
-  const Score Hanging               = S( 48, 27);
+  Score Hanging               = S( 48, 27);
   const Score WeakUnopposedPawn     = S(  5, 25);
-  const Score ThreatByPawnPush      = S( 38, 22);
-  const Score ThreatByAttackOnQueen = S( 38, 22);
-  const Score HinderPassedPawn      = S(  7,  0);
+  Score ThreatByPawnPush      = S( 38, 22);
+  Score ThreatByAttackOnQueen = S( 38, 22);
+  Score HinderPassedPawn      = S(  7,  0);
   const Score TrappedBishopA1H1     = S( 50, 50);
 
+  TUNE(SetRange(0, 700), Passed, RankFactor, kFactor, HinderPassedPawn, ThreatBySafePawn, Hanging, ThreatByPawnPush, ThreatByAttackOnQueen, ThreatByMinor, ThreatByRook, ThreatByKing);
+  
   #undef S
   #undef V
 
@@ -656,7 +663,7 @@ namespace {
         score -= HinderPassedPawn * popcount(bb);
 
         int r = relative_rank(Us, s);
-        int rr = RankFactor[r];
+        int rr = RankFactor[r] / 10;
 
         Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
 
@@ -665,11 +672,11 @@ namespace {
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            ebonus += (king_distance(Them, blockSq) * 5 - king_distance(Us, blockSq) * 2) * rr;
+            ebonus += ((king_distance(Them, blockSq) * 5 - king_distance(Us, blockSq) * 2) * rr) / 10;
 
             // If blockSq is not the queening square then consider also a second push
             if (r != RANK_7)
-                ebonus -= king_distance(Us, blockSq + Up) * rr;
+                ebonus -= (king_distance(Us, blockSq + Up) * rr) / 10;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
@@ -689,20 +696,20 @@ namespace {
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
-                int k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
+                int k = !unsafeSquares ? kFactor[0] : !(unsafeSquares & blockSq) ? kFactor[1] : 0;
 
                 // If the path to the queen is fully defended, assign a big bonus.
                 // Otherwise assign a smaller bonus if the block square is defended.
                 if (defendedSquares == squaresToQueen)
-                    k += 6;
+                    k += kFactor[2];
 
                 else if (defendedSquares & blockSq)
-                    k += 4;
+                    k += kFactor[3];
 
-                mbonus += k * rr, ebonus += k * rr;
+                mbonus += (k * rr) / 100, ebonus += (k * rr) / 100;
             }
             else if (pos.pieces(Us) & blockSq)
-                mbonus += rr + r * 2, ebonus += rr + r * 2;
+                mbonus += (rr + r * kFactor[4]) / 10, ebonus += (rr + r * kFactor[4]) / 10;
         } // rr != 0
 
         // Scale down bonus for candidate passers which need more than one
