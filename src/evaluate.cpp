@@ -638,8 +638,8 @@ namespace {
                      & ~attackedBy[~kingColor][ALL_PIECES]
                      & ~pos.pieces(kingColor);
 
-    // If no such square, increase the distance evaluation by 1
-    d += bool(target);
+    // If king can come closer, decrease the distance evaluation by 1
+    d -= bool(target);
 
     return std::min(d, 5);
   }
