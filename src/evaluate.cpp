@@ -635,7 +635,7 @@ namespace {
     int d = distance(ksq, s);
 
     // If king is a defender and is on the wrong side of the pawn, increase by 1
-    d += bool(defender && (forward_ranks_bb(kingColor, s) & ksq));
+    d += bool(defender && (forward_ranks_bb(kingColor, s + pawn_push(kingColor)) & ksq));
 
     return std::min(d, 5);
   }
