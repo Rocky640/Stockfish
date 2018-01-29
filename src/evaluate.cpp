@@ -199,8 +199,8 @@ namespace {
   // Passed[mg/eg][Rank] contains midgame and endgame bonuses for passed pawns.
   // We don't use a Score because we process the two components independently.
   const Value Passed[][RANK_NB] = {
-    { V(0), V(5), V( 5), V(31), V(73), V(166), V(252) },
-    { V(0), V(7), V(14), V(38), V(73), V(166), V(252) }
+    { V(0), V(5), V( 5), V(32), V(70), V(172), V(217) },
+    { V(0), V(7), V(13), V(42), V(70), V(170), V(269) }
   };
 
   // PassedFile[File] contains a bonus according to the file of a passed pawn
@@ -210,7 +210,7 @@ namespace {
   };
 
   // Rank factor applied on some bonus for passed pawn on rank 4 or beyond
-  const int RankFactor[RANK_NB] = {0, 0, 0, 2, 6, 11, 16};
+  const int RankFactor[RANK_NB] = {0, 0, 0, 2, 7, 12, 19};
 
   // KingProtector[PieceType-2] contains a bonus according to distance from king
   const Score KingProtector[] = { S(-3, -5), S(-4, -3), S(-3, 0), S(-1, 1) };
@@ -230,7 +230,7 @@ namespace {
   const Score WeakUnopposedPawn     = S(  5, 25);
   const Score ThreatByPawnPush      = S( 38, 22);
   const Score ThreatByAttackOnQueen = S( 38, 22);
-  const Score HinderPassedPawn      = S(  7,  0);
+  const Score HinderPassedPawn      = S(  8,  1);
   const Score TrappedBishopA1H1     = S( 50, 50);
 
   #undef S
@@ -689,7 +689,7 @@ namespace {
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
-                int k = !unsafeSquares ? 18 : !(unsafeSquares & blockSq) ? 8 : 0;
+                int k = !unsafeSquares ? 20 : !(unsafeSquares & blockSq) ? 9 : 0;
 
                 // If the path to the queen is fully defended, assign a big bonus.
                 // Otherwise assign a smaller bonus if the block square is defended.
