@@ -179,7 +179,7 @@ namespace {
         if (doubled && !supported)
             score -= Doubled;
 
-        e->leverWeight[Us] += bool(lever) * rr;
+        e->leverWeight[Us] += bool(lever) * (rr - RANK_3);
     }
 
     return score;
