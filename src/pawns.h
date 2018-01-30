@@ -39,7 +39,7 @@ struct Entry {
   Bitboard pawn_attacks_span(Color c) const { return pawnAttacksSpan[c]; }
   int weak_unopposed(Color c) const { return weakUnopposed[c]; }
   int pawn_asymmetry() const { return asymmetry; }
-  int lever_count() const { return leverCount; }
+  int lever_count() const { return leverCount / 2; }
   int open_files() const { return openFiles; }
 
   int semiopen_file(Color c, File f) const {
