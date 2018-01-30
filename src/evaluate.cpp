@@ -753,7 +753,7 @@ namespace {
 
     // ...count safe + (behind & safe) with a single popcount.
     int bonus = popcount((Us == WHITE ? safe << 32 : safe >> 32) | (behind & safe));
-    int weight = pos.count<ALL_PIECES>(Us) - (2 * pe->open_files() + pe->lever_count());
+    int weight = pos.count<ALL_PIECES>(Us) + pe->lever_count() - 2 * pe->open_files();
 
     return make_score(bonus * weight * weight / 16, 0);
   }
@@ -772,7 +772,7 @@ namespace {
 
     // Compute the initiative bonus for the attacking side
     int initiative =   8 * (pe->pawn_asymmetry() + kingDistance - 17)
-                    + 12 * (pos.count<PAWN>() - pe->lever_count())
+                    + 12 * (pos.count<PAWN>() + pe->lever_count())
                     + 16 * bothFlanks;
 
     // Now apply the bonus: note that we find the attacking side by extracting
