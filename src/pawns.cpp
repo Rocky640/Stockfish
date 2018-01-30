@@ -185,8 +185,8 @@ namespace {
         if (doubled && !supported)
             score -= Doubled;
 
-        //if (lever)
-           //score += Lever[relative_rank(Us, s)];
+        if (lever)
+           e->leverCount ++;
     }
 
     return score;
@@ -231,6 +231,7 @@ Entry* probe(const Position& pos) {
       return e;
 
   e->key = key;
+  e->leverCount = 0;
   e->score = evaluate<WHITE>(pos, e) - evaluate<BLACK>(pos, e);
   e->asymmetry = popcount(e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]);
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
