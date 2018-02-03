@@ -236,7 +236,7 @@ namespace {
   const Score HinderPassedPawn      = S(  7,  0);
   const Score TrappedBishopA1H1     = S( 50, 50);
   
-  TUNE(SetRange(-100, 100) MobilityBonus[1]);
+  TUNE(SetRange(-100, 100), MobilityBonus[1]);
   TUNE(SetRange(-50, 50), OneBishopPawns, TwoBishopPawns,OneBishopTheirPawns,TwoBishopTheirPawns);
 
   #undef S
