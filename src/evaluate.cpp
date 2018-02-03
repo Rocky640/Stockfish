@@ -1,4 +1,5 @@
 /*
+/*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
   Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
@@ -227,7 +228,6 @@ namespace {
   const Score ThreatBySafePawn      = S(192,175);
   const Score ThreatByRank          = S( 16,  3);
   const Score Hanging               = S( 48, 27);
-  const Score WeakUnopposedPawn     = S(  5, 25);
   const Score ThreatByPawnPush      = S( 38, 22);
   const Score ThreatByAttackOnQueen = S( 38, 22);
   const Score HinderPassedPawn      = S(  7,  0);
@@ -593,10 +593,6 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
     }
-
-    // Bonus for opponent unopposed weak pawns
-    if (pos.pieces(Us, ROOK, QUEEN))
-        score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
