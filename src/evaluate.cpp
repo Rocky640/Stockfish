@@ -152,7 +152,7 @@ namespace {
 
   // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
   // indexed by piece type and number of attacked squares in the mobility area.
-  const Score MobilityBonus[][32] = {
+  Score MobilityBonus[][32] = {
     { S(-75,-76), S(-57,-54), S( -9,-28), S( -2,-10), S(  6,  5), S( 14, 12), // Knights
       S( 22, 26), S( 29, 29), S( 36, 29) },
     { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
@@ -217,7 +217,10 @@ namespace {
 
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn       = S( 16,  0);
-  const Score BishopPawns           = S(  8, 12);
+  Score OneBishopPawns[2]              = { S(  8, 12), S(0, 0)}; //our same color pawns, our remaining pawns
+  Score OneBishopTheirPawns[2]         = { S(  0,  0), S(0, 0)}; //our same color pawns, our remaining pawns
+  Score TwoBishopPawns[2]              = { S(  8, 12), S(0, 0)}; //our same color pawns, our remaining pawns
+  Score TwoBishopTheirPawns[2]         = { S(  0,  0), S(0, 0)}; //our same color pawns, our remaining pawns
   const Score LongRangedBishop      = S( 22,  0);
   const Score RookOnPawn            = S(  8, 24);
   const Score TrappedRook           = S( 92,  0);
@@ -232,6 +235,9 @@ namespace {
   const Score ThreatByAttackOnQueen = S( 38, 22);
   const Score HinderPassedPawn      = S(  7,  0);
   const Score TrappedBishopA1H1     = S( 50, 50);
+  
+  TUNE(MobilityBonus[1]);
+  TUNE(SetRange(-50, 50), OneBishopPawns, TwoBishopPawns,OneBishopTheirPawns,TwoBishopTheirPawns);
 
   #undef S
   #undef V
@@ -361,7 +367,21 @@ namespace {
             if (Pt == BISHOP)
             {
                 // Penalty for pawns on the same color square as the bishop
-                score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
+                if (pos.count<BISHOP>(Us) == 1)
+                {
+                    score -= OneBishopPawns[0] * pe->pawns_on_same_color_squares(Us, s);
+                    score -= OneBishopTheirPawns[0] * pe->pawns_on_same_color_squares(Them, s);
+                    
+                    score -= OneBishopPawns[1] * pe->pawns_on_same_color_squares(Us, ~s);
+                    score -= OneBishopTheirPawns[1] * pe->pawns_on_same_color_squares(Them, ~s);
+                }
+                else //2 or more...
+                {
+                    score -= TwoBishopPawns[0] * pe->pawns_on_same_color_squares(Us, s);
+                    score -= TwoBishopTheirPawns[0] * pe->pawns_on_same_color_squares(Them, s);
+                    score -= TwoBishopPawns[1] * pe->pawns_on_same_color_squares(Us, ~s);
+                    score -= TwoBishopTheirPawns[1] * pe->pawns_on_same_color_squares(Them, ~s);
+                }
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
