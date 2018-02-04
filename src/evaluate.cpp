@@ -155,7 +155,7 @@ namespace {
   const Score MobilityBonus[][32] = {
     { S(-75,-76), S(-57,-54), S( -9,-28), S( -2,-10), S(  6,  5), S( 14, 12), // Knights
       S( 22, 26), S( 29, 29), S( 36, 29) },
-    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
+    { S(-48,-53), S(-17,-21), S( 13,  1), S( 25, 15), S( 35, 24), S( 51, 42), // Bishops
       S( 55, 54), S( 63, 57), S( 63, 65), S( 68, 73), S( 81, 78), S( 81, 86),
       S( 91, 88), S( 98, 97) },
     { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rooks
@@ -176,6 +176,9 @@ namespace {
     { S(22, 6), S(36,12) }, // Knight
     { S( 9, 2), S(15, 5) }  // Bishop
   };
+  
+  const Score BishopOurPawns[2]   = { S(-2, -7), S(12, 6)};   //our same color pawns, our remaining pawns
+  const Score BishopTheirPawns[2] = { S(-4,  2), S( 5, 9)};   //their same color pawns, their remaining pawns
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is no
   // friendly pawn on the rook file.
@@ -217,7 +220,6 @@ namespace {
 
   // Assorted bonuses and penalties used by evaluation
   const Score MinorBehindPawn       = S( 16,  0);
-  const Score BishopPawns           = S(  8, 12);
   const Score LongRangedBishop      = S( 22,  0);
   const Score RookOnPawn            = S(  8, 24);
   const Score TrappedRook           = S( 92,  0);
@@ -360,8 +362,11 @@ namespace {
 
             if (Pt == BISHOP)
             {
-                // Penalty for pawns on the same color square as the bishop
-                score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
+                // Bonus or penalty for pawns which are on the same color square (or not) as the bishop
+                score += BishopOurPawns[0]   * pe->pawns_on_same_color_squares(Us,    s);
+                score += BishopOurPawns[1]   * pe->pawns_on_same_color_squares(Us,   ~s);
+                score += BishopTheirPawns[0] * pe->pawns_on_same_color_squares(Them,  s);
+                score += BishopTheirPawns[1] * pe->pawns_on_same_color_squares(Them, ~s);
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
