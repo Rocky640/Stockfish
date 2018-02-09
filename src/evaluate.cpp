@@ -641,11 +641,19 @@ namespace {
 
     const Color     Them = (Us == WHITE ? BLACK : WHITE);
     const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    const Bitboard Advanced = (Us == WHITE ? Rank7BB | Rank6BB | Rank5BB
+                                           : Rank2BB | Rank3BB | Rank4BB);
 
-    Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
+    Bitboard b, bb, bmany ,squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
     b = pe->passed_pawns(Us);
+    
+    bmany = 0;
+    if (more_than_one(b & QueenSide & Advanced)) 
+        bmany |= b & QueenSide & Advanced;
+    if (more_than_one(b & KingSide  & Advanced))
+        bmany |= b & KingSide  & Advanced;
 
     while (b)
     {
@@ -710,6 +718,10 @@ namespace {
         // pawn push to become passed or have a pawn in front of them.
         if (!pos.pawn_passed(Us, s + Up) || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
             mbonus /= 2, ebonus /= 2;
+        
+        // Scale down if we have many advanced on same side
+        if (bmany & s)
+            mbonus = mbonus * 3 / 4, ebonus = ebonus * 3 / 4;
 
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
