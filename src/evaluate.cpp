@@ -644,6 +644,8 @@ namespace {
 
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
+    int bestdistance = 0;
+    
 
     b = pe->passed_pawns(Us);
 
@@ -660,17 +662,17 @@ namespace {
         int rr = RankFactor[r];
 
         Value mbonus = Passed[MG][r], ebonus = Passed[EG][r];
-
+        int curdistance = 0;
         if (rr)
         {
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            ebonus += (king_distance(Them, blockSq) * 5 - king_distance(Us, blockSq) * 2) * rr;
+            curdistance = (king_distance(Them, blockSq) * 5 - king_distance(Us, blockSq) * 2) * rr;
 
             // If blockSq is not the queening square then consider also a second push
             if (r != RANK_7)
-                ebonus -= king_distance(Us, blockSq + Up) * rr;
+                curdistance -= king_distance(Us, blockSq + Up) * rr;
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
@@ -709,10 +711,17 @@ namespace {
         // Scale down bonus for candidate passers which need more than one
         // pawn push to become passed or have a pawn in front of them.
         if (!pos.pawn_passed(Us, s + Up) || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
-            mbonus /= 2, ebonus /= 2;
+            mbonus /= 2, ebonus /= 2 , curdistance /= 2;
 
+        // Record only the best king distance bonus for all our passed pawns
+        if (curdistance > bestdistance)
+            bestdistance = curdistance;
+
+        
         score += make_score(mbonus, ebonus) + PassedFile[file_of(s)];
     }
+
+    score += make_score(0,  bestdistance);
 
     if (T)
         Trace::add(PASSED, Us, score);
