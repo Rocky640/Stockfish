@@ -107,7 +107,7 @@ namespace {
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = shift<Right>(ourPawns) | shift<Left>(ourPawns);
-    e->dbleAttacks[Us]   = shift<Right>(ourPawns) & shift<Left>(ourPawns);
+    e->blocked[Them]     = shift<Up>((shift<Right>(ourPawns) & shift<Left>(ourPawns)) | ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
 
@@ -259,7 +259,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
                + StormDanger
                  [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
                   rkUs   == RANK_1                                          ? Unopposed :
-                  rkThem == rkUs + 1 || (dbleAttacks[Us] & make_square(f, rkThem)) ? BlockedByPawn  : Unblocked]
+                  blocked[Them] & make_square(f, rkThem)                    ? BlockedByPawn  : Unblocked]
                  [d][rkThem];
   }
 
