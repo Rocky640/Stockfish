@@ -185,7 +185,7 @@ namespace {
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
   const Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(47, 120)
+    S(0, 15), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(47, 120)
   };
 
   const Score ThreatByRook[PIECE_TYPE_NB] = {
@@ -536,7 +536,7 @@ namespace {
     const Direction Right    = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard  TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, bb, weak, defended, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies attacked by a pawn
@@ -570,6 +570,7 @@ namespace {
     if (defended | weak)
     {
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        bb = b & attackedBy[Us][BISHOP] & ~attackedBy[Them][BISHOP];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -577,6 +578,8 @@ namespace {
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
+
+        score += ThreatByMinor[0] * popcount(bb);
 
         b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
         while (b)
