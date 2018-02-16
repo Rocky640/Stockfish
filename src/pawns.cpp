@@ -92,6 +92,7 @@ namespace {
     const Direction Up    = (Us == WHITE ? NORTH      : SOUTH);
     const Direction Right = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Direction Left  = (Us == WHITE ? NORTH_WEST : SOUTH_EAST);
+    const Bitboard  Edges = FileABB | FileHBB;
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -174,8 +175,9 @@ namespace {
         if (supported | phalanx)
         {
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
-            while (supported)
-                e->bishopBlockers[Us] |= LineBB[s][pop_lsb(&supported)] & forward_ranks_bb(Them, s);
+            if (!(Edges & s))
+                while (supported)
+                    e->bishopBlockers[Us] |= LineBB[s][pop_lsb(&supported)] & forward_ranks_bb(Them, s);
         }
 
         else if (!neighbours)
