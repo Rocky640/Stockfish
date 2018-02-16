@@ -50,7 +50,7 @@ struct Entry {
   }
 
   int pawns_on_same_color_squares(Color c, Square s) const {
-    return pawnsOnSquares[c][bool(DarkSquares & s)];
+    return pawnsOnSquares[c][bool(DarkSquares & s)] + 2 * bool(bishopBlockers[c] & s);
   }
 
   template<Color Us>
@@ -70,6 +70,7 @@ struct Entry {
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
+  Bitboard bishopBlockers[COLOR_NB];
   Square kingSquares[COLOR_NB];
   Score kingSafety[COLOR_NB];
   int weakUnopposed[COLOR_NB];
