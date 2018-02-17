@@ -121,6 +121,10 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+     // mobilityFromSquare[square] are the attacked squares in the mobility area
+     // for a piece on a given square.
+    Bitboard mobilityFromSquare[SQUARE_NB];
+
     // kingRing[color] is the zone around the king which is considered
     // by the king safety evaluation. This consists of the squares directly
     // adjacent to the king, and (only for a king on its first rank) the
@@ -333,9 +337,7 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
-
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        mobilityFromSquare[s] = b & mobilityArea[Us];
 
         // Bonus for this piece as a king protector
         score += KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
@@ -394,12 +396,14 @@ namespace {
                 score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
 
             // Penalty when trapped by the king, even more if the king cannot castle
-            else if (mob <= 3)
-            {
-                File kf = file_of(pos.square<KING>(Us));
-
-                if ((kf < FILE_E) == (file_of(s) < kf))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+            else {
+                int mob = popcount(mobilityFromSquare[s]);
+                if (mob <= 3)
+                {
+                    Square ksq = pos.square<KING>(Us);
+                    if ((file_of(ksq) < FILE_E) == (file_of(s) < file_of(ksq)))
+                        score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
+                }
             }
         }
 
@@ -535,11 +539,11 @@ namespace {
     const Direction Right    = (Us == WHITE ? NORTH_EAST : SOUTH_WEST);
     const Bitboard  TRank3BB = (Us == WHITE ? Rank3BB    : Rank6BB);
 
-    Bitboard b, weak, defended, stronglyProtected, safeThreats;
+    Bitboard b, theirPieces, weak, defended, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
 
-    // Non-pawn enemies attacked by a pawn
-    weak = (pos.pieces(Them) ^ pos.pieces(Them, PAWN)) & attackedBy[Us][PAWN];
+    theirPieces = pos.pieces(Them) ^ pos.pieces(Them, KING, PAWN);
+    weak        = theirPieces & attackedBy[Us][PAWN];
 
     if (weak)
     {
@@ -557,8 +561,7 @@ namespace {
                        | (attackedBy2[Them] & ~attackedBy2[Us]);
 
     // Non-pawn enemies, strongly protected
-    defended =  (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
-              & stronglyProtected;
+    defended = theirPieces & stronglyProtected;
 
     // Enemies not strongly protected and under our attack
     weak =   pos.pieces(Them)
@@ -591,6 +594,25 @@ namespace {
         b = weak & attackedBy[Us][KING];
         if (b)
             score += ThreatByKing[more_than_one(b)];
+    }
+
+    // Opponent minors or majors only defended once
+    weak &= theirPieces & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
+
+    // Loop through all the opponent minors and majors and compute their effective mobility
+    while (theirPieces)
+    {
+        Square s = pop_lsb(&theirPieces);
+        Bitboard activity = mobilityFromSquare[s];
+
+        // Restrict the piece activity to squares where it can keep the defence of weak squares
+        b = activity & weak;
+        while (b)
+            activity &= attacks_bb(type_of(pos.piece_on(s)), pop_lsb(&b), pos.pieces());
+
+        // Mobility bonus according to restricted activity, but also all the pieces defended or attacked
+        mobility[Them] += MobilityBonus[type_of(pos.piece_on(s)) - 2]
+                                       [popcount(activity | (mobilityFromSquare[s] & (weak | pos.pieces(Us))))];
     }
 
     // Bonus for opponent unopposed weak pawns
@@ -862,13 +884,13 @@ namespace {
     score += evaluate_pieces<WHITE, ROOK  >() - evaluate_pieces<BLACK, ROOK  >();
     score += evaluate_pieces<WHITE, QUEEN >() - evaluate_pieces<BLACK, QUEEN >();
 
-    score += mobility[WHITE] - mobility[BLACK];
+    score +=  evaluate_threats<WHITE>()
+            - evaluate_threats<BLACK>();
+
+    score +=  mobility[WHITE] - mobility[BLACK];
 
     score +=  evaluate_king<WHITE>()
             - evaluate_king<BLACK>();
-
-    score +=  evaluate_threats<WHITE>()
-            - evaluate_threats<BLACK>();
 
     score +=  evaluate_passed_pawns<WHITE>()
             - evaluate_passed_pawns<BLACK>();
