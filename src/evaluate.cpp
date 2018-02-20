@@ -161,6 +161,8 @@ namespace {
 
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   const Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
+  
+  const Score BishopPairMob[] = { S(0, 6), S(1, 5) };
 
   // Assorted bonuses and penalties
   const Score BishopPawns       = S(  8, 12);
@@ -597,6 +599,13 @@ namespace {
        | (attackedBy[Us][ROOK  ] & attackedBy[Them][QUEEN] & ~attackedBy[Them][QUEEN_DIAGONAL]);
 
     score += ThreatOnQueen * popcount(b & safeThreats);
+
+    // Adjust the bishop pair value according to combined bishop mobility
+    if (pos.count<BISHOP>(Us) > 1)
+    {
+        int mob = popcount(attackedBy[Us][BISHOP] & mobilityArea[Us]) - 10;
+        score += BishopPairMob[mob < 0] * mob;
+    }
 
     if (T)
         Trace::add(THREAT, Us, score);
