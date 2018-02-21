@@ -162,7 +162,7 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   const Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
   
-  const Score BishopPairMob[] = { S(0, 6), S(1, 5) };
+  const Score BishopPairMob[] = { S(0, 4), S(0, 3) };
 
   // Assorted bonuses and penalties
   const Score BishopPawns       = S(  8, 12);
