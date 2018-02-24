@@ -461,14 +461,17 @@ namespace {
         else
             unsafeChecks |= b;
 
-        // Unsafe or occupied checking squares will also be considered, as long as
-        // the square is in the attacker's mobility area.
+        // Unsafe or occupied checking squares are considered, as long as
+        // the square is in the attacker's mobility area...
         unsafeChecks &= mobilityArea[Them];
+
+        // ... or is a discovery blocker (except their pawns)
+        unsafeChecks |= pos.check_blockers(Us) & ~pos.pieces(Them, PAWN);
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAdjacentZoneAttacksCount[Them]
                      + 191 * popcount(kingRing[Us] & weak)
-                     + 143 * popcount(pos.pinned_pieces(Us) | unsafeChecks)
+                     + 143 * popcount(unsafeChecks)
                      - 848 * !pos.count<QUEEN>(Them)
                      -   9 * mg_value(score) / 8
                      +  40;

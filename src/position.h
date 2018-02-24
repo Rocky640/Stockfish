@@ -107,6 +107,7 @@ public:
   Bitboard checkers() const;
   Bitboard discovered_check_candidates() const;
   Bitboard pinned_pieces(Color c) const;
+  Bitboard check_blockers(Color c) const;
   Bitboard check_squares(PieceType pt) const;
 
   // Attacks to/from a given square
@@ -306,6 +307,10 @@ inline Bitboard Position::pinned_pieces(Color c) const {
 
 inline Bitboard Position::check_squares(PieceType pt) const {
   return st->checkSquares[pt];
+}
+
+inline Bitboard Position::check_blockers(Color c) const {
+  return st->blockersForKing[c];
 }
 
 inline bool Position::pawn_passed(Color c, Square s) const {
