@@ -278,8 +278,8 @@ namespace {
         if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
             kingRing[Us] |= shift<Up>(kingRing[Us]);
 
-        // Exclude enemy pawns which stops the attack against a fianchetto defensive formation
-        if (popcount(kingRing[Us] & ShelterMask) == 3)
+        // Exclude some enemy pawns from the king ring when we have a "fianchetto" pawn shelter
+        if (popcount(KingFlank[file_of(pos.square<KING>(Us))] & pos.pieces(Us, PAWN) & ShelterMask) == 3)
             kingRing[Us] &= ~(pos.pieces(Them, PAWN) & StormMask);
 
         kingAttackersCount[Them] = popcount(attackedBy[Us][KING] & pe->pawn_attacks(Them));
