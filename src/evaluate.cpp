@@ -222,6 +222,7 @@ namespace {
     // king on its first rank) the squares two ranks in front. For instance,
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
     // and h6. It is set to 0 when king safety evaluation is skipped.
+    // Blocked enemy pawns are excluded from that area.
     Bitboard kingRing[COLOR_NB];
 
     // kingAttackersCount[color] is the number of pieces of the given color
@@ -254,11 +255,11 @@ namespace {
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
     // Find our pawns that are blocked or on the first two ranks
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    Bitboard blocked = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+    mobilityArea[Us] = ~(blocked | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -272,6 +273,7 @@ namespace {
         kingRing[Us] = attackedBy[Us][KING];
         if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
             kingRing[Us] |= shift<Up>(kingRing[Us]);
+        kingRing[Us] &= ~blocked;
 
         kingAttackersCount[Them] = popcount(attackedBy[Us][KING] & pe->pawn_attacks(Them));
         kingAdjacentZoneAttacksCount[Them] = kingAttackersWeight[Them] = 0;
