@@ -263,7 +263,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
       safety -=  ShelterWeakness[f == file_of(ksq)][d][rkUs]
                + StormDanger[idx][d][rkThem];
 
-      if ((idx == BlockedByPawn) && (PawnAttacks[Us][sUs] & theirPawns))
+      if ((idx == BlockedByPawn) && (PawnAttacks[Us][sUs] & theirPawns) && rkThem < RANK_5)
           safety -= Value(30);
   }
 
