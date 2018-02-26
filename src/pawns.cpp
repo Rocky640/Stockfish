@@ -248,23 +248,26 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
   Bitboard theirPawns = b & pos.pieces(Them);
   Value safety = MaxSafetyBonus;
   File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
-  Square s;
+  Square sUs;
 
   for (File f = File(center - 1); f <= File(center + 1); ++f)
   {
       b = ourPawns & file_bb(f);
-      Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
+      Rank rkUs = b ? relative_rank(Us, (sUs = backmost_sq(Us, b))) : RANK_1;
 
       b = theirPawns & file_bb(f);
-      Rank rkThem = b ? relative_rank(Us, s = frontmost_sq(Them, b)) : RANK_1;
+      Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
 
       int d = std::min(f, ~f);
+      int idx = (f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing :
+                 rkUs   == RANK_1                                          ? Unopposed     :
+                 rkThem == rkUs + 1                                        ? BlockedByPawn : Unblocked);
+
       safety -=  ShelterWeakness[f == file_of(ksq)][d][rkUs]
-               + StormDanger
-                 [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
-                  rkUs   == RANK_1                                          ? Unopposed :
-                  rkThem == rkUs + 1 && !(rank_bb(s) & adjacent_files(s) & theirPawns)            ? BlockedByPawn  : Unblocked]
-                 [d][rkThem];
+               + StormDanger[idx][d][rkThem];
+
+      if ((idx == BlockedByPawn) && (PawnAttacks[Us][sUs] & theirPawns))
+          safety -= Value(30);
   }
 
   return safety;
