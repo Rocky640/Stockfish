@@ -93,7 +93,7 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard opposed, backward, lever, leverPush;
-    Square s, ss;
+    Square s;
 
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
@@ -180,10 +180,9 @@ namespace {
             score -= Doubled;
 
         if (stoppers)
-           e->pawnBreaks[Us] |= rank_bb(backmost_sq(Us, stoppers)) & stoppers;
+           e->pawnBreaks[Us] |=  rank_bb(backmost_sq(Us, stoppers))
+                               & stoppers & ~opposed;
     }
-
-    e->pawnBreaks[Us] &= ~theirPawns;
 
     return score;
   }
