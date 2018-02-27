@@ -273,7 +273,7 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
       if (   idx >= BlockedByPawn
           && !(pawnBreaks[Them] & s)
           && (adjacent_files_bb(f) & theirPawns))
-          safety -= StormDanger[idx][d][rkThem] / 4;
+          safety -= 3 * StormDanger[idx][d][rkThem] / 4;
       else
           safety -= StormDanger[idx][d][rkThem];
   }
