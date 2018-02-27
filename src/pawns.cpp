@@ -266,15 +266,14 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
                 rkUs   == RANK_1                                          ? Unopposed :
                 rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked;
 
-      safety -=  ShelterWeakness[f == file_of(ksq)][d][rkUs]
-               + StormDanger[idx][d][rkThem];
+      safety -=  ShelterWeakness[f == file_of(ksq)][d][rkUs];
 
-      // If the storming pawn is opposed but its neighbours cannot help lever
-      // the opposing pawn, increase the safety.
-      if (   idx >= BlockedByPawn
-          && !(pawnBreaks[Them] & s)
-          && (adjacent_files_bb(f) & theirPawns))
-          safety += StormDanger[idx][d][rkThem] / 2;
+      // A storming pawn is dangerous only if not opposed, or it does not have neighbours
+      // or the neighbours can help lever the opposing pawn
+      if (   idx < BlockedByPawn
+          || !(adjacent_files_bb(f) & theirPawns)
+          || (pawnBreaks[Them] & s))
+          safety -= StormDanger[idx][d][rkThem];
   }
 
   //int pawncount  = popcount(ourPawns & KingFlank[center]);
