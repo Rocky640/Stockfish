@@ -92,21 +92,23 @@ namespace {
     const Direction Up   = (Us == WHITE ? NORTH : SOUTH);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
-    Bitboard lever, leverPush;
-    Square s;
-    bool opposed, backward;
+    Bitboard opposed, backward, lever, leverPush;
+    Square s, ss;
+
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
 
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 
+    e->pawnBreaks[Us]  = e->weakUnopposed[Us]   = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
     e->pawnsOnSquares[Us][BLACK] = popcount(ourPawns & DarkSquares);
     e->pawnsOnSquares[Us][WHITE] = pos.count<PAWN>(Us) - e->pawnsOnSquares[Us][BLACK];
+    
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -166,7 +168,7 @@ namespace {
 
         // Score this pawn
         if (supported | phalanx)
-            score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
+            score += Connected[bool(opposed)][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
 
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
@@ -176,7 +178,12 @@ namespace {
 
         if (doubled && !supported)
             score -= Doubled;
+
+        if (stoppers)
+           e->pawnBreaks[Us] |= rank_bb(backmost_sq(Us, stoppers)) & stoppers;
     }
+
+    e->pawnBreaks[Us] &= ~theirPawns;
 
     return score;
   }
@@ -245,24 +252,35 @@ Value Entry::shelter_storm(const Position& pos, Square ksq) {
   Bitboard theirPawns = b & pos.pieces(Them);
   Value safety = MaxSafetyBonus;
   File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
+  Square s;
 
   for (File f = File(center - 1); f <= File(center + 1); ++f)
   {
       b = ourPawns & file_bb(f);
-      Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
+      Rank rkUs = b ? relative_rank(Us, (s = backmost_sq(Us, b))) : RANK_1;
 
       b = theirPawns & file_bb(f);
       Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
 
       int d = std::min(f, ~f);
+      int idx = f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
+                rkUs   == RANK_1                                          ? Unopposed :
+                rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked;
+
       safety -=  ShelterWeakness[f == file_of(ksq)][d][rkUs]
-               + StormDanger
-                 [f == file_of(ksq) && rkThem == relative_rank(Us, ksq) + 1 ? BlockedByKing  :
-                  rkUs   == RANK_1                                          ? Unopposed :
-                  rkThem == rkUs + 1                                        ? BlockedByPawn  : Unblocked]
-                 [d][rkThem];
+               + StormDanger[idx][d][rkThem];
+
+      // If the storming pawn is opposed but its neighbours cannot help lever
+      // the opposing pawn, increase the safety.
+      if (   idx >= BlockedByPawn
+          && !(pawnBreaks[Them] & s)
+          && (adjacent_files_bb(f) & theirPawns))
+          safety += StormDanger[idx][d][rkThem] / 2;
   }
 
+  //int pawncount  = popcount(ourPawns & KingFlank[center]);
+  //int breakcount = popcount(pawnBreaks[Them] & ourPawns & KingFlank[center]);
+  
   return safety;
 }
 
