@@ -256,10 +256,14 @@ namespace {
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
+    // Find our pawns attacked by enemy pawns which are not supported by a pawn
+    Bitboard bb = pos.pieces(Them, PAWN) & ~pe->pawn_attacks(Them);
+    bb = pawn_attacks_bb<Them>(bb) & pos.pieces(Us, PAWN);
+
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.square<KING>(Us)
-                           | (pe->pawn_attacks(Them) & ~pos.pieces(Us, PAWN)));
+                           | (pe->pawn_attacks(Them) ^ bb));
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
