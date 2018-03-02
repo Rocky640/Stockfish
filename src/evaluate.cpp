@@ -174,6 +174,7 @@ namespace {
   const Score ThreatByPawnPush  = S( 47, 26);
   const Score ThreatByRank      = S( 16,  3);
   const Score ThreatBySafePawn  = S(175,168);
+  const Score ThreatFollowUp    = S( 15, 15);
   const Score ThreatOnQueen     = S( 42, 21);
   const Score TrappedBishopA1H1 = S( 50, 50);
   const Score TrappedRook       = S( 92,  0);
@@ -528,6 +529,10 @@ namespace {
 
         safeThreats = pawn_attacks_bb<Us>(b) & weak;
         score += ThreatBySafePawn * popcount(safeThreats);
+
+        // Possible follow-up threats
+        b = pawn_attacks_bb<Us>(safeThreats) & pos.pieces(Them);
+        score += ThreatFollowUp * popcount(b);
     }
 
     // Squares strongly protected by the enemy, either because they defend the
