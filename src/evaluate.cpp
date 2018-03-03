@@ -171,6 +171,7 @@ namespace {
   const Score MinorBehindPawn   = S( 16,  0);
   const Score PawnlessFlank     = S( 20, 80);
   const Score RookOnPawn        = S(  8, 24);
+  const Score ActiveLevers      = S( 15, 15);
   const Score ThreatByPawnPush  = S( 47, 26);
   const Score ThreatByRank      = S( 16,  3);
   const Score ThreatBySafePawn  = S(175,168);
@@ -572,6 +573,12 @@ namespace {
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
+
+    // Single defended material which we attack
+    b = pos.pieces(Them) & ~(attackedBy2[Them] | pe->dble_attacks(Them)) & attackedBy[Us][ALL_PIECES];
+    // The pawns that defend them and our levers on such pawns
+    b = pawn_attacks_bb<Us>(b) & pos.pieces(Them, PAWN) & attackedBy[Us][PAWN];
+    score += ActiveLevers * popcount(b);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
