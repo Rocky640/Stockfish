@@ -579,7 +579,7 @@ namespace {
 
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
-        score += WeakUnopposedPawn * popcount(pe->weak_unopposed(Them) & ~ shieldedFile[Them]);
+        score += WeakUnopposedPawn * popcount(pe->weak_unopposed(Them) & ~shieldedFile[Them]);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
