@@ -342,7 +342,7 @@ namespace {
             {
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
                 if (attackedBy[Us][PAWN] & s)
-                    shieldedFile[Us] |= forward_file_bb(Us, s);
+                    shieldedFile[Us] |= forward_file_bb(Them, s);
             }
 
             else if (bb &= b & ~pos.pieces(Us))
