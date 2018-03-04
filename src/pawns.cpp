@@ -20,11 +20,13 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>        // std::abs
 
 #include "bitboard.h"
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
+
 
 namespace {
 
@@ -225,6 +227,8 @@ Entry* probe(const Position& pos) {
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
                           | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
+                          
+  e->asymmetry += std::abs(pos.count<PAWN>(WHITE) - pos.count<PAWN>(BLACK));
 
   return e;
 }
