@@ -176,6 +176,9 @@ namespace {
 
         if (doubled && !supported)
             score -= Doubled;
+
+        if (ourPawns & forward_file_bb(Us, s))
+            e->asymmetry +=1;
     }
 
     return score;
@@ -220,11 +223,12 @@ Entry* probe(const Position& pos) {
       return e;
 
   e->key = key;
+  e->asymmetry = 0;
   e->scores[WHITE] = evaluate<WHITE>(pos, e);
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
-  e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
-  e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
-                          | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
+  e->openFiles  = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
+  e->asymmetry += popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
+                           | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
 
   return e;
 }
