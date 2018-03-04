@@ -224,6 +224,8 @@ namespace {
     // and h6. It is set to 0 when king safety evaluation is skipped.
     Bitboard kingRing[COLOR_NB];
 
+    Bitboard blockers_for_queen[COLOR_NB];
+
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
     int kingAttackersCount[COLOR_NB];
@@ -265,6 +267,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+    blockers_for_queen[Us] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -324,8 +327,19 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+        bool relative_pin = false;
 
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        if (blockers_for_queen[Us] & s)
+        {
+            if (Pt == ROOK)
+                relative_pin = (attackedBy[Them][QUEEN_DIAGONAL] & s);
+            if (Pt == BISHOP)
+                relative_pin = !(attackedBy[Them][QUEEN_DIAGONAL] & s);
+            if (Pt == KNIGHT)
+                relative_pin = true;
+        }
+
+        mobility[Us] += MobilityBonus[Pt - 2][relative_pin ? 1 : mob];
 
         // Penalty if the piece is far from the king
         score -= KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
@@ -391,9 +405,10 @@ namespace {
 
         if (Pt == QUEEN)
         {
-            // Penalty if any relative pin or discovered attack against the queen
+            // Initialize the blockers_for_queen, and penalize if any discovered attack against the queen
             Bitboard queenPinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
+            blockers_for_queen[Us] = pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners);
+            if (blockers_for_queen[Us] & pos.pieces(Them))
                 score -= WeakQueen;
         }
     }
@@ -846,11 +861,13 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Pieces should be evaluated first (populate attack tables)
+    // Evaluate queen first, to detect relative pins...
+    score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+
+    // ...and proceed with remaining pieces (populate attack tables).
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
 
     score += mobility[WHITE] - mobility[BLACK];
 
