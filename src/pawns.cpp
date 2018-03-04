@@ -101,7 +101,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = e->weakPawns[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
@@ -168,11 +168,15 @@ namespace {
         if (supported | phalanx)
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
 
-        else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
+        else
+        {
+            e->weakPawns[Us] |= s;
+            if (!neighbours)
+                score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
-        else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed;
+            else if (backward)
+                score -= Backward, e->weakUnopposed[Us] += !opposed;
+        }
 
         if (doubled && !supported)
             score -= Doubled;
@@ -224,6 +228,7 @@ Entry* probe(const Position& pos) {
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
+                          | (e->weakPawns[WHITE]     | e->weakPawns[WHITE])
                           | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
 
   return e;
