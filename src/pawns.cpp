@@ -228,7 +228,7 @@ Entry* probe(const Position& pos) {
   e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
                           | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
                           
-  e->asymmetry += std::abs(pos.count<PAWN>(WHITE) - pos.count<PAWN>(BLACK));
+  e->asymmetry += std::abs(pos.count<PAWN>(WHITE) - pos.count<PAWN>(BLACK)) * 2;
 
   return e;
 }
