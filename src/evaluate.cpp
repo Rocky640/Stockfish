@@ -170,7 +170,7 @@ namespace {
   const Score KnightOnQueen     = S( 21, 11);
   const Score LongRangedBishop  = S( 22,  0);
   const Score MinorBehindPawn   = S( 16,  0);
-  const Score NoOpenFile        = S(  0, 40);
+  const Score NoOpenFile        = S(  0, 20);
   const Score PawnlessFlank     = S( 20, 80);
   const Score RookOnPawn        = S(  8, 24);
   const Score ThreatByPawnPush  = S( 47, 26);
