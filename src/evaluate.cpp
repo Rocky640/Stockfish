@@ -287,8 +287,12 @@ namespace {
   Score Evaluation<T>::pieces() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard OutpostRanks[2] = {
+        (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                     : Rank5BB | Rank4BB | Rank3BB),
+        Rank3BB | Rank4BB | Rank5BB | Rank6BB
+    };
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -334,7 +338,7 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
-            bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
+            bb = OutpostRanks[Pt - 2] & ~pe->pawn_attacks_span(Them);
             if (bb & s)
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
 
