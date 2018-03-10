@@ -339,7 +339,7 @@ namespace {
 
             else if (bb &= b & ~pos.pieces(Us))
                 score +=  Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)]
-                        * OutpostRankFactor[rr - RANK_3];
+                        * OutpostRankFactor[relative_rank(Us, frontmost_sq(Us, bb)) - RANK_3];
 
             // Bonus when behind a pawn
             if (    rr < RANK_5
