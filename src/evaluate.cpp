@@ -120,11 +120,15 @@ namespace {
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they occupy or can reach an outpost square, bigger if that
-  // square is supported by a pawn.
+  // square is supported by a pawn. Score is doubled if the outpost is occupied.
+  // Score is also multiplied by a rank factor
   const Score Outpost[][2] = {
-    { S(22, 6), S(36,12) }, // Knight
-    { S( 9, 2), S(15, 5) }  // Bishop
+    { S(7, 2), S(12, 4) }, // Knight
+    { S(3, 1), S( 5, 2) }  // Bishop
   };
+  // OutpostRankFactor[rank-3] is a factor applied to above bonus according to
+  // relative rank 3, 4, 5, or 6
+  const int OutpostRankFactor[] = {1, 2, 3, 2};
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
@@ -327,16 +331,19 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+            Rank rr = relative_rank(Us, s);
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
+                score +=   Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)]
+                        * (OutpostRankFactor[rr - RANK_2] * 2);
 
             else if (bb &= b & ~pos.pieces(Us))
-                score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)];
+                score +=  Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)]
+                        * OutpostRankFactor[rr - RANK_2];
 
             // Bonus when behind a pawn
-            if (    relative_rank(Us, s) < RANK_5
+            if (    rr < RANK_5
                 && (pos.pieces(PAWN) & (s + pawn_push(Us))))
                 score += MinorBehindPawn;
 
