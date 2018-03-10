@@ -75,6 +75,11 @@ void init(OptionsMap& o) {
   o["SyzygyProbeDepth"]      << Option(1, 1, 100);
   o["Syzygy50MoveRule"]      << Option(true);
   o["SyzygyProbeLimit"]      << Option(6, 0, 6);
+  
+  o["ConnMg"]      << Option(2, -10, 10);
+  o["ConnEg"]      << Option(2, -10, 10);
+  o["Conn2Mg"]      << Option(0, -10, 10);
+  o["Conn2Eg"]      << Option(0, -10, 10);
 }
 
 
