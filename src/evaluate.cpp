@@ -166,6 +166,7 @@ namespace {
   const Score BishopPawns       = S(  8, 12);
   const Score CloseEnemies      = S(  7,  0);
   const Score Connectivity      = S(  2,  2);
+  const Score ConnectivityBy2   = S(  1,  1);
   const Score Hanging           = S( 52, 30);
   const Score HinderPassedPawn  = S(  8,  1);
   const Score KnightOnQueen     = S( 21, 11);
@@ -601,8 +602,9 @@ namespace {
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
-    b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
-    score += Connectivity * popcount(b);
+    b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING));
+    score += Connectivity    * popcount(b & attackedBy[Us][ALL_PIECES]);
+    score += ConnectivityBy2 * popcount(b & attackedBy2[Us]);
 
     if (T)
         Trace::add(THREAT, Us, score);
