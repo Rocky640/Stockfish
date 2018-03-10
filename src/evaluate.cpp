@@ -291,8 +291,7 @@ namespace {
   Score Evaluation<T>::pieces() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard OutpostRanks = Rank3BB | Rank4BB | Rank5BB | Rank6BB;
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -336,11 +335,11 @@ namespace {
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
                 score +=   Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)]
-                        * (OutpostRankFactor[rr - RANK_2] * 2);
+                        * (OutpostRankFactor[rr - RANK_3] * 2);
 
             else if (bb &= b & ~pos.pieces(Us))
                 score +=  Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)]
-                        * OutpostRankFactor[rr - RANK_2];
+                        * OutpostRankFactor[rr - RANK_3];
 
             // Bonus when behind a pawn
             if (    rr < RANK_5
