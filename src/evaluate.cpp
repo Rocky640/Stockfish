@@ -320,7 +320,10 @@ namespace {
         }
 
         b &= mobilityArea[Us];
-        int mob = popcount(b) - more_than_one(b & pos.pieces(Us));
+        int mob = popcount(b);
+        if (Pt != QUEEN)
+           mob -= more_than_one(b & pos.pieces(Us));
+
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         // Penalty if the piece is far from the king
