@@ -133,8 +133,9 @@ namespace {
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
+  // ThreatByMinor[0] is an additional if the piece is not well defended
   const Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(47, 120)
+    S(3, 3), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(47, 120)
   };
 
   const Score ThreatByRook[PIECE_TYPE_NB] = {
@@ -547,6 +548,8 @@ namespace {
             score += ThreatByMinor[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
+            if (weak & s)
+                score += ThreatByMinor[0];
         }
 
         b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
