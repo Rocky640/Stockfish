@@ -319,7 +319,9 @@ namespace {
             kingAdjacentZoneAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
+        b &= mobilityArea[Us];
+        // Reduce the mobility count by 1 if there is more than two minors or majors in the way
+        int mob = popcount(b) - (popcount(b & pos.pieces(Us)) > 2);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
