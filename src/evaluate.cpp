@@ -144,6 +144,9 @@ namespace {
   // ThreatByKing[on one/on many] contains bonuses for king attacks on
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[] = { S(3, 65), S(9, 145) };
+  
+  // WeakQueen[protected/loose]
+  const Score WeakQueen[] = { S( 40, 10) , S(60, 15) };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   const Score PassedRank[RANK_NB] = {
@@ -179,7 +182,6 @@ namespace {
   const Score ThreatByRank       = S( 16,  3);
   const Score ThreatBySafePawn   = S(175,168);
   const Score TrappedRook        = S( 92,  0);
-  const Score WeakQueen          = S( 50, 10);
   const Score WeakUnopposedPawn  = S(  5, 25);
 
 #undef S
@@ -390,7 +392,7 @@ namespace {
             // Penalty if any relative pin or discovered attack against the queen
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
-                score -= WeakQueen;
+                score -= WeakQueen[bool(attackedBy[Us][ALL_PIECES] & s)];
         }
     }
     if (T)
