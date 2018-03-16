@@ -386,14 +386,6 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
-
-        if (Pt == QUEEN)
-        {
-            // Penalty if any relative pin or discovered attack against the queen
-            Bitboard queenPinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
-                score -= WeakQueen[bool(attackedBy[Us][ALL_PIECES] & s)];
-        }
     }
     if (T)
         Trace::add(Pt, Us, score);
@@ -586,9 +578,10 @@ namespace {
 
     score += ThreatByPawnPush * popcount(b);
 
-    // Bonus for threats on the next moves against enemy queen
+    
     if (pos.count<QUEEN>(Them) == 1)
     {
+        // Bonus for threats on the next moves against enemy queen
         Square s = pos.square<QUEEN>(Them);
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
@@ -600,6 +593,11 @@ namespace {
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
         score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+
+        // Bonus if any relative pin or discovered attack against the queen
+        Bitboard queenPinners;
+        if (pos.slider_blockers(pos.pieces(Us, ROOK, BISHOP), s, queenPinners))
+            score += WeakQueen[bool(attackedBy[Them][ALL_PIECES] & s)];
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
