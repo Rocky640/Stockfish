@@ -145,8 +145,8 @@ namespace {
   // pawns or pieces which are not pawn-defended.
   const Score ThreatByKing[] = { S(3, 65), S(9, 145) };
   
-  // WeakQueen[protected/loose]
-  const Score WeakQueen[] = { S( 40, 10) , S(60, 15) };
+  // WeakQueen[loose/protected]
+  const Score WeakQueen[] = { S(60, 15), S(40, 10) };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   const Score PassedRank[RANK_NB] = {
