@@ -167,6 +167,7 @@ namespace {
   const Score CloseEnemies       = S(  7,  0);
   const Score Connectivity       = S(  3,  1);
   const Score CorneredBishop     = S( 50, 50);
+  const Score Development        = S(  4,  0);
   const Score Hanging            = S( 52, 30);
   const Score HinderPassedPawn   = S(  8,  1);
   const Score KnightOnQueen      = S( 21, 11);
@@ -715,6 +716,7 @@ namespace {
   Score Evaluation<T>::space() const {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard FirstRank = Us == WHITE ? Rank1BB : Rank8BB;
     const Bitboard SpaceMask =
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
@@ -739,6 +741,9 @@ namespace {
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
     Score score = make_score(bonus * weight * weight / 16, 0);
+
+    // Bonus for each developed minor
+    score += Development * popcount(pos.pieces(Us, KNIGHT, BISHOP) & ~FirstRank);
 
     if (T)
         Trace::add(SPACE, Us, score);
