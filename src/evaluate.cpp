@@ -255,10 +255,10 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard PawnMask  = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
     constexpr Bitboard MinorMask =
-           Us == WHITE ? make_bitboard(SQ_A1, SQ_A2, SQ_A3, SQ_B1, SQ_B2, SQ_C1,
-                                       SQ_H1, SQ_H2, SQ_H3, SQ_G1, SQ_G2, SQ_F1)
-                       : make_bitboard(SQ_A8, SQ_A7, SQ_A6, SQ_B8, SQ_B7, SQ_C8,
-                                       SQ_H8, SQ_H7, SQ_H6, SQ_G8, SQ_G7, SQ_F8);
+           Us == WHITE ? make_bitboard(SQ_A1, SQ_A2, SQ_B1, SQ_B2,
+                                       SQ_H1, SQ_H2, SQ_G1, SQ_G2)
+                       : make_bitboard(SQ_A8, SQ_A7, SQ_B8, SQ_B7,
+                                       SQ_H8, SQ_H7, SQ_G8, SQ_G7);
 
 
     // Find our pawns which are blocked or on the first two ranks
