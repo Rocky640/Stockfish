@@ -207,7 +207,7 @@ namespace {
     const Position& pos;
     Material::Entry* me;
     Pawns::Entry* pe;
-    Bitboard mobilityArea[COLOR_NB][2];
+    Bitboard mobilityArea[COLOR_NB];
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
@@ -254,17 +254,13 @@ namespace {
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard PawnMask  = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
-    constexpr Bitboard MinorMask = (Us == WHITE ? Rank1BB | Rank2BB: Rank8BB | Rank7BB);
 
-    // Find our pawns which are blocked or on the first two ranks
+    // Find our pawns that are blocked or on their initial ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | PawnMask);
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
-    mobilityArea[Us][1] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
-
-    // For bishop and knights, exclude also squares occupied by minor pieces on bad squares
-    mobilityArea[Us][0] = mobilityArea[Us][1] & ~(pos.pieces(Us, KNIGHT, BISHOP) & MinorMask);
+    mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -292,13 +288,16 @@ namespace {
   Score Evaluation<T>::pieces() {
 
     const Color Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                               : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard OutpostRanks  = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                                : Rank5BB | Rank4BB | Rank3BB);
+    const Bitboard MinorMobRanks = (Us == WHITE ? Rank1BB | Rank2BB: Rank8BB | Rank7BB);
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
+    int mob;
 
     attackedBy[Us][Pt] = 0;
 
@@ -323,7 +322,12 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us][Pt > BISHOP]);
+        if (Pt == KNIGHT)
+            mob = popcount(b & mobilityArea[Us] & ~(pos.pieces(Us, BISHOP) & MinorMobRanks));
+        else if (Pt == BISHOP)
+            mob = popcount(b & mobilityArea[Us] & ~(pos.pieces(Us, KNIGHT) & MinorMobRanks));
+        else
+            mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -463,7 +467,7 @@ namespace {
 
         // Unsafe or occupied checking squares will also be considered, as long as
         // the square is in the attacker's mobility area.
-        unsafeChecks &= mobilityArea[Them][1];
+        unsafeChecks &= mobilityArea[Them];
         pinned = pos.blockers_for_king(Us) & pos.pieces(Us);
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
@@ -592,7 +596,7 @@ namespace {
     if (pos.count<QUEEN>(Them) == 1)
     {
         Square s = pos.square<QUEEN>(Them);
-        safeThreats = mobilityArea[Us][1] & ~stronglyProtected;
+        safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
 
