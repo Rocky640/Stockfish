@@ -527,7 +527,7 @@ namespace {
         score += ThreatBySafePawn * popcount(safeThreats);
 
         // Threatening a second capture
-        if (pawn_attacks_bb<Us>(safeThreats & ~TRank8BB) & pos.pieces(Them))
+        if (pawn_attacks_bb<Us>(safeThreats & ~TRank8BB) & nonPawnEnemies)
             score += ThreatByPawnPush;
     }
 
