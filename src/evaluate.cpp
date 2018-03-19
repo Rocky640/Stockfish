@@ -404,12 +404,14 @@ namespace {
   template<Tracing T> template<Color Us>
   Score Evaluation<T>::king() const {
 
-    const Color    Them = (Us == WHITE ? BLACK : WHITE);
-    const Bitboard Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
-                                       : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
+    const Color     Them     = (Us == WHITE ? BLACK : WHITE);
+    const Bitboard  TRank2BB = (Us == WHITE ? Rank2BB : Rank7BB);
+    const Direction Down     = (Us == WHITE ? SOUTH : NORTH);
+    const Bitboard  Camp     = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
+                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard weak, b, b1, b2, safe, unsafeChecks, pinned;
+    Bitboard weak, b, b1, b2, b3, safe, unsafeChecks, pinned;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
@@ -451,11 +453,17 @@ namespace {
             unsafeChecks |= b2;
 
         // Enemy knights checks
-        b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
-        if (b & safe)
+        b3 = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
+        if (b3 & safe)
             kingDanger += KnightSafeCheck;
         else
-            unsafeChecks |= b;
+            unsafeChecks |= b3;
+
+        // Enemy promotion checks
+        b = pe->passed_pawns(Them) & TRank2BB;
+        if (b)
+           unsafeChecks |= (b1 | b2 | b3) & (  (shift<Down>(b) & ~pos.pieces())
+                                             | (pawn_attacks_bb<Us>(b) & pos.pieces(Us)));
 
         // Unsafe or occupied checking squares will also be considered, as long as
         // the square is in the attacker's mobility area.
