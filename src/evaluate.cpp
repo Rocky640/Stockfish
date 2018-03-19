@@ -433,13 +433,13 @@ namespace {
 
         // Enemy queen safe checks
         b = (b1 | b2) & attackedBy[Them][QUEEN] & safe;
+        b1 &= attackedBy[Them][ROOK];
+        b2 &= attackedBy[Them][BISHOP];
+
         if (b & ~attackedBy[Us][QUEEN])
             kingDanger += QueenSafeCheck;
         else
-            unsafeChecks |= b;
-
-        b1 &= attackedBy[Them][ROOK];
-        b2 &= attackedBy[Them][BISHOP];
+            unsafeChecks |= b & ~(b1 | b2);
 
         // Enemy rooks checks
         if (b1 & safe)
