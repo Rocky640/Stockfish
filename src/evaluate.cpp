@@ -684,9 +684,21 @@ namespace {
 
                 bonus += make_score(k * w, k * w);
             }
-            else if (pos.pieces(Us) & blockSq)
+            else if (pos.pieces(Them) & blockSq)
+            {
+                PieceType pt = type_of(pos.piece_on(blockSq));
+                if (pt != PAWN) 
+                {
+                    // Add a bonus if the blocker has other duties
+                    if (pos.attacks_from(pt, blockSq) & (pos.pieces(Them) ^ pos.pieces(Them, KING))
+                          & ~attackedBy2[Them] & attackedBy[Us][ALL_PIECES])
+                        bonus += make_score(w + r * 2, w + r * 2);
+                }
+            }
+            else
+                // Add a bonus the blocker is a friendly piece
                 bonus += make_score(w + r * 2, w + r * 2);
-        } // rr != 0
+        } // w != 0
 
         // Scale down bonus for candidate passers which need more than one
         // pawn push to become passed or have a pawn in front of them.
