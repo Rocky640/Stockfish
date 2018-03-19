@@ -462,7 +462,7 @@ namespace {
         // Enemy promotion checks
         b = pe->passed_pawns(Them) & TRank2BB;
         if (b)
-           unsafeChecks |= (b1 | b2 | b3) & (  (shift<Down>(b) & ~pos.pieces())
+           unsafeChecks |= (b1 | b2 | b3) & (  (shift<Down>(b) & safe)
                                              | (pawn_attacks_bb<Us>(b) & pos.pieces(Us)));
 
         // Unsafe or occupied checking squares will also be considered, as long as
