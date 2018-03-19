@@ -242,6 +242,10 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAttacksCount[WHITE].
     int kingAttacksCount[COLOR_NB];
+
+    // blockersForQueen[COLOR_NB] are pieces which movement will expose a queen of
+    // the given color to a bishop or rook attack
+    Bitboard blockersForQueen[COLOR_NB];
   };
 
 
@@ -255,11 +259,20 @@ namespace {
     const Direction Down = (Us == WHITE ? SOUTH : NORTH);
     const Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
+    Bitboard pinnersForQueen;
+    blockersForQueen[Us] = (pos.count<QUEEN>(Us) == 1 ? 
+         pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP),
+                             pos.square<QUEEN>(Us),
+                             pinnersForQueen)         : 0);
+
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
-    // Squares occupied by those pawns, by our king, or controlled by enemy pawns
-    // are excluded from the mobility area.
+    // Add our pinned pieces, and our relatively pinned pieces
+    b |= (blockersForQueen[Us] | pos.blockers_for_king(Us)) & pos.pieces(Us);
+
+    // Squares occupied by those pawns, those pinned pieces, by our king,
+    // or controlled by enemy pawns, are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
 
     // Initialise attackedBy bitboards for kings and pawns
@@ -383,14 +396,6 @@ namespace {
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
-        }
-
-        if (Pt == QUEEN)
-        {
-            // Penalty if any relative pin or discovered attack against the queen
-            Bitboard queenPinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
-                score -= WeakQueen;
         }
     }
     if (T)
@@ -584,9 +589,10 @@ namespace {
 
     score += ThreatByPawnPush * popcount(b);
 
-    // Bonus for threats on the next moves against enemy queen
+    
     if (pos.count<QUEEN>(Them) == 1)
     {
+        // Bonus for threats on the next moves against enemy queen
         Square s = pos.square<QUEEN>(Them);
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
@@ -598,6 +604,9 @@ namespace {
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
         score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+
+        // Bonus for queen exposed to discovered attacks, or relative pin
+        score += WeakQueen * bool(blockersForQueen[Them]);
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
