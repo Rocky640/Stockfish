@@ -439,14 +439,14 @@ namespace {
         b1 &= attackedBy[Them][ROOK];
         b2 &= attackedBy[Them][BISHOP];
 
-        // Enemy rooks checks
-        if (b1 & safe)
+        // Enemy rooks checks or queen pin
+        if (b1 & (safe | pos.pieces(Them, ROOK)))
             kingDanger += RookSafeCheck;
         else
             unsafeChecks |= b1;
 
-        // Enemy bishops checks
-        if (b2 & safe)
+        // Enemy bishops checks or queen pin
+        if (b2 & (safe | pos.pieces(Them, BISHOP)))
             kingDanger += BishopSafeCheck;
         else
             unsafeChecks |= b2;
