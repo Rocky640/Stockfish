@@ -46,7 +46,9 @@ struct Entry {
   }
 
   int pawns_on_same_color_squares(Color c, Square s) const {
-    return pawnsOnSquares[c][bool(DarkSquares & s)];
+    // double the weight of pawns on same file or adjacent files as bishop.
+    Bitboard b = pawnsOnSquares[c][bool(DarkSquares & s)];
+    return popcount(b | shift<NORTH>(b & (file_bb(s) | adjacent_files_bb(file_of(s)))));
   }
 
   template<Color Us>
@@ -66,12 +68,13 @@ struct Entry {
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
+  Bitboard pawnsOnSquares[COLOR_NB][COLOR_NB]; // [color][light/dark squares]
   Square kingSquares[COLOR_NB];
   Score kingSafety[COLOR_NB];
   int weakUnopposed[COLOR_NB];
   int castlingRights[COLOR_NB];
   int semiopenFiles[COLOR_NB];
-  int pawnsOnSquares[COLOR_NB][COLOR_NB]; // [color][light/dark squares]
+  
   int asymmetry;
   int openFiles;
 };
