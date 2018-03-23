@@ -726,7 +726,10 @@ namespace {
     // Find the safe squares for our pieces inside the area defined by
     // SpaceMask. A square is unsafe if it is attacked by an enemy
     // pawn, or if it is undefended and attacked by an enemy piece.
-    Bitboard safe =   SpaceMask
+
+    Bitboard edgeBishops = pos.pieces(Us, BISHOP) & ~CenterFiles;
+
+    Bitboard safe =  (SpaceMask | edgeBishops)
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN]
                    & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
