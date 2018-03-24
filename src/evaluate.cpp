@@ -812,6 +812,15 @@ namespace {
                  &&  pos.count<PAWN>(strongSide) <= 2
                  && !pos.pawn_passed(~strongSide, pos.square<KING>(~strongSide)))
             sf = 37 + 7 * pos.count<PAWN>(strongSide);
+
+        // Too many blocked pawns are drawish
+        else {
+            Bitboard b = pos.pieces() & (  shift<NORTH>(pos.pieces(WHITE, PAWN))
+                                         | shift<SOUTH>(pos.pieces(BLACK, PAWN)));
+            int blocked = std::max(0, popcount(b) - 10); // a number between 0 and 6
+            assert(blocked == 0 || sf == SCALE_FACTOR_NORMAL);
+            sf -= blocked * 6;
+        }
     }
 
     return ScaleFactor(sf);
