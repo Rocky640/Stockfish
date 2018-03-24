@@ -817,7 +817,7 @@ namespace {
         else {
             Bitboard b = pos.pieces() & (  shift<NORTH>(pos.pieces(WHITE, PAWN))
                                          | shift<SOUTH>(pos.pieces(BLACK, PAWN)));
-            int blocked = std::max(0, popcount(b) - 10); // a number between 0 and 6
+            int blocked = std::max(0, popcount(b) - 8); // a number between 0 and 8
             assert(blocked == 0 || sf == SCALE_FACTOR_NORMAL);
             sf -= blocked * 6;
         }
