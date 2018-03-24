@@ -812,6 +812,9 @@ namespace {
                  &&  pos.count<PAWN>(strongSide) <= 2
                  && !pos.pawn_passed(~strongSide, pos.square<KING>(~strongSide)))
             sf = 37 + 7 * pos.count<PAWN>(strongSide);
+        // If too many blocked pawns, it gets more drawish
+        else
+            sf -= std::max(0, pe->blocked_pawns() - 10) * 6;
     }
 
     return ScaleFactor(sf);
