@@ -819,7 +819,7 @@ namespace {
                                          | shift<SOUTH>(pos.pieces(BLACK, PAWN)));
             int blocked = std::max(0, popcount(b) - 8); // a number between 0 and 8
             assert(blocked == 0 || sf == SCALE_FACTOR_NORMAL);
-            sf -= blocked * 6;
+            sf -= blocked * 4;
         }
     }
 
