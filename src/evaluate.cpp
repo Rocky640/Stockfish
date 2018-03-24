@@ -615,8 +615,8 @@ namespace {
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
     score += Connectivity * popcount(b);
 
-    // Cramped: penalize our low mobility pieces which protects low mobility pieces
-    b = lowMobilityAttacks[Us] & lowMobilityPieces[Us];
+    // Cramped: penalize our low mobility pieces which are in the way of other low mobility pieces
+    b = lowMobilityPieces[Us] & lowMobilityAttacks[Us] & ~attackedBy[Them][ALL_PIECES];
     score -= Connectivity * popcount(b);
 
     
