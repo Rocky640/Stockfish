@@ -617,7 +617,7 @@ namespace {
 
     // Cramped: penalize our low mobility pieces which are in the way of other low mobility pieces
     b = lowMobilityPieces[Us] & lowMobilityAttacks[Us] & ~attackedBy[Them][ALL_PIECES];
-    score -= Connectivity * popcount(b);
+    score -= Connectivity * 2 * popcount(b);
 
     
     if (T)
