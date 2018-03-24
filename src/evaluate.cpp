@@ -130,7 +130,7 @@ namespace {
   // no (friendly) pawn on the rook file.
   //constexpr Score RookOnFile[] = { S(20, 7), S(45, 20) };
   constexpr Score RookOnFile[][2] = { 
-    { S(20,  7), S(15,  5) },  //semi open
+    { S(22,  9), S(18,  5) },  //semi open
     { S(50, 25), S(40, 15) }   //open
   };
 
@@ -379,7 +379,7 @@ namespace {
             // Bonus for rook on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
                 score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))]
-                                   [bool(pos.pieces(Them) & attackedBy[Them][PAWN] & file_bb(s))];
+                                   [bool(pos.pieces(Them) & attackedBy[Them][PAWN] & forward_file_bb(Us, s))];
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
