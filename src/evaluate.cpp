@@ -719,6 +719,9 @@ namespace {
     constexpr Bitboard SpaceMask =
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+    constexpr Bitboard Fianchetto =
+      Us == WHITE ? make_bitboard(SQ_B2, SQ_G2)
+                  : make_bitboard(SQ_B7, SQ_G7);
 
     if (pos.non_pawn_material() < SpaceThreshold)
         return SCORE_ZERO;
@@ -727,9 +730,7 @@ namespace {
     // SpaceMask. A square is unsafe if it is attacked by an enemy
     // pawn, or if it is undefended and attacked by an enemy piece.
 
-    Bitboard edgeBishops = pos.pieces(Us, BISHOP) & ~CenterFiles;
-
-    Bitboard safe =  (SpaceMask | edgeBishops)
+    Bitboard safe =  (SpaceMask | (pos.pieces(Us, BISHOP) & Fianchetto))
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN]
                    & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
