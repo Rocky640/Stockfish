@@ -220,6 +220,9 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    Bitboard lowMobilityPieces[COLOR_NB];
+    Bitboard lowMobilityAttacks[COLOR_NB];
+
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
@@ -267,6 +270,8 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+    lowMobilityPieces[Us] = 0;
+    lowMobilityAttacks[Us] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -320,6 +325,11 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+        if (mob < 3)
+        {
+            lowMobilityPieces[Us] |= s;
+            lowMobilityAttacks[Us] |= b;
+        }
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -605,6 +615,11 @@ namespace {
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
     score += Connectivity * popcount(b);
 
+    // Cramped: penalize our low mobility pieces which protects low mobility pieces
+    b = lowMobilityAttacks[Us] & lowMobilityPieces[Us];
+    score -= Connectivity * popcount(b);
+
+    
     if (T)
         Trace::add(THREAT, Us, score);
 
