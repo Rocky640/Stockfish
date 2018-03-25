@@ -126,6 +126,10 @@ namespace {
     { S( 9, 2), S(15, 5) }  // Bishop
   };
 
+  // BishopPawns[not opposed/opposed] contains the penalty applied for each friendly
+  // pawn of same color as bishop, less if there is an enemy bishop of same color
+  constexpr Score BishopPawns[] = { S(9, 13), S(7, 11) };
+  
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
   constexpr Score RookOnFile[] = { S(20, 7), S(45, 20) };
@@ -163,7 +167,6 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Assorted bonuses and penalties
-  constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
   constexpr Score CorneredBishop     = S( 50, 50);
@@ -344,7 +347,8 @@ namespace {
             if (Pt == BISHOP)
             {
                 // Penalty according to number of pawns on the same color square as the bishop
-                score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
+                bool opposed = pos.pieces(Them, BISHOP) & (DarkSquares & s ? DarkSquares : ~DarkSquares);
+                score -= BishopPawns[opposed] * pe->pawns_on_same_color_squares(Us, s);
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
