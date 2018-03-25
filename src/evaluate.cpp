@@ -321,7 +321,14 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        
+        if (Pt == BISHOP)
+        {
+            bool samecolor = pos.pieces(Them, BISHOP) & ((DarkSquares & s) ? DarkSquares : ~DarkSquares);
+            mobility[Us] += MobilityBonus[Pt - 2][mob] * (samecolor ? 7 : 9) / 8;
+        }
+        else
+            mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         // Penalty if the piece is far from the king
         score -= KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
