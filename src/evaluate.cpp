@@ -128,7 +128,7 @@ namespace {
 
   // BishopPawns[not opposed/opposed] contains the penalty applied for each friendly
   // pawn of same color as bishop, less if there is an enemy bishop of same color
-  constexpr Score BishopPawns[] = { S(9, 13), S(7, 11) };
+  constexpr Score BishopPawns[] = { S(10, 14), S(8, 12) };
   
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
