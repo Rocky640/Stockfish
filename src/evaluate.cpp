@@ -325,7 +325,7 @@ namespace {
         if (Pt == BISHOP)
         {
             bool samecolor = pos.pieces(Them, BISHOP) & ((DarkSquares & s) ? DarkSquares : ~DarkSquares);
-            mobility[Us] += MobilityBonus[Pt - 2][mob] * (samecolor ? 7 : 9) / 8;
+            mobility[Us] += MobilityBonus[Pt - 2][mob] * (samecolor ? 3 : 5) / 4;
         }
         else
             mobility[Us] += MobilityBonus[Pt - 2][mob];
