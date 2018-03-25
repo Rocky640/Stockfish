@@ -225,6 +225,8 @@ namespace {
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
     // and h6. It is set to 0 when king safety evaluation is skipped.
     Bitboard kingRing[COLOR_NB];
+    Bitboard kingRing2[COLOR_NB];
+
 
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
@@ -271,9 +273,12 @@ namespace {
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
     {
-        kingRing[Us] = attackedBy[Us][KING];
+        kingRing[Us] = kingRing2[Us] = attackedBy[Us][KING];
         if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
+        {
             kingRing[Us] |= shift<Up>(kingRing[Us]);
+            kingRing2[Us] |= kingRing[Us] & pos.pieces(Us);
+        }
 
         kingAttackersCount[Them] = popcount(attackedBy[Us][KING] & pe->pawn_attacks(Them));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
@@ -316,7 +321,7 @@ namespace {
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
+            kingAttacksCount[Us] += popcount(b & kingRing2[Them]);
         }
 
         int mob = popcount(b & mobilityArea[Us]);
