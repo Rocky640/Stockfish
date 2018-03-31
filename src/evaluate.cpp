@@ -812,7 +812,8 @@ namespace {
             {
                 int npmc = pos.count<ALL_PIECES>(strongSide) - pos.count<PAWN>(strongSide); 
                 assert(npmc >= 2 && npmc <= 7); //at least a king and a bishop, and one bishop was exchanged
-                sf = SCALE_FACTOR_NORMAL - (7 - npmc) * 7; // a number between  (29 and 64)
+                //sf = SCALE_FACTOR_NORMAL - (7 - npmc) * 7; // a number between  (29 and 64)
+                sf = SCALE_FACTOR_NORMAL - (7 - npmc) * 3; // a number between  (49 and 64)
             }
         }
         // Endings where weaker side can place his king in front of the enemy's
