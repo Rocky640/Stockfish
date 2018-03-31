@@ -809,7 +809,11 @@ namespace {
             // Endgame with opposite-colored bishops, but also other pieces. Still
             // a bit drawish, but not as drawish as with only the two bishops.
             else
-                sf = 46;
+            {
+                int npmc = pos.count<ALL_PIECES>(strongSide) - pos.count<PAWN>(strongSide); 
+                assert(npmc >= 2 && npmc <= 7); //at least a king and a bishop, and one bishop was exchanged
+                sf = SCALE_FACTOR_NORMAL - (7 - npmc) * 7; // a number between  (29 and 64)
+            }
         }
         // Endings where weaker side can place his king in front of the enemy's
         // pawns are drawish.
