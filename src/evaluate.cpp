@@ -740,8 +740,10 @@ namespace {
     Bitboard behind = pos.pieces(Us, PAWN);
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
+    // ... or safe from any pawn attack
+    behind |= ~pe->pawn_attacks_span(Them);
 
-    int bonus = popcount(safe) + popcount(behind & safe);
+    int bonus = popcount(safe)+ popcount(behind & safe);
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
     Score score = make_score(bonus * weight * weight / 16, 0);
