@@ -1002,6 +1002,9 @@ bool Position::see_ge(Move m, Value threshold) const {
   if (type_of(m) != NORMAL)
       return VALUE_ZERO >= threshold;
 
+  // borrowed from evaluate.cpp (for the purpose of this test)
+  constexpr int PassedRankMg[RANK_NB] = {0 , 5 , 5, 32, 70, 172, 217};
+
   Bitboard stmAttackers;
   Square from = from_sq(m), to = to_sq(m);
   PieceType nextVictim = type_of(piece_on(from));
@@ -1019,6 +1022,9 @@ bool Position::see_ge(Move m, Value threshold) const {
   // Now assume the worst possible result: that the opponent can
   // capture our piece for free.
   balance -= PieceValue[MG][nextVictim];
+
+  if ((nextVictim == PAWN) && pawn_passed(us, to))
+      balance -= Value(PassedRankMg[relative_rank(us, to)]);
 
   // If it is enough (like in PxQ) then return immediately. Note that
   // in case nextVictim == KING we always return here, this is ok
