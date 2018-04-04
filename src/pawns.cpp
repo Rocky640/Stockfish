@@ -304,7 +304,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   {
       Rank backmostRank = relative_rank(Us, backmost_sq(Us, pos.pieces(PAWN))); // a number between 1 and 6
       if (backmostRank >= RANK_5)
-          egbonus += 16 * (relative_rank(Us, ksq) - backmostRank);
+          egbonus += 10 * (relative_rank(Us, ksq) - backmostRank);
   }
 
   Value mgbonus = shelter_storm<Us>(pos, ksq);
