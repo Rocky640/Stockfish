@@ -295,6 +295,8 @@ namespace {
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard TRank1       = (Us == WHITE ? Rank1BB : Rank8BB);
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -326,7 +328,8 @@ namespace {
         }
 
         if (Pt == KNIGHT || Pt == BISHOP)
-            mob = popcount(b & mobilityArea[Us] & ~pos.pieces(Us, QUEEN, ROOK));
+            mob = popcount(b & mobilityArea[Us]
+                             & (~pos.pieces(Us, QUEEN, ROOK) | TRank1));
         else
             mob = popcount(b & mobilityArea[Us]);
 
