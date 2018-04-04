@@ -278,21 +278,45 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   kingSquares[Us] = ksq;
   castlingRights[Us] = pos.can_castle(Us);
   int minKingPawnDistance = 0;
+  int egbonus = Value(0);
 
   Bitboard pawns = pos.pieces(Us, PAWN);
   if (pawns)
+  {
       while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
+      egbonus -= 16 * minKingPawnDistance;
+  }
 
-  Value bonus = shelter_storm<Us>(pos, ksq);
+  
+  /* { // King piece square 
+   { S(267,  0), S(320, 48), S(270, 75), S(195, 84) }, //A1, A2, A3, A4
+   { S(264, 43), S(304, 92), S(238,143), S(180,132) },
+   { S(200, 83), S(245,138), S(176,167), S(110,165) },
+   { S(177,106), S(185,169), S(148,169), S(110,179) },
+   { S(149,108), S(177,163), S(115,200), S( 66,203) }, //RANK_5 is maximal for eg
+   { S(118, 95), S(159,155), S( 84,176), S( 41,174) },
+   { S( 87, 50), S(128, 99), S( 63,122), S( 20,139) },
+   { S( 63,  9), S( 88, 55), S( 47, 80), S(  0, 90) } //A8, B8, C8, D8
+  } */
+  
+  
+  if (pos.pieces(PAWN))
+  {
+      Rank backmostRank = relative_rank(Us, backmost_sq(Us, pos.pieces(PAWN))); // a number between 1 and 6
+      if (backmostRank >= RANK_5)
+          egbonus += 16 * (relative_rank(Us, ksq) - backmostRank);
+  }
+
+  Value mgbonus = shelter_storm<Us>(pos, ksq);
 
   // If we can castle use the bonus after the castling if it is bigger
   if (pos.can_castle(MakeCastling<Us, KING_SIDE>::right))
-      bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_G1)));
+      mgbonus = std::max(mgbonus, shelter_storm<Us>(pos, relative_square(Us, SQ_G1)));
 
   if (pos.can_castle(MakeCastling<Us, QUEEN_SIDE>::right))
-      bonus = std::max(bonus, shelter_storm<Us>(pos, relative_square(Us, SQ_C1)));
+      mgbonus = std::max(mgbonus, shelter_storm<Us>(pos, relative_square(Us, SQ_C1)));
 
-  return make_score(bonus, -16 * minKingPawnDistance);
+  return make_score(mgbonus, egbonus);
 }
 
 // Explicit template instantiation
