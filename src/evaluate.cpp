@@ -590,7 +590,8 @@ namespace {
     score += ThreatByPawnPush * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
-    if (pos.count<QUEEN>(Them) == 1)
+    if (   pos.count<QUEEN>(Them) == 1
+        && !(pos.pieces(Them, QUEEN) & attackedBy[Us][ALL_PIECES]))
     {
         Square s = pos.square<QUEEN>(Them);
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
