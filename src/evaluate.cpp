@@ -891,9 +891,9 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Exclude squares controlled twice by the enemy, unless we attack twice
-    mobilityArea[WHITE] &= attackedBy2[WHITE] | ~attackedBy2[BLACK];
-    mobilityArea[BLACK] &= attackedBy2[BLACK] | ~attackedBy2[WHITE];
+    // Exclude empty squares controlled twice by the enemy, and we don't
+    mobilityArea[WHITE] &= pos.pieces() | attackedBy2[WHITE] | ~attackedBy2[BLACK];
+    mobilityArea[BLACK] &= pos.pieces() | attackedBy2[BLACK] | ~attackedBy2[WHITE];
 
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
