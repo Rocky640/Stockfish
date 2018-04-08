@@ -888,9 +888,12 @@ namespace {
        return pos.side_to_move() == WHITE ? v : -v;
 
     // Main evaluation begins here
-
     initialize<WHITE>();
     initialize<BLACK>();
+
+    // Exclude squares controlled twice by the enemy, unless we attack twice
+    mobilityArea[WHITE] &= attackedBy2[WHITE] | ~attackedBy2[BLACK];
+    mobilityArea[BLACK] &= attackedBy2[BLACK] | ~attackedBy2[WHITE];
 
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
