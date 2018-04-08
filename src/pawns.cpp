@@ -36,6 +36,9 @@ namespace {
 
   // Backward pawn penalty
   constexpr Score Backward = S(24, 12);
+  
+  // Semi-backward pawn penalty
+  constexpr Score SemiBackward = S(8, 4);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -177,7 +180,8 @@ namespace {
         if (doubled && !supported)
             score -= Doubled;
 
-        e->weakUnopposed[Us] += (phalanx && relative_rank(Us, s) == RANK_2 && leverPush && !opposed);
+        if (phalanx && relative_rank(Us, s) == RANK_2 && leverPush && !opposed)
+            score -= SemiBackward;
     }
 
     return score;
