@@ -609,10 +609,11 @@ namespace {
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
     score += Connectivity * popcount(b);
 
-    // Bonus for overload (non-pawn enemies attacked and defended exactly once)
+    // Bonus non-pawn enemies attacked only once
+    // and defended exactly once by a piece.
     b =  nonPawnEnemies
        & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
-       & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
+       & attackedBy[Them][ALL_PIECES] & ~stronglyProtected;
     score += Overload * popcount(b);
 
     if (T)
