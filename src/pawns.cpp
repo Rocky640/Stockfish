@@ -176,6 +176,8 @@ namespace {
 
         if (doubled && !supported)
             score -= Doubled;
+
+        e->weakUnopposed[Us] += (phalanx && relative_rank(Us, s) == RANK_2 && leverPush && !opposed);
     }
 
     return score;
