@@ -613,7 +613,7 @@ namespace {
     b =  nonPawnEnemies
        & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
        & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
-    score += Overload * popcount(b);
+    score += Overload * (popcount(b) + more_than_one(b & attackedBy[Them][QUEEN]));
 
     if (T)
         Trace::add(THREAT, Us, score);
