@@ -255,11 +255,11 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
-    // At the start of the game, all our pawns will be excluded from the mobiityArea
+    // At the start of the game, all our pawns are excluded from the mobiityArea
     Bitboard b = pos.pieces(Us, PAWN);
 
-    // Later, we just worry with blocked pawns or those on the first ranks
-    if (pos.non_pawn_material() >= SpaceThreshold)
+    // Later, only the blocked pawns or those on the first ranks
+    if (pos.non_pawn_material() < SpaceThreshold)
         b &= shift<Down>(pos.pieces()) | LowRanks;
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
