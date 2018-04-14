@@ -173,6 +173,7 @@ namespace {
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
+  constexpr Score QueenOnQueen       = S( 21, 11);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByPawnPush   = S( 47, 26);
@@ -602,9 +603,11 @@ namespace {
         b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
-        b  |= attackedBy[Us][QUEEN] & attackedBy[Them][QUEEN] & ~attackedBy2[Them];
-
         score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+
+        b = attackedBy[Us][QUEEN] & attackedBy[Them][QUEEN] & ~attackedBy2[Them];
+        score += QueenOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
