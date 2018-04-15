@@ -417,7 +417,7 @@ namespace {
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard weak, b, b1, b2, safe, unsafeChecks, pinned;
+    Bitboard weak, b, b1, b2, safe, otherChecks;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
@@ -426,7 +426,7 @@ namespace {
     if (kingAttackersCount[Them] > 1 - pos.count<QUEEN>(Them))
     {
         int kingDanger = 0;
-        unsafeChecks = 0;
+        otherChecks = 0;
 
         // Attacked squares defended at most once by our queen or king
         weak =  attackedBy[Them][ALL_PIECES]
@@ -451,30 +451,31 @@ namespace {
         if (b1 & safe)
             kingDanger += RookSafeCheck;
         else
-            unsafeChecks |= b1;
+            otherChecks |= b1;
 
         // Enemy bishops checks
         if (b2 & safe)
             kingDanger += BishopSafeCheck;
         else
-            unsafeChecks |= b2;
+            otherChecks |= b2;
 
         // Enemy knights checks
         b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
         if (b & safe)
             kingDanger += KnightSafeCheck;
         else
-            unsafeChecks |= b;
+            otherChecks |= b;
 
         // Unsafe or occupied checking squares will also be considered, as long as
-        // the square is in the attacker's mobility area.
-        unsafeChecks &= mobilityArea[Them];
-        pinned = pos.blockers_for_king(Us) & pos.pieces(Us);
+        // the square is in the attacker's mobility area, is a capture (on a pinned piece)
+        // or a discovery check by a knight or bishop move
+        otherChecks &= mobilityArea[Them];
+        otherChecks |= pos.blockers_for_king(Us) & (pos.pieces(Us) | pos.pieces(Them, KNIGHT, BISHOP));
 
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      + 102 * kingAttacksCount[Them]
                      + 191 * popcount(kingRing[Us] & weak)
-                     + 143 * popcount(pinned | unsafeChecks)
+                     + 143 * popcount(otherChecks)
                      - 848 * !pos.count<QUEEN>(Them)
                      -   9 * mg_value(score) / 8
                      +  40;
