@@ -603,12 +603,12 @@ namespace {
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
 
-        score += KnightOnQueen * popcount(b & safeThreats);
+        score += KnightOnQueen * bool(b & safeThreats);
 
         b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
-        score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+        score += SliderOnQueen * bool(b & safeThreats & attackedBy2[Us]);
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
