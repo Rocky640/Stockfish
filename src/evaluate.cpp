@@ -174,6 +174,7 @@ namespace {
   constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
+  constexpr Score QueenRank          = S(  8,  2);
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByPawnPush   = S( 47, 26);
   constexpr Score ThreatByRank       = S( 16,  3);
@@ -518,7 +519,7 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats, b1, b2;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -595,20 +596,25 @@ namespace {
 
     score += ThreatByPawnPush * popcount(b);
 
-    // Bonus for threats on the next moves against enemy queen
+    // Bonus for non-immediate threats against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
     {
         Square s = pos.square<QUEEN>(Them);
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
-        b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
+        b1  = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
+        b1 &= safeThreats;
 
-        score += KnightOnQueen * popcount(b & safeThreats);
+        score += KnightOnQueen * popcount(b1);
 
-        b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
-           | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
+        b2  =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
+             | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
+        b2 &= safeThreats & attackedBy2[Us];
 
-        score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+        score += SliderOnQueen * popcount(b2);
+
+        if (b1 | b2)
+            score += QueenRank * (int)relative_rank(Them, s);
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
