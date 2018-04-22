@@ -161,12 +161,14 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
+  // Hanging[attacked PieceType] contains a penalty for undefended pieces
+  constexpr Score Hanging[] = { S(0, 0), S(46, 34), S(62, 37), S(49, 39), S(52, 32), S(56, 26) };
+
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
   constexpr Score CorneredBishop     = S( 50, 50);
-  constexpr Score Hanging            = S( 52, 30);
   constexpr Score HinderPassedPawn   = S(  8,  1);
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
@@ -560,7 +562,12 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        b = weak & ~attackedBy[Them][ALL_PIECES];
+        while (b)
+        {
+            Square s = pop_lsb(&b);
+            score += Hanging[type_of(pos.piece_on(s))];
+        }
 
         // Bonus for overload (non-pawn enemies attacked and defended exactly once)
         b =  nonPawnEnemies
