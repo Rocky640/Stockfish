@@ -162,7 +162,9 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Overload[PieceType] 
-  constexpr Score Overload[]      = { S(0, 0), S(0, 0), S(9, 2), S(8, 9), S(10, 7), S(7, 5) };
+  constexpr Score Overload[PIECE_TYPE_NB] = {
+     S(0, 0), S(0, 0), S(9, 2), S(8, 9), S(10, 7), S(7, 5)
+  };
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
@@ -565,11 +567,16 @@ namespace {
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
         // Bonus for overload (non-pawn enemies attacked and defended exactly once)
-        b =  nonPawnEnemies
-           & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
-           & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
-        while (b)
-            score += Overload[type_of(pos.piece_on(pop_lsb(&b)))];
+        {
+            b =  nonPawnEnemies
+               & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
+               & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
+            while (b)
+            {
+                Square s = pop_lsb(&b);
+                score += Overload[type_of(pos.piece_on(s))];
+            }
+        }
     }
 
     // Bonus for enemy unopposed weak pawns
