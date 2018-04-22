@@ -162,19 +162,20 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Assorted bonuses and penalties
+  constexpr Score BishopOnQueen      = S( 42, 26);
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 52, 30);
   constexpr Score HinderPassedPawn   = S(  8,  1);
-  constexpr Score KnightOnQueen      = S( 21, 11);
+  constexpr Score KnightOnQueen      = S( 18, 12);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
-  constexpr Score SliderOnQueen      = S( 42, 21);
+  constexpr Score RookOnQueen        = S( 52, 13);
   constexpr Score ThreatByPawnPush   = S( 47, 26);
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(175,168);
@@ -437,7 +438,7 @@ namespace {
         safe  = ~pos.pieces(Them);
         safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
 
-        b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+        b1 = attacks_bb<  ROOK>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
 
         // Enemy queen safe checks
@@ -602,13 +603,13 @@ namespace {
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
-
         score += KnightOnQueen * popcount(b & safeThreats);
 
-        b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
-           | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
+        b = attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s);
+        score += BishopOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
 
-        score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+        b = attackedBy[Us][  ROOK] & pos.attacks_from<  ROOK>(s);
+        score += RookOnQueen   * popcount(b & safeThreats & attackedBy2[Us]);
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
