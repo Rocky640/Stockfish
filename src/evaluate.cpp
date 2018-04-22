@@ -166,21 +166,27 @@ namespace {
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
   constexpr Score CorneredBishop     = S( 50, 50);
-  constexpr Score Hanging            = S( 52, 30);
+  Score Hanging[PIECE_TYPE_NB]       = { S(0, 0), S(52, 30), S(52, 30), S(52, 30), S(52, 30), S(52, 30)};
   constexpr Score HinderPassedPawn   = S(  8,  1);
-  constexpr Score KnightOnQueen      = S( 21, 11);
+  Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
-  constexpr Score Overload           = S( 10,  5);
+  Score Overload[PIECE_TYPE_NB]      = { S(0, 0), S(0, 0), S(10, 5), S(10, 5), S(10, 5), S(10, 5)};
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
-  constexpr Score SliderOnQueen      = S( 42, 21);
+  Score BishopOnQueen      = S( 42, 21);
+  Score RookOnQueen      = S( 42, 21);
   constexpr Score ThreatByPawnPush   = S( 47, 26);
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(175,168);
   constexpr Score TrappedRook        = S( 92,  0);
   constexpr Score WeakQueen          = S( 50, 10);
   constexpr Score WeakUnopposedPawn  = S(  5, 25);
+
+  TUNE(KnightOnQueen, BishopOnQueen, RookOnQueen);
+  TUNE(SetRange(  0, 100), Hanging);
+  TUNE(SetRange(-20,  20), Overload);
+  
 
 #undef S
 
@@ -560,13 +566,16 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        b = weak & ~attackedBy[Them][ALL_PIECES];
+        while (b)
+            score += Hanging[type_of(pos.piece_on(pop_lsb(&b)))];
 
         // Bonus for overload (non-pawn enemies attacked and defended exactly once)
         b =  nonPawnEnemies
            & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
            & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
-        score += Overload * popcount(b);
+        while (b)
+            score += Overload[type_of(pos.piece_on(pop_lsb(&b)))];
     }
 
     // Bonus for enemy unopposed weak pawns
@@ -602,13 +611,13 @@ namespace {
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
-
         score += KnightOnQueen * popcount(b & safeThreats);
 
-        b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
-           | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
+        b =  attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s);        
+        score += BishopOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
 
-        score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+        b =  attackedBy[Us][ROOK] & pos.attacks_from<ROOK>(s);
+        score += RookOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
