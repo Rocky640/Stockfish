@@ -161,6 +161,9 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
+  // Overload[PieceType] 
+  constexpr Score Overload[]      = { S(0, 0), S(0, 0), S(9, 2), S(8, 9), S(10, 7), S(7, 5) };
+
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
@@ -171,7 +174,6 @@ namespace {
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
-  constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
@@ -566,7 +568,8 @@ namespace {
         b =  nonPawnEnemies
            & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
            & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
-        score += Overload * popcount(b);
+        while (b)
+            score += Overload[type_of(pos.piece_on(pop_lsb(&b)))];
     }
 
     // Bonus for enemy unopposed weak pawns
