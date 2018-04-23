@@ -497,7 +497,7 @@ namespace {
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank but not defended by our pawns.
     b1 = attackedBy[Them][ALL_PIECES] & kf & Camp;
-    b2 = b1 & attackedBy2[Them] & ~attackedBy[Us][PAWN];
+    b2 = b1 & attackedBy2[Them] & mobilityArea[Them];
 
     // King tropism, to anticipate slow motion attacks on our king
     score -= CloseEnemies * (popcount(b1) + popcount(b2));
