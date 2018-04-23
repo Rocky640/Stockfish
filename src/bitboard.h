@@ -71,6 +71,7 @@ extern Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 extern Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 extern Bitboard DistanceRingBB[SQUARE_NB][8];
 extern Bitboard ForwardFileBB[COLOR_NB][SQUARE_NB];
+extern Bitboard KingRingBB[COLOR_NB][SQUARE_NB];
 extern Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 extern Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
 extern Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];

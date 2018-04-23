@@ -35,6 +35,7 @@ Bitboard BetweenBB[SQUARE_NB][SQUARE_NB];
 Bitboard LineBB[SQUARE_NB][SQUARE_NB];
 Bitboard DistanceRingBB[SQUARE_NB][8];
 Bitboard ForwardFileBB[COLOR_NB][SQUARE_NB];
+Bitboard KingRingBB[COLOR_NB][SQUARE_NB];
 Bitboard PassedPawnMask[COLOR_NB][SQUARE_NB];
 Bitboard PawnAttackSpan[COLOR_NB][SQUARE_NB];
 Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
@@ -136,6 +137,17 @@ void Bitboards::init() {
                           PseudoAttacks[pt][s] |= to;
                   }
               }
+
+  for (Color c = WHITE; c <= BLACK; ++c)
+      for (Square s = SQ_A1; s <= SQ_H8; ++s)
+      {
+          Square s2 = s;
+          if ((c == WHITE) && (Rank1BB & s)) s2 += NORTH;
+          if ((c == BLACK) && (Rank8BB & s)) s2 += SOUTH;
+          if (FileABB & s) s2 += EAST;
+          if (FileHBB & s) s2 += WEST;
+          KingRingBB[c][s] = (PseudoAttacks[KING][s2] | s2) ^ s;
+      }
 
   Direction RookDirections[] = { NORTH,  EAST,  SOUTH,  WEST };
   Direction BishopDirections[] = { NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST };

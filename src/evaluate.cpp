@@ -220,10 +220,10 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // kingRing[color] are the squares adjacent to the king, plus (only for a
-    // king on its first rank) the squares two ranks in front. For instance,
-    // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
-    // and h6. It is set to 0 when king safety evaluation is skipped.
+    // kingRing[color] are the closest 8 squares near the king.
+    // For example, for a black Kh8, Kh7 or Kg8, visualise the 8 squares around square g7.
+    // Exception is if black king is on rank 1, only 6 squares are computed.
+    // It is set to 0 when we want to skip the king safety evaluation.
     Bitboard kingRing[COLOR_NB];
 
     // kingAttackersCount[color] is the number of pieces of the given color
@@ -251,7 +251,6 @@ namespace {
   void Evaluation<T>::initialize() {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
-    constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
@@ -271,16 +270,7 @@ namespace {
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
     {
-        kingRing[Us] = attackedBy[Us][KING];
-        if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
-            kingRing[Us] |= shift<Up>(kingRing[Us]);
-
-        if (file_of(pos.square<KING>(Us)) == FILE_H)
-            kingRing[Us] |= shift<WEST>(kingRing[Us]);
-
-        else if (file_of(pos.square<KING>(Us)) == FILE_A)
-            kingRing[Us] |= shift<EAST>(kingRing[Us]);
-
+        kingRing[Us] = KingRingBB[Us][pos.square<KING>(Us)];
         kingAttackersCount[Them] = popcount(attackedBy[Us][KING] & pe->pawn_attacks(Them));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
