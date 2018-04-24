@@ -77,6 +77,7 @@ namespace {
   constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
   constexpr Bitboard Center      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+  constexpr Bitboard Edges       = FileABB | FileHBB;
 
   constexpr Bitboard KingFlank[FILE_NB] = {
     QueenSide,   QueenSide, QueenSide,
@@ -101,7 +102,7 @@ namespace {
 
   // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
   // indexed by piece type and number of attacked squares in the mobility area.
-  constexpr Score MobilityBonus[][32] = {
+  Score MobilityBonus[][32] = {
     { S(-75,-76), S(-57,-54), S( -9,-28), S( -2,-10), S(  6,  5), S( 14, 12), // Knights
       S( 22, 26), S( 29, 29), S( 36, 29) },
     { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
@@ -162,6 +163,8 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Assorted bonuses and penalties
+  Score BishopPair         = S(  0,  0);
+  Score BadBishopEg        = S(  0, 24);
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
@@ -181,6 +184,9 @@ namespace {
   constexpr Score TrappedRook        = S( 92,  0);
   constexpr Score WeakQueen          = S( 50, 10);
   constexpr Score WeakUnopposedPawn  = S(  5, 25);
+
+  TUNE(SetRange(0, 40),BishopPair, BadBishopEg);
+  TUNE(SetRange(-100, 200), MobilityBonus[1][0], MobilityBonus[1][1], MobilityBonus[1][2], MobilityBonus[1][3], MobilityBonus[1][4]);
 
 #undef S
 
@@ -260,7 +266,7 @@ namespace {
 
     // Squares occupied by those pawns, by our king, or controlled by enemy pawns
     // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.square<KING>(Us) | pe->pawn_attacks(Them));
+    mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -296,12 +302,12 @@ namespace {
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard BadBishopMask = (Us == WHITE ? Rank5BB : Rank4BB) & ~ Edges;
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
-    int mob;
 
     attackedBy[Us][Pt] = 0;
 
@@ -326,8 +332,7 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        mob = (Pt == KNIGHT || Pt == BISHOP) ? popcount(b & mobilityArea[Us] & ~pos.pieces(Us, QUEEN))
-                                             : popcount(b & mobilityArea[Us]);
+        int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -354,9 +359,17 @@ namespace {
                 // Penalty according to number of pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
 
+                if (pos.count<BISHOP>(Us) == 2)
+                    score += BishopPair;
+
+                b = attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s;
+                if (!(BadBishopMask & b))
+                     score -= BadBishopEg;
+
                 // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
+                if (more_than_one(Center & b))
                     score += LongDiagonalBishop;
+                
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
