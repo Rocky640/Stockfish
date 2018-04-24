@@ -163,7 +163,7 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Assorted bonuses and penalties
-  constexpr Score BadBishop          = S( 16, 24);
+  constexpr Score BadBishopEg        = S(  0, 24);
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
@@ -361,7 +361,7 @@ namespace {
                 b = attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s;
                 // Penalty for bishop which can not "see" the 5th rank
                 if (!(BadBishopMask & b))
-                    score -= BadBishop;
+                    score -= BadBishopEg;
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & b))
