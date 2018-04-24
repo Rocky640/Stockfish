@@ -77,6 +77,7 @@ namespace {
   constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
   constexpr Bitboard Center      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+  constexpr Bitboard Edges       = FileABB | FileHBB;
 
   constexpr Bitboard KingFlank[FILE_NB] = {
     QueenSide,   QueenSide, QueenSide,
@@ -162,6 +163,7 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Assorted bonuses and penalties
+  constexpr Score BadBishop          = S( 16, 24);
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
@@ -296,6 +298,8 @@ namespace {
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard BadBishopMask = (Us == WHITE ? Rank5BB : Rank4BB) & ~ Edges;
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -354,8 +358,13 @@ namespace {
                 // Penalty according to number of pawns on the same color square as the bishop
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
 
+                b = attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s;
+                // Penalty for bishop which can not "see" the 5th rank
+                if (!(BadBishopMask & b))
+                    score -= BadBishop;
+
                 // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
+                if (more_than_one(Center & b))
                     score += LongDiagonalBishop;
             }
 
