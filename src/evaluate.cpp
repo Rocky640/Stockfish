@@ -163,7 +163,6 @@ namespace {
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
   // Assorted bonuses and penalties
-  constexpr Score BadBishopEg        = S(  6, 24);
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
@@ -298,7 +297,6 @@ namespace {
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
-    constexpr Bitboard BadBishopMask = (Us == WHITE ? Rank5BB : Rank4BB) & ~RookFiles;
 
     const Square* pl = pos.squares<Pt>(Us);
 
@@ -358,10 +356,6 @@ namespace {
 
                 // Find the bishop attacks on a board with only pawns, plus the bishop itself
                 b = attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s;
-
-                // Penalty for bishop which can not "see" the 5th rank
-                if (!(BadBishopMask & b))
-                    score -= BadBishopEg;
 
                 // Bonus for bishop which can "see" both center squares
                 if (more_than_one(Center & b))
