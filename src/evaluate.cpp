@@ -325,6 +325,10 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
+        // Evaluate bishop mobility on a board with only pawns and kings
+        if (Pt == BISHOP)
+            b = attacks_bb<BISHOP>(s, pos.pieces(PAWN, KING));
+
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
@@ -353,7 +357,7 @@ namespace {
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
+                if (more_than_one(Center & (b | s)))
                     score += LongDiagonalBishop;
             }
 
