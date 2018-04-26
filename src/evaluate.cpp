@@ -353,7 +353,7 @@ namespace {
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s);
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
+                if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN) | pos.pieces(Them)) | s)))
                     score += LongDiagonalBishop;
             }
 
