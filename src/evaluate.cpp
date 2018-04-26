@@ -325,9 +325,9 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        // Evaluate bishop mobility on a board with only pawns and kings, or enemy pawn protected pieces
+        // Evaluate bishop mobility on a board with only pawns and kings, or enemy pieces
         if (Pt == BISHOP)
-            b = attacks_bb<BISHOP>(s, pos.pieces(PAWN, KING) | (pos.pieces(Them) & attackedBy[Them][PAWN]));
+            b = attacks_bb<BISHOP>(s, pos.pieces(PAWN, KING) | pos.pieces(Them));
 
         int mob = popcount(b & mobilityArea[Us]);
 
