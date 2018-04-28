@@ -107,9 +107,6 @@ namespace {
 
         File f = file_of(s);
 
-        e->semiopenFiles[Us]   &= ~(1 << f);
-        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
-
         // Flag the pawn
         opposed    = theirPawns & forward_file_bb(Us, s);
         stoppers   = theirPawns & passed_pawn_mask(Us, s);
@@ -155,6 +152,16 @@ namespace {
                 if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
                     e->passedPawns[Us] |= s;
         }
+
+        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
+
+        // The file is not semi open if we have a pawn on that file.
+        // However, if this pawn is phalanx and lever and not supported,
+        // the enemy cannot avoid the lever, and whoever takes, the file will be 
+        // cleared from our pawn.
+        // This is still a guess, because if we push, the file will be still semi open
+        if (!(phalanx && lever && !supported))
+            e->semiopenFiles[Us] &= ~(1 << f);
 
         // Score this pawn
         if (supported | phalanx)
