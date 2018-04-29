@@ -156,11 +156,12 @@ namespace {
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
 
         // The file is not semi open if we have a pawn on that file.
-        // However, if this pawn is phalanx and lever and not supported,
+        // However, if this pawn is phalanx and lever,
         // the enemy cannot avoid the lever, and whoever takes, the file will be 
         // cleared from our pawn.
-        // This is still a guess, because if we push, the file will be still semi open
-        if (!(phalanx && lever && !supported))
+        // This is still a guess, because if we push, or we recpature with a pawn, 
+        // the file will be still closed.
+        if (!(phalanx && lever))
             e->semiopenFiles[Us] &= ~(1 << f);
 
         // Score this pawn
