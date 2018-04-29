@@ -160,7 +160,7 @@ namespace {
         // the enemy cannot avoid the lever, and whoever takes, the file will be 
         // cleared from our pawn.
         // This is still a guess, because if we push, the file will be still semi open
-        if (!(phalanx && lever && !supported))
+        if (!((shift<Up>(phalanx) & lever) && !supported))
             e->semiopenFiles[Us] &= ~(1 << f);
 
         // Score this pawn
