@@ -297,6 +297,8 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard Camp = (Us == WHITE ? Rank2BB | Rank3BB | Rank4BB
+                                           : Rank7BB | Rank6BB | Rank5BB);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -351,11 +353,12 @@ namespace {
             if (Pt == BISHOP)
             {
                 // Penalty according to number of pawns on the same color square as the
-                // bishop, bigger when the center files are blocked with pawns.
+                // bishop, bigger when some files are blocked with pawns.
                 Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
+                blocked &= CenterFiles | ((QueenSide & s ? QueenSide : KingSide) & Camp);
 
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
-                                     * (1 + popcount(blocked & CenterFiles));
+                                     * (1 + popcount(blocked));
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
