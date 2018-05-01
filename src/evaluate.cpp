@@ -297,6 +297,10 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard BlockedBishopMask = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
+                                                        : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB)
+                                            & CenterFiles;
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -355,7 +359,7 @@ namespace {
                 Bitboard blocked =   pos.pieces(Us, PAWN)
                                    & shift<Down>(pos.pieces());
                 blocked |= pos.pieces(Them, PAWN) & attackedBy[Them][PAWN];
-                blocked &= (DarkSquares & s ? DarkSquares : ~ DarkSquares) & CenterFiles;
+                blocked &= (DarkSquares & s ? DarkSquares : ~ DarkSquares) & BlockedBishopMask;
 
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
                                      * (1 + popcount(blocked));
