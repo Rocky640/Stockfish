@@ -354,7 +354,6 @@ namespace {
                 // bishop, bigger when the center files are blocked with pawns.
                 Bitboard blocked =   pos.pieces(Us, PAWN)
                                    & shift<Down>(pos.pieces());
-                blocked |= pos.pieces(Them, PAWN) & attackedBy[Them][PAWN];
                 blocked &= (DarkSquares & s ? DarkSquares : ~ DarkSquares) & CenterFiles;
 
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
