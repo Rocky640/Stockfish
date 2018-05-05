@@ -599,9 +599,10 @@ namespace {
 
     score += ThreatByPawnPush * popcount(b);
 
-    // Bonus for threats on the next moves against enemy queen
+    
     if (pos.count<QUEEN>(Them) == 1)
     {
+        // Bonus for threats on the next moves against enemy queen
         Square s = pos.square<QUEEN>(Them);
         safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
@@ -614,15 +615,15 @@ namespace {
 
         score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
 
-       // Exposed loose pieces to queen attacks
-       b =   (pos.pieces(Them) ^ pos.pieces(Them, KING))
+       // Penalty for our exposed loose pieces to their queen attacks
+       b =   (pos.pieces(Us) ^ pos.pieces(Us, KING))
           & ~(attackedBy[Us][ALL_PIECES] | attackedBy[Them][ALL_PIECES]);
 
-       safeThreats = attackedBy[Us][QUEEN] & ~attackedBy[Them][ALL_PIECES];
+       safeThreats = attackedBy[Them][QUEEN] & ~attackedBy[Us][ALL_PIECES];
 
        while (b)
            if (pos.attacks_from<QUEEN>(pop_lsb(&b)) & safeThreats)
-               score += ThreatByQueen;
+               score -= ThreatByQueen;
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
