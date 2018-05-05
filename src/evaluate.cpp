@@ -616,7 +616,7 @@ namespace {
         score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
 
        // Penalty for our exposed loose pieces to their queen attacks
-       b =   (pos.pieces(Us) ^ pos.pieces(Us, KING))
+       b =   (pos.pieces(Us) ^ pos.pieces(Us, KING, PAWN))
           & ~(attackedBy[Us][ALL_PIECES] | attackedBy[Them][ALL_PIECES]);
 
        safeThreats = attackedBy[Them][QUEEN] & ~attackedBy[Us][ALL_PIECES];
