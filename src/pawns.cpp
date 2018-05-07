@@ -35,7 +35,7 @@ namespace {
   constexpr Score Isolated = S(13, 18);
 
   // Backward pawn penalty
-  constexpr Score Backward = S(24, 12);
+  constexpr Score Backward[2] = { S(24, 12), S(48, 24) };
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -148,7 +148,7 @@ namespace {
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
         else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed;
+            score -= Backward[bool(doubled)], e->weakUnopposed[Us] += !opposed;
 
         if (doubled && !supported)
             score -= Doubled;
