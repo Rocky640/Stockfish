@@ -116,11 +116,6 @@ namespace {
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
 
-        // A pawn is backward when it is behind all pawns of the same color
-        // on the adjacent files and cannot be safely advanced.
-        backward = !lever && !(ourPawns & pawn_attack_span(Them, s + Up))
-                          &&  (stoppers & (leverPush | (s + Up)));
-
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate them. Include also not passed pawns
         // which could become passed after one or two pawn pushes when are
@@ -147,7 +142,7 @@ namespace {
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
-        else if (backward)
+        else if (leverPush)
             score -= Backward, e->weakUnopposed[Us] += !opposed;
 
         if (doubled && !supported)
