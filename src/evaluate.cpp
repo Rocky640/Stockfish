@@ -355,7 +355,7 @@ namespace {
                 // bishop, bigger when the center files are blocked with pawns.
                 Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
 
-                score -=  BishopPawns[bool(pos.pieces(Them, KNIGHT))]
+                score -=  BishopPawns[pos.pieces(Us, KNIGHT, BISHOP) == SquareBB[s]]
                         * pe->pawns_on_same_color_squares(Us, s)
                         * (1 + popcount(blocked & CenterFiles));
 
