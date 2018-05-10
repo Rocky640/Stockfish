@@ -163,7 +163,7 @@ namespace {
   
   // BishopPawns[not against/ against knight] contains a penalty applied to each 
   // same color pawn as bishop, more if fighting against some knight
-  constexpr Score BishopPawns[2] = { S(3, 5), S(4, 6) };
+  constexpr Score BishopPawns[2] = { S(3, 4), S(3, 6) };
 
   // Assorted bonuses and penalties
   constexpr Score CloseEnemies       = S(  7,  0);
