@@ -160,9 +160,12 @@ namespace {
 
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
+  
+  // BishopPawns[not against/ against knight] contains a penalty applied to each 
+  // same color pawn as bishop, more if fighting against some knight
+  constexpr Score BishopPawns[2] = { S(3, 5), S(4, 6) };
 
   // Assorted bonuses and penalties
-  constexpr Score BishopPawns        = S(  3,  5);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
   constexpr Score CorneredBishop     = S( 50, 50);
@@ -354,8 +357,9 @@ namespace {
                 // bishop, bigger when the center files are blocked with pawns.
                 Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
 
-                score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
-                                     * (1 + popcount(blocked & CenterFiles));
+                score -=   BishopPawns[bool(pos.pieces(Them, KNIGHT))]
+                         * pe->pawns_on_same_color_squares(Us, s)
+                         * (1 + popcount(blocked & CenterFiles));
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
