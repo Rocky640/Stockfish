@@ -443,9 +443,13 @@ namespace {
         b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
 
-        // Enemy queen safe checks
-        if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
+        // Enemy queen safe checks. Score at most one check from any direction.
+        b = (b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN];
+        while (b)
+        {
             kingDanger += QueenSafeCheck;
+            b &= ~LineBB[pop_lsb(&b)][ksq];
+        }
 
         b1 &= attackedBy[Them][ROOK];
         b2 &= attackedBy[Them][BISHOP];
