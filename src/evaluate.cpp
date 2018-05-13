@@ -448,7 +448,8 @@ namespace {
         int q = 1;
         while (b)
         {
-            kingDanger += QueenSafeCheck / (q++);
+            kingDanger += QueenSafeCheck / q;
+            q *= 4;
             b &= ~LineBB[pop_lsb(&b)][ksq];
         }
 
