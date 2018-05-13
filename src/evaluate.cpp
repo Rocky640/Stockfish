@@ -445,9 +445,10 @@ namespace {
 
         // Enemy queen safe checks. Score at most one check from any direction.
         b = (b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN];
+        int q = 1;
         while (b)
         {
-            kingDanger += QueenSafeCheck;
+            kingDanger += QueenSafeCheck / (q++);
             b &= ~LineBB[pop_lsb(&b)][ksq];
         }
 
