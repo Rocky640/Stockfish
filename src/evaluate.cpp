@@ -388,6 +388,7 @@ namespace {
             {
                 score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
                 if (    kingRing[Them] && !(b & kingRing[Them])
+                    && pe->semiopen_file(Them, file_of(s))
                     && (b & passed_pawn_mask(Them, pos.square<KING>(Them))))
                 {
                     kingAttackersCount[Us]++;
