@@ -582,8 +582,11 @@ namespace {
     safeThreats = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(safeThreats);
 
-    // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
+    // Pawns which can push without leaving a hole
+    b = pawn_attacks_bb<Them>(pe->dble_attacks(Us) | pos.pieces(Them, PAWN)) & pos.pieces(Us, PAWN);
+
+    // Find squares where such pawns can push on the next move
+    b  = shift<Up>(b) & ~pos.pieces();
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are not completely unsafe
