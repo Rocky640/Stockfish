@@ -639,6 +639,7 @@ namespace {
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
+    int cnt = 0;
     b = pe->passed_pawns(Us);
 
     while (b)
@@ -706,9 +707,14 @@ namespace {
         if (   !pos.pawn_passed(Us, s + Up)
             || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
             bonus = bonus / 2;
+        else
+            cnt += (r > RANK_3);
 
         score += bonus + PassedFile[file_of(s)];
     }
+
+    if (pos.non_pawn_material(Them) < RookValueEg && cnt > 2)
+        score += score;
 
     if (T)
         Trace::add(PASSED, Us, score);
