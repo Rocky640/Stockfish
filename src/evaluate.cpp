@@ -519,6 +519,8 @@ namespace {
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  Advanced = (Us == WHITE ? Rank5BB | Rank6BB | Rank7BB
+                                                : Rank4BB | Rank3BB | Rank2BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
@@ -582,9 +584,9 @@ namespace {
     safeThreats = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(safeThreats);
 
-    // Pawns which can push without leaving a hole for a knight
-    b =  pawn_attacks_bb<Them>(pe->dble_attacks(Us) | pos.pieces(Them) | ~attackedBy[Them][KNIGHT])
-       & pos.pieces(Us, PAWN);
+    // Pawns which can push without leaving a protected hole
+    b  = pawn_attacks_bb<Them>(pe->dble_attacks(Us) | ~attackedBy2[Them]) | Advanced;
+    b &= pos.pieces(Us, PAWN);
 
     // Find squares where such pawns can push on the next move
     b  = shift<Up>(b) & ~pos.pieces();
