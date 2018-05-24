@@ -582,8 +582,9 @@ namespace {
     safeThreats = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(safeThreats);
 
-    // Pawns which can push without leaving a hole
-    b = pawn_attacks_bb<Them>(pe->dble_attacks(Us) | pos.pieces(Them, PAWN)) & pos.pieces(Us, PAWN);
+    // Pawns which can push without leaving a hole for a knight
+    b =  pawn_attacks_bb<Them>(pe->dble_attacks(Us) | pos.pieces(Them) | ~attackedBy[Them][KNIGHT])
+       & pos.pieces(Us, PAWN);
 
     // Find squares where such pawns can push on the next move
     b  = shift<Up>(b) & ~pos.pieces();
