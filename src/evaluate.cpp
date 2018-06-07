@@ -315,10 +315,6 @@ namespace {
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
-        attackedBy[Us][Pt] |= b;
-        attackedBy[Us][ALL_PIECES] |= b;
-
         if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
@@ -327,8 +323,19 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
-
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
+
+        if (Pt != KNIGHT)
+        {
+            bb = b & pos.pieces(Them, Pt);
+            while (bb)
+                b &= ~LineBB[s][pop_lsb(&bb)] | pos.pieces();
+        }
+
+        attackedBy[Us][ALL_PIECES] |= b;
+        attackedBy[Us][Pt] |= b;
 
         // Penalty if the piece is far from the king
         score -= KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
