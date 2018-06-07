@@ -265,7 +265,8 @@ namespace {
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
-    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
+    attackedBy[Us][WITH_XRAY]  = attackedBy[Us][ALL_PIECES] 
+                               = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
     // Init our king safety tables only if we are going to use them
@@ -325,8 +326,10 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
+        attackedBy2[Us] |= attackedBy[Us][WITH_XRAY] & b;
+        attackedBy[Us][WITH_XRAY] |= b;
 
+        // Exclude empty squares defended by enemy same type pieces, possibly through x-ray
         if (Pt != KNIGHT)
         {
             bb = b & pos.pieces(Them, Pt);
