@@ -211,8 +211,8 @@ namespace {
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
-    // attacked by a given color and piece type. Special "piece types" which
-    // is also calculated is ALL_PIECES.
+    // attacked by a given color and piece type. ALL_PIECES and XRAY
+    // (through opponent pieces) are special "piece types" which are also calculated.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
@@ -265,6 +265,7 @@ namespace {
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
+    attackedBy[Us][XRAY] = 0;
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
@@ -307,9 +308,9 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
-        // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
+        // Find attacked squares, including some x-ray attacks for bishops and rooks
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Us, QUEEN))
+          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(Us, QUEEN, ROOK))
                          : pos.attacks_from<Pt>(s);
 
         if (pos.blockers_for_king(Us) & s)
@@ -318,6 +319,13 @@ namespace {
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
+
+        if (Pt != KNIGHT)
+        {
+             bb = b & pos.pieces(Them, Pt, QUEEN);
+             while (bb)
+                attackedBy[Them][XRAY] |= b & ArrowBB[pop_lsb(&bb)][s];
+        }
 
         if (b & kingRing[Them])
         {
@@ -438,7 +446,7 @@ namespace {
 
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
-        safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
+        safe &= ~(attackedBy[Us][ALL_PIECES] | attackedBy[Us][XRAY]) | (weak & attackedBy2[Them]);
 
         b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
@@ -562,7 +570,7 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        score += Hanging * popcount(weak & ~(attackedBy[Them][ALL_PIECES] | attackedBy[Them][XRAY]));
 
         // Bonus for overload (non-pawn enemies attacked and defended exactly once)
         b =  nonPawnEnemies
