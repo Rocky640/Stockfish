@@ -307,10 +307,8 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
-        // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
-                         : pos.attacks_from<Pt>(s);
+        // Find directly attacked squares
+        b = pos.attacks_from<Pt>(s);
 
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
@@ -318,6 +316,13 @@ namespace {
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
+        
+        if (Pt != KNIGHT)
+        {
+             bb = b & pos.pieces(Them, Pt, QUEEN);
+             while (bb)
+                attackedBy[Them][XRAY] |= b & ArrowBB[pop_lsb(&bb)][s];
+        }
 
         if (b & kingRing[Them])
         {
@@ -438,7 +443,7 @@ namespace {
 
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
-        safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
+        safe &= ~attackedBy[Us][ALL_PIECES] | ~attackedBy[Us][XRAY] | (weak & attackedBy2[Them]);
 
         b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
@@ -562,7 +567,7 @@ namespace {
         if (b)
             score += ThreatByKing[more_than_one(b)];
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        score += Hanging * popcount(weak & ~(attackedBy[Them][ALL_PIECES] | attackedBy[Them][XRAY]));
 
         // Bonus for overload (non-pawn enemies attacked and defended exactly once)
         b =  nonPawnEnemies
@@ -862,6 +867,9 @@ namespace {
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+
+    attackedBy2[WHITE] |= attackedBy[WHITE][ALL_PIECES] & attackedBy[WHITE][XRAY];
+    attackedBy2[BLACK] |= attackedBy[BLACK][ALL_PIECES] & attackedBy[BLACK][XRAY];
 
     score += mobility[WHITE] - mobility[BLACK];
 
