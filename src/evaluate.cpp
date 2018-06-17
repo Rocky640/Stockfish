@@ -175,7 +175,7 @@ namespace {
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
-  constexpr Score ThreatByPawnPush   = S( 47, 26);
+  constexpr Score ThreatByPawnPush   = S( 23, 13);
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(175,168);
   constexpr Score TrappedRook        = S( 92,  0);
@@ -520,7 +520,7 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Bitboard b, bb, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -576,7 +576,7 @@ namespace {
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
     // Our safe or protected pawns
-    b =   pos.pieces(Us, PAWN)
+    b =  pos.pieces(Us, PAWN)
        & (~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES]);
 
     safeThreats = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
@@ -587,15 +587,14 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
-        & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
+    b &= attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES];
 
-    // Bonus for safe pawn threats on the next move
-    b =   pawn_attacks_bb<Us>(b)
-       &  pos.pieces(Them)
-       & ~attackedBy[Us][PAWN];
+    // Targetting opponent pieces not already attacked
+    bb = pos.pieces(Them) & ~attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    // Bonus for pawn threats on the next move, more if attacking square is not pawn defended
+    score +=  ThreatByPawnPush * (  popcount(bb & pawn_attacks_bb<Us>(b & ~attackedBy[Them][PAWN]))
+                                  + popcount(bb & pawn_attacks_bb<Us>(b)));
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
