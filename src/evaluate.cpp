@@ -590,7 +590,7 @@ namespace {
     b &= attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES];
 
     // Targetting opponent pieces not already attacked
-    bb = pos.pieces(Them) & ~attackedBy[Us][PAWN];
+    bb = nonPawnEnemies & ~attackedBy[Us][PAWN];
 
     // Bonus for pawn threats on the next move, more if attacking square is not pawn defended
     score +=  ThreatByPawnPush * (  popcount(bb & pawn_attacks_bb<Us>(b & ~attackedBy[Them][PAWN]))
