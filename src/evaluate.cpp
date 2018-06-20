@@ -171,7 +171,7 @@ namespace {
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
-  constexpr Score Overload           = S( 10,  5);
+  constexpr Score Overload[2]        =  { S( 5, 5), S(15, 5)};
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
@@ -519,6 +519,8 @@ namespace {
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  Camp     = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB
+                                                : Rank8BB | Rank7BB | Rank6BB | Rank5BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
@@ -568,7 +570,8 @@ namespace {
         b =  nonPawnEnemies
            & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
            & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
-        score += Overload * popcount(b);
+        if (b)
+            score += Overload[0] * popcount(b & Camp) + Overload[1] * popcount(b & ~Camp);
     }
 
     // Bonus for enemy unopposed weak pawns
