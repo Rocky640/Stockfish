@@ -165,6 +165,7 @@ namespace {
   constexpr Score BishopPawns        = S(  3,  5);
   constexpr Score CloseEnemies       = S(  8,  0);
   constexpr Score Connectivity       = S(  3,  1);
+  constexpr Score ConnectOutpostPush = S(  6,  3);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 52, 30);
   constexpr Score HinderPassedPawn   = S(  5,  2);
@@ -591,10 +592,10 @@ namespace {
 
     // Bonus for safe pawn threats on the next move
     b =   pawn_attacks_bb<Us>(b)
-       &  pos.pieces(Them)
        & ~attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush * popcount(b & pos.pieces(Them));
+    score += ConnectOutpostPush * popcount(b & pos.pieces(Us, KNIGHT, BISHOP) & ~pe->pawn_attacks_span(Them));
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
