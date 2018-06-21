@@ -171,6 +171,7 @@ namespace {
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
+  constexpr Score MobilityPawnPush   = S( 10,  7);
   constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
@@ -591,10 +592,16 @@ namespace {
 
     // Bonus for safe pawn threats on the next move
     b =   pawn_attacks_bb<Us>(b)
-       &  pos.pieces(Them)
        & ~attackedBy[Us][PAWN];
 
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush * popcount(b & pos.pieces(Them));
+
+    // Bonus for reducing mobility of opponent pieces after a pawn push
+    // either be controlling the square, or by blocking a mobile pawn
+    b |= shift<Up>(b) & pos.pieces(Them, PAWN) & ~attackedBy[Them][PAWN];
+    b &= mobilityArea[Them];
+    score += MobilityPawnPush * (  popcount(b & attackedBy[Them][ALL_PIECES])
+                                 + popcount(b & attackedBy2[Them]));
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
