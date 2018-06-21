@@ -598,10 +598,10 @@ namespace {
 
     // Bonus for reducing mobility of opponent pieces after a pawn push
     // either be controlling the square, or by blocking a mobile pawn
+
     b |= shift<Up>(b) & pos.pieces(Them, PAWN) & ~attackedBy[Them][PAWN];
-    b &= mobilityArea[Them];
-    score += MobilityPawnPush * (  popcount(b & attackedBy[Them][ALL_PIECES])
-                                 + popcount(b & attackedBy2[Them]));
+    b &= mobilityArea[Them] & ~pos.pieces(Them);
+    score += MobilityPawnPush * popcount(b & attackedBy[Them][ALL_PIECES]);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
