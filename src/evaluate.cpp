@@ -517,6 +517,7 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
+    constexpr Bitboard  TRank2BB = (Us == WHITE ? Rank2BB : Rank7BB);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
@@ -615,6 +616,14 @@ namespace {
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
     score += Connectivity * popcount(b);
+
+    // Passive rooks attacking/defending pawns on low ranks
+    b = pos.pieces(PAWN) & (TRank2BB | TRank3BB)
+                         & attackedBy[Us][ROOK]
+                         & attackedBy[Them][ALL_PIECES];
+    while (b)
+        if (!(forward_file_bb(Us, pop_lsb(&b)) & pos.pieces(Us, ROOK)))
+            score -= RookOnFile[0];
 
     if (T)
         Trace::add(THREAT, Us, score);
