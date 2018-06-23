@@ -620,10 +620,11 @@ namespace {
     // Passive rooks attacking/defending pawns on low ranks
     b = pos.pieces(PAWN) & (TRank2BB | TRank3BB)
                          & attackedBy[Us][ROOK]
+                         & ~attackedBy[Us][PAWN]
                          & attackedBy[Them][ALL_PIECES];
     while (b)
         if (!(forward_file_bb(Us, pop_lsb(&b)) & pos.pieces(Us, ROOK)))
-            score -= RookOnFile[0];
+            score -= RookOnPawn;
 
     if (T)
         Trace::add(THREAT, Us, score);
