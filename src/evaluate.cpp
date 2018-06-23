@@ -384,7 +384,7 @@ namespace {
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
 
             // Penalty for no lateral mobility
-            else if (!(b & mobilityArea[Us] & rank_bb(s) & ~pos.pieces(Us)))
+            else if (!(b & mobilityArea[Us] & rank_bb(s)))
                 score -= RookOnPawn;
 
             // Bonus for rook on an open or semi-open file
