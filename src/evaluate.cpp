@@ -383,9 +383,9 @@ namespace {
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
 
-            // Penalty for lateral mobility block by a friendly pawn
-            else
-                score -= RookOnPawn * popcount(pos.pieces(Us, PAWN) & b & adjacent_files_bb(file_of(s)));
+            // Penalty for no lateral mobility
+            else if (!(b & mobilityArea[Us] & rank_bb(s) & ~pos.pieces(Us)))
+                score -= RookOnPawn;
 
             // Bonus for rook on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
