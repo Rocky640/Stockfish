@@ -617,13 +617,13 @@ namespace {
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
     score += Connectivity * popcount(b);
 
-    // Passive rooks attacking/defending pawns on low ranks
+    // Passive rook defending pawns on low ranks from the side
     b = pos.pieces(PAWN) & (TRank2BB | TRank3BB)
                          & attackedBy[Us][ROOK]
                          & ~attackedBy[Us][PAWN]
                          & attackedBy[Them][ALL_PIECES];
     while (b)
-        if (!(forward_file_bb(Us, pop_lsb(&b)) & pos.pieces(Us, ROOK)))
+        if (rank_bb(pop_lsb(&b)) & pos.pieces(Us, ROOK))
             score -= RookOnPawn;
 
     if (T)
