@@ -334,7 +334,7 @@ namespace {
         score -= KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
 
         // Bonus if help to stop passed pawn
-        if (pe->passed_pawn_paths(Us) & (b | s))
+        if (pe->passed_pawn_paths(Them) & (b | s))
             score += HinderPassedPawn;
 
         if (Pt == BISHOP || Pt == KNIGHT)
