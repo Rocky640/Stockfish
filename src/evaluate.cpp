@@ -101,7 +101,7 @@ namespace {
 
   // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
   // indexed by piece type and number of attacked squares in the mobility area.
-  constexpr Score MobilityBonus[][32] = {
+  Score MobilityBonus[][32] = {
     { S(-75,-76), S(-57,-54), S( -9,-28), S( -2,-10), S(  6,  5), S( 14, 12), // Knights
       S( 22, 26), S( 29, 29), S( 36, 29) },
     { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
@@ -116,6 +116,29 @@ namespace {
       S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
+  Score KM[] =
+    { S(18, 22), S(48,26), S( 7,18), S( 8, 15), S(  6,  5), S( 8, 7),
+      S( 8, 14), S( 7, 3), S( 7, 0) };
+  void initknight()
+  {
+      //anchor the mobility on mob = 4
+      //adjust MobilityBonus insuring we preserve a monotonic function
+      MobilityBonus[0][4] = KM[4];
+
+      MobilityBonus[0][3] = MobilityBonus[0][4]-KM[3];
+      MobilityBonus[0][2] = MobilityBonus[0][3]-KM[2];
+      MobilityBonus[0][1] = MobilityBonus[0][2]-KM[1];
+      MobilityBonus[0][0] = MobilityBonus[0][1]-KM[0];
+
+      MobilityBonus[0][5] = MobilityBonus[0][4]+KM[5];
+      MobilityBonus[0][6] = MobilityBonus[0][5]+KM[6];
+      MobilityBonus[0][7] = MobilityBonus[0][6]+KM[7];
+      MobilityBonus[0][8] = MobilityBonus[0][7]+KM[8];
+
+
+  }
+
+  TUNE(SetRange(0, 80), KM, initknight);
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they occupy or can reach an outpost square, bigger if that
