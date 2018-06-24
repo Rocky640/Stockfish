@@ -121,8 +121,10 @@ namespace {
             && !(ourPawns & forward_file_bb(Us, s))
             && popcount(supported) >= popcount(lever) - 1
             && popcount(phalanx)   >= popcount(leverPush))
-            e->passedPawns[Us] |= s;
-
+            {
+                e->passedPawns[Us] |= s;
+                e->passedPawnPaths[Us] |= forward_file_bb(Us, s);
+            }
         else if (   stoppers == SquareBB[s + Up]
                  && relative_rank(Us, s) >= RANK_5)
         {

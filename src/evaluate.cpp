@@ -333,6 +333,10 @@ namespace {
         // Penalty if the piece is far from the king
         score -= KingProtector[Pt - 2] * distance(s, pos.square<KING>(Us));
 
+        // Bonus if help to stop passed pawn
+        if (pe->passed_pawn_paths(Us) & (b | s))
+            score += HinderPassedPawn;
+
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
@@ -646,9 +650,6 @@ namespace {
         Square s = pop_lsb(&b);
 
         assert(!(pos.pieces(Them, PAWN) & forward_file_bb(Us, s + Up)));
-
-        bb = forward_file_bb(Us, s) & (attackedBy[Them][ALL_PIECES] | pos.pieces(Them));
-        score -= HinderPassedPawn * popcount(bb);
 
         int r = relative_rank(Us, s);
         int w = PassedDanger[r];
