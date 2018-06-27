@@ -162,6 +162,7 @@ namespace {
   constexpr Score KingProtector[] = { S(4, 6), S(6, 3) };
 
   // Assorted bonuses and penalties
+  constexpr Score BadRook            = S( 20, 30);
   constexpr Score BishopPawns        = S(  3,  5);
   constexpr Score CloseEnemies       = S(  8,  0);
   constexpr Score Connectivity       = S(  3,  1);
@@ -390,6 +391,9 @@ namespace {
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
             {
+                if (mob == 1 && relative_rank(Us, s) <= RANK_4)
+                    score -= BadRook;
+
                 File kf = file_of(pos.square<KING>(Us));
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
