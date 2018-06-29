@@ -168,12 +168,14 @@ namespace {
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 52, 30);
   constexpr Score HinderPassedPawn   = S(  5, -1);
+  constexpr Score KnightOnRook       = S( 10,  5);
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
+  constexpr Score SliderOnRook       = S( 21, 10);
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByPawnPush   = S( 49, 30);
   constexpr Score ThreatByRank       = S( 16,  3);
@@ -521,6 +523,7 @@ namespace {
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Square s;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -543,7 +546,7 @@ namespace {
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
         while (b)
         {
-            Square s = pop_lsb(&b);
+            s = pop_lsb(&b);
             score += ThreatByMinor[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
@@ -552,7 +555,7 @@ namespace {
         b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
         while (b)
         {
-            Square s = pop_lsb(&b);
+            s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
@@ -598,10 +601,11 @@ namespace {
     score += ThreatByPawnPush * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
+    safeThreats = mobilityArea[Us] & ~stronglyProtected;
+
     if (pos.count<QUEEN>(Them) == 1)
     {
-        Square s = pos.square<QUEEN>(Them);
-        safeThreats = mobilityArea[Us] & ~stronglyProtected;
+        s = pos.square<QUEEN>(Them);
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
 
@@ -611,6 +615,21 @@ namespace {
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
         score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
+    }
+
+    // Bonus for threats on the next moves against enemy rook if he has no queen.
+    if (pos.count<QUEEN>(Them) == 0)
+    {
+        const Square* pl = pos.squares<ROOK>(Them);
+
+        while ((s = *pl++) != SQ_NONE)
+        {
+            b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
+            score += KnightOnRook * popcount(b & safeThreats);
+
+            b =  attackedBy[Us][BISHOP] & attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(Them, ROOK));
+            score += SliderOnRook * popcount(b & safeThreats);
+        }
     }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
