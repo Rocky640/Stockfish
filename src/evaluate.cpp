@@ -117,6 +117,8 @@ namespace {
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
 
+  constexpr Score BadPiece[] = { S(15, 15), S(8, 8) };
+
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they occupy or can reach an outpost square, bigger if that
   // square is supported by a pawn.
@@ -312,8 +314,14 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
                          : pos.attacks_from<Pt>(s);
 
-        if (pos.blockers_for_king(Us) & s)
+        bool pinned = pos.blockers_for_king(Us) & s;
+        if (pinned)
             b &= LineBB[pos.square<KING>(Us)][s];
+
+        int mob = popcount(b & mobilityArea[Us]);
+        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        if (mob <= 1 && !pinned)
+            mobility[Us] -= BadPiece[mob];
 
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
@@ -325,10 +333,6 @@ namespace {
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
-
-        int mob = popcount(b & mobilityArea[Us]);
-
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
