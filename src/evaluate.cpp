@@ -668,7 +668,7 @@ namespace {
                 bonus -= make_score(0, king_proximity(Us, blockSq + Up) * w);
 
             // If the pawn is free to advance, then increase the bonus
-            if (pos.empty(blockSq))
+            if (~pos.pieces() & (attackedBy2[Us] | ~attackedBy2[Them]) & blockSq)
             {
                 // If there is a rook or queen attacking/defending the pawn from behind,
                 // consider all the squaresToQueen. Otherwise consider only the squares
@@ -697,7 +697,7 @@ namespace {
 
                 bonus += make_score(k * w, k * w);
             }
-            else if (pos.pieces(Us) & blockSq)
+            else if (~pos.pieces(Them) & blockSq)
                 bonus += make_score(w + r * 2, w + r * 2);
         } // w != 0
 
