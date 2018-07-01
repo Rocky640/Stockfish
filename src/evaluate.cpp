@@ -573,7 +573,7 @@ namespace {
 
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
-        score += WeakUnopposedPawn * pe->weak_unopposed(Them);
+        score += WeakUnopposedPawn * popcount(pe->weak_unopposed(Them) & ~attackedBy[Them][BISHOP]);
 
     // Our safe or protected pawns
     b =   pos.pieces(Us, PAWN)
