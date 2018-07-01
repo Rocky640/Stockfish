@@ -35,7 +35,7 @@ namespace {
   constexpr Score Isolated  = S( 4, 20);
   constexpr Score Backward  = S(21, 22);
   constexpr Score Doubled   = S(12, 54);
-  constexpr Score ExtraPawn = S(20, 30);
+  constexpr Score ExtraPawn = S( 5,  5);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
