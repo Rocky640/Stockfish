@@ -355,7 +355,7 @@ namespace {
                 Bitboard samecolor = (DarkSquares & s) ? DarkSquares : ~DarkSquares;
                 Bitboard blocked =   pos.pieces(Us, PAWN)
                                    & shift<Down>(  (pos.pieces() & ~samecolor)
-                                                 | (pos.pieces(Them, PAWN) & attackedBy[Them][PAWN]));
+                                                 |  pos.pieces(Them, PAWN));
 
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
                                      * (1 + popcount(blocked & CenterFiles));
