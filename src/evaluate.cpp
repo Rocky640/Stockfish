@@ -219,7 +219,7 @@ namespace {
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
-    Bitboard outpostFiles[COLOR_NB];
+    Bitboard outposts[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
@@ -269,7 +269,7 @@ namespace {
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
-    outpostFiles[Us] = 0;
+    outposts[Us] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -341,7 +341,7 @@ namespace {
             {
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
                 if (attackedBy[Us][PAWN] & s)
-                    outpostFiles[Us] |= forward_file_bb(Them, s);
+                    outposts[Us] |= s;
             }
 
             else if (bb &= b & ~pos.pieces(Us))
@@ -580,7 +580,7 @@ namespace {
 
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
-        score += WeakUnopposedPawn * popcount(pe->weak_unopposed(Them) & ~outpostFiles[Them]);
+        score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
     // Our safe or protected pawns
     b =   pos.pieces(Us, PAWN)
@@ -747,8 +747,8 @@ namespace {
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN];
 
-    // Find all squares which are at most three squares behind some friendly pawn
-    Bitboard behind = pos.pieces(Us, PAWN);
+    // Find all squares which are at most three squares behind some friendly pawn or outpost
+    Bitboard behind = pos.pieces(Us, PAWN) | outposts[Us];
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
