@@ -331,7 +331,7 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
-        if (!(b & mobilityArea[Us] & ~pos.pieces(Us)))
+        if (!mob)
             lowMobility[Us] |= s;
 
         if (Pt == BISHOP || Pt == KNIGHT)
