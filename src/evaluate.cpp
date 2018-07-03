@@ -335,7 +335,7 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
-            if (!mob)
+            if (!mob && !(pos.blockers_for_king(Us) & s))
                 lowMobility[Us] |= s;
 
             // Bonus if piece is on an outpost square or can reach one
