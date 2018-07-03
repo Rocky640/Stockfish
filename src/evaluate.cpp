@@ -331,7 +331,7 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
-        if (!mob)
+        if (!mob && !(pos.blockers_for_king(Us) & s))
             lowMobility[Us] |= s;
 
         if (Pt == BISHOP || Pt == KNIGHT)
@@ -749,7 +749,7 @@ namespace {
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
-    int bonus = popcount(safe) + popcount(behind & safe) - popcount(lowMobility[Us]);
+    int bonus = popcount(safe) + popcount(behind & safe) - 2 * popcount(lowMobility[Us]);
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
     Score score = make_score(bonus * weight * weight / 16, 0);
