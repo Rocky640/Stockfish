@@ -849,14 +849,21 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Pieces should be evaluated first (populate attack tables)
+    // First, populate the attack tables starting with minor pieces
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
+            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>();
+
+    // Adjust the mobility area for majors ...
+    mobilityArea[WHITE] &= ~((attackedBy[BLACK][KNIGHT] | attackedBy[BLACK][BISHOP]) & Rank1BB);
+    mobilityArea[BLACK] &= ~((attackedBy[WHITE][KNIGHT] | attackedBy[WHITE][BISHOP]) & Rank8BB);
+
+    // ... and proceed to populate the remaining attack tables
+    score +=  pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
 
+    // Finally, the attack tables are ready, and we can safely use them
     score +=  king<   WHITE>() - king<   BLACK>()
             + threats<WHITE>() - threats<BLACK>()
             + passed< WHITE>() - passed< BLACK>()
