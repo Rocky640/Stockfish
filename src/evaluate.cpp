@@ -220,6 +220,9 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    Bitboard lowMobility[COLOR_NB];
+    Bitboard outpostControl[COLOR_NB];
+
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
@@ -267,6 +270,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+    lowMobility[Us] = outpostControl[Us] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -332,10 +336,17 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+            if (!mob)
+                lowMobility[Us] |= s;
+
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
+            {
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
+                if (attackedBy[Us][PAWN] & s)
+                    outpostControl[Us] |= b;
+            }
 
             else if (bb &= b & ~pos.pieces(Us))
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)];
@@ -849,14 +860,19 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Pieces should be evaluated first (populate attack tables)
-    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+    // Pieces should be evaluated first, starting from the minors
+    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>();
+    score +=  pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>();
+
+    mobilityArea[WHITE] &= ~(lowMobility[WHITE] | outpostControl[BLACK]);
+    mobilityArea[BLACK] &= ~(lowMobility[BLACK] | outpostControl[WHITE]);
+
+    score +=  pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
+    score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
-
+    
+    // The attack tables are now fully populated, we can proceed with other features
     score +=  king<   WHITE>() - king<   BLACK>()
             + threats<WHITE>() - threats<BLACK>()
             + passed< WHITE>() - passed< BLACK>()
