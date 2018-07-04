@@ -518,6 +518,7 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
+    constexpr Direction Down     = (Us == WHITE ? SOUTH   : NORTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
@@ -586,9 +587,10 @@ namespace {
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
-    // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
-        & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
+    // Keep only the squares which are storming the king, or not completely unsafe
+    b &=  shift<Down>(kingRing[Them]) |
+          (  ~attackedBy[Them][PAWN]
+           & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]));
 
     // Bonus for safe pawn threats on the next move
     b =   pawn_attacks_bb<Us>(b)
