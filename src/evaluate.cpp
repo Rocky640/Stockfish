@@ -587,7 +587,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
+    b &= ~(attackedBy[Them][PAWN] | file_bb(pos.square<KING>(Us)))
         & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
 
     // Bonus for safe pawn threats on the next move
