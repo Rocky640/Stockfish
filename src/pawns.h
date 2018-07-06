@@ -41,6 +41,10 @@ struct Entry {
   int pawn_asymmetry() const { return asymmetry; }
   int open_files() const { return openFiles; }
 
+  bool strong_support(Color c, Square s) const {
+    return strongSupport[c] & s;
+  }
+
   int semiopen_file(Color c, File f) const {
     return semiopenFiles[c] & (1 << f);
   }
@@ -66,6 +70,7 @@ struct Entry {
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
+  Bitboard strongSupport[COLOR_NB];
   Square kingSquares[COLOR_NB];
   Score kingSafety[COLOR_NB];
   int weakUnopposed[COLOR_NB];
