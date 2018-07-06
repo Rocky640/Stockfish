@@ -41,8 +41,8 @@ struct Entry {
   int pawn_asymmetry() const { return asymmetry; }
   int open_files() const { return openFiles; }
 
-  bool strong_support(Color c, Square s) const {
-    return strongSupport[c] & s;
+  int support_type(Color c, Bitboard b) const {
+    return (pawnAttacks[c] & b) ? 1 + bool(strongSupport[c] & b) : 0;
   }
 
   int semiopen_file(Color c, File f) const {
