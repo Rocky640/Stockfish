@@ -45,6 +45,10 @@ struct Entry {
     return semiopenFiles[c] & (1 << f);
   }
 
+  Bitboard backwards_on_same_color_squares(Color c, Square s) const {
+    return pawnsOnSquares[c][bool(DarkSquares & s)] & backwards[c];
+  }
+    
   int pawns_on_same_color_squares(Color c, Square s) const {
     return pawnsOnSquares[c][bool(DarkSquares & s)];
   }
@@ -69,6 +73,7 @@ struct Entry {
   Square kingSquares[COLOR_NB];
   Score kingSafety[COLOR_NB];
   int weakUnopposed[COLOR_NB];
+  Bitboard backwards[COLOR_NB];
   int castlingRights[COLOR_NB];
   int semiopenFiles[COLOR_NB];
   int pawnsOnSquares[COLOR_NB][COLOR_NB]; // [color][light/dark squares]
