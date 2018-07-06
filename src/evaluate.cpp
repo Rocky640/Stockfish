@@ -153,6 +153,13 @@ namespace {
 
   // PassedDanger[Rank] contains a term to weight the passed score
   constexpr int PassedDanger[RANK_NB] = { 0, 0, 0, 2, 7, 12, 19 };
+  
+  Score ThreatByKing[RANK_NB]  = {
+    S( 31, 75), S( 31, 75), S( 31, 75), S( 31, 75),
+    S( 31, 75), S( 31, 75), S( 31, 75) ,S( 31, 75)
+  }; 
+  
+  TUNE(SetRange(-30, 200), ThreatByKing);
 
   // KingProtector[knight/bishop] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(4, 6), S(6, 3) };
@@ -171,7 +178,7 @@ namespace {
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
-  constexpr Score ThreatByKing       = S( 31, 75);
+  
   constexpr Score ThreatByPawnPush   = S( 49, 30);
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(165,133);
@@ -557,7 +564,7 @@ namespace {
 
         // Bonus for king attacks on pawns or pieces which are not pawn-defended
         if (weak & attackedBy[Us][KING])
-            score += ThreatByKing;
+            score += ThreatByKing[relative_rank(Us, pos.square<KING>(Us))];
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
