@@ -37,6 +37,7 @@ struct Entry {
   Bitboard pawn_attacks(Color c) const { return pawnAttacks[c]; }
   Bitboard passed_pawns(Color c) const { return passedPawns[c]; }
   Bitboard pawn_attacks_span(Color c) const { return pawnAttacksSpan[c]; }
+  Bitboard backward_pawns(Color c) const { return backwards[c]; }
   int weak_unopposed(Color c) const { return weakUnopposed[c]; }
   int pawn_asymmetry() const { return asymmetry; }
   int open_files() const { return openFiles; }
@@ -45,10 +46,6 @@ struct Entry {
     return semiopenFiles[c] & (1 << f);
   }
 
-  Bitboard backwards_on_same_color_squares(Color c, Square s) const {
-    return pawnsOnSquares[c][bool(DarkSquares & s)] & backwards[c];
-  }
-    
   int pawns_on_same_color_squares(Color c, Square s) const {
     return pawnsOnSquares[c][bool(DarkSquares & s)];
   }
