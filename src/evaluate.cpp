@@ -635,7 +635,7 @@ namespace {
       // If king cannot come closer because it is cut by opponent rook(s) or own pawns, increase d by 1
       if (   d > 1
           && !(  DistanceRingBB[pos.square<KING>(c)][0]
-               & DistanceRingBB[s][d - 1]
+               & DistanceRingBB[s][d - 2]
                & ~(pos.pieces(c, PAWN) | attackedBy[~c][ROOK])))
           d += 1;
 
