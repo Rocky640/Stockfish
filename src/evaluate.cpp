@@ -630,7 +630,16 @@ namespace {
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
 
     auto king_proximity = [&](Color c, Square s) {
-      return std::min(distance(pos.square<KING>(c), s), 5);
+      int d = distance(pos.square<KING>(c), s);
+
+      // If king cannot come closer because it is cut by opponent rook(s) or own pawns, increase d by 1
+      if (   d > 1
+          && !(  attackedBy[Us][KING]
+               & DistanceRingBB[s][d - 1]
+               & ~(pos.pieces(Them, PAWN) | attackedBy[Them][ROOK])))
+          d += 1;
+
+      return std::min(d, 5);
     };
 
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
