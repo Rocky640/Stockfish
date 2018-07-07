@@ -634,9 +634,9 @@ namespace {
 
       // If king cannot come closer because it is cut by opponent rook(s) or own pawns, increase d by 1
       if (   d > 1
-          && !(  attackedBy[Us][KING]
+          && !(  DistanceRingBB[pos.square<KING>(c)][0]
                & DistanceRingBB[s][d - 1]
-               & ~(pos.pieces(Them, PAWN) | attackedBy[Them][ROOK])))
+               & ~(pos.pieces(c, PAWN) | attackedBy[~c][ROOK])))
           d += 1;
 
       return std::min(d, 5);
