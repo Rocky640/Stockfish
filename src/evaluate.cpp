@@ -376,13 +376,15 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Bonus for aligning rook with enemy pawns on the same rank/file
-            if (relative_rank(Us, s) >= RANK_5)
-                score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
-
             // Bonus for rook on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
+            {
                 score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
+                
+                 // Bonus for aligning rook with enemy pawns on the same rank/file
+                 if (relative_rank(Us, s) >= RANK_5)
+                    score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
+            }
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
