@@ -566,6 +566,10 @@ namespace {
            & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
            & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
         score += Overload * popcount(b);
+
+        // Bonus for tying the king in the center
+        if (pos.can_castle(Them) && (b & attackedBy[Them][KING]))
+            score += Overload;
     }
 
     // Bonus for enemy unopposed weak pawns
