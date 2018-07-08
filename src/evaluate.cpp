@@ -169,7 +169,7 @@ namespace {
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
-  constexpr Score RookOnPawn         = S(  8, 24);
+  constexpr Score RookOnPawn         = S(  8, 26);
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByKing       = S( 31, 75);
   constexpr Score ThreatByPawnPush   = S( 49, 30);
@@ -378,7 +378,8 @@ namespace {
         {
             // Bonus for aligning rook with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
-                score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & attacks_bb<ROOK>(s, pos.pieces(Us, PAWN)));
+                score += RookOnPawn * popcount(   pos.pieces(Them, PAWN)
+                                                & attacks_bb<ROOK>(s, pos.pieces(Us, PAWN) | pos.pieces(Them, ROOK)));
 
             // Bonus for rook on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
