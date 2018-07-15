@@ -376,11 +376,11 @@ namespace {
         if (Pt == ROOK)
         {
             // Bonus for aligning rook with enemy pawns on the same rank/file
-            // or protecting a passed pawn which is not behind.
+            // or protecting an advanced passed pawn from side
             if (relative_rank(Us, s) >= RANK_5)
             {
                 bb  = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
-                bb |= pe->passed_pawns(Us) & b & ~forward_file_bb(Them, s);
+                bb |= pe->passed_pawns(Us) & b & rank_bb(s);
                 score += RookOnPawn * popcount(bb);
             }
 
