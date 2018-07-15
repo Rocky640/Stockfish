@@ -839,8 +839,8 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
 
     // ... and queen last, after reducing the respective mobility areas.
-    mobilityArea[WHITE] &= attackedBy2[WHITE] | ~attackedBy2[WHITE];
-    mobilityArea[BLACK] &= attackedBy2[BLACK] | ~attackedBy2[BLACK];
+    mobilityArea[WHITE] &= attackedBy2[WHITE] | ~attackedBy2[BLACK];
+    mobilityArea[BLACK] &= attackedBy2[BLACK] | ~attackedBy2[WHITE];
 
     score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
