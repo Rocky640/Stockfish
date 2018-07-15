@@ -398,7 +398,16 @@ namespace {
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
+
+            b = attackedBy[Them][KNIGHT] & pos.attacks_from<KNIGHT>(s);
+            score -= KnightOnQueen * popcount(b & mobilityArea[Them]);
+
+            b =  (attackedBy[Them][BISHOP] & pos.attacks_from<BISHOP>(s))
+               | (attackedBy[Them][ROOK  ] & pos.attacks_from<ROOK  >(s));
+
+            score -= SliderOnQueen * popcount(b & mobilityArea[Them] & attackedBy2[Them]);
         }
+
     }
     if (T)
         Trace::add(Pt, Us, score);
@@ -516,22 +525,17 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Bitboard b, weak, defended, nonPawnEnemies, safeThreats;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
     nonPawnEnemies = pos.pieces(Them) ^ pos.pieces(Them, PAWN);
 
-    // Squares strongly protected by the enemy, either because they defend the
-    // square with a pawn, or because they defend the square twice and we don't.
-    stronglyProtected =  attackedBy[Them][PAWN]
-                       | (attackedBy2[Them] & ~attackedBy2[Us]);
+    // Non-pawn enemies not in our mobilityArea
+    defended = nonPawnEnemies & ~mobilityArea[Us];
 
-    // Non-pawn enemies, strongly protected
-    defended = nonPawnEnemies & stronglyProtected;
-
-    // Enemies not strongly protected and under our attack
-    weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
+    // Enemies in our mobilityArea and under our attack
+    weak = pos.pieces(Them) & mobilityArea[Us] & attackedBy[Us][ALL_PIECES];
 
     // Bonus according to the kind of attacking pieces
     if (defended | weak)
@@ -592,22 +596,6 @@ namespace {
        & ~attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
-
-    // Bonus for threats on the next moves against enemy queen
-    if (pos.count<QUEEN>(Them) == 1)
-    {
-        Square s = pos.square<QUEEN>(Them);
-        safeThreats = mobilityArea[Us] & ~stronglyProtected;
-
-        b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
-
-        score += KnightOnQueen * popcount(b & safeThreats);
-
-        b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
-           | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
-
-        score += SliderOnQueen * popcount(b & safeThreats & attackedBy2[Us]);
-    }
 
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
@@ -845,11 +833,16 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Pieces should be evaluated first (populate attack tables)
+    // Pieces should be evaluated first (populate attack tables)...
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
+
+    // ... and queen last, after reducing the respective mobility areas.
+    mobilityArea[WHITE] &= attackedBy2[WHITE] | ~attackedBy2[WHITE];
+    mobilityArea[BLACK] &= attackedBy2[BLACK] | ~attackedBy2[BLACK];
+
+    score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
 
