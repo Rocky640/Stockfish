@@ -380,7 +380,7 @@ namespace {
             if (relative_rank(Us, s) >= RANK_5)
             {
                 bb  = pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s];
-                bb |= pe->passed_pawns(Us) & b & rank_bb(s);
+                bb |= pe->passed_pawns(Us) & b & forward_file_bb(Us, s);
                 score += RookOnPawn * popcount(bb);
             }
 
