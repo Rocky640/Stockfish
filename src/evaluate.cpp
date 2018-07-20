@@ -310,10 +310,6 @@ namespace {
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
-        attackedBy[Us][Pt] |= b;
-        attackedBy[Us][ALL_PIECES] |= b;
-
         if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
@@ -321,7 +317,15 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
+        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
+        attackedBy[Us][Pt] |= b;
+
         int mob = popcount(b & mobilityArea[Us]);
+
+        if (Pt == QUEEN)
+            mob -= popcount(b & mobilityArea[Us] & attackedBy[Them][ALL_PIECES]) / 2;
+        else
+            attackedBy[Us][ALL_PIECES] |= b;
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -846,10 +850,13 @@ namespace {
     // Pieces should be evaluated first (populate attack tables)
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
 
+    score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
     score += mobility[WHITE] - mobility[BLACK];
+
+    attackedBy[WHITE][ALL_PIECES] |= attackedBy[WHITE][QUEEN];
+    attackedBy[BLACK][ALL_PIECES] |= attackedBy[BLACK][QUEEN];
 
     score +=  king<   WHITE>() - king<   BLACK>()
             + threats<WHITE>() - threats<BLACK>()
