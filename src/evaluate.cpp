@@ -513,7 +513,7 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeForPawn;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -557,7 +557,7 @@ namespace {
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
-        b =  weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
+        b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
 
@@ -565,24 +565,19 @@ namespace {
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
-    // Our safe or protected pawns
-    b =   pos.pieces(Us, PAWN)
-       & (~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES]);
+    // Squares not completely unsafe, suitable for pawn attacks
+    safeForPawn = (~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES])
+                 & ~attackedBy[Them][PAWN];
 
-    safeThreats = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatBySafePawn * popcount(safeThreats);
+    b = pawn_attacks_bb<Us>(safeForPawn & pos.pieces(Us, PAWN)) & nonPawnEnemies;
+    score += ThreatBySafePawn * popcount(b);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
-    // Keep only the squares which are not completely unsafe
-    b &= ~attackedBy[Them][PAWN]
-        & (attackedBy[Us][ALL_PIECES] | ~attackedBy[Them][ALL_PIECES]);
-
-    // Bonus for safe pawn threats on the next move
-    b =   pawn_attacks_bb<Us>(b)
-       &  pos.pieces(Them)
+    // Bonus for new safe pawn threats on the next move
+    b =   pawn_attacks_bb<Us>(safeForPawn & b) & nonPawnEnemies
        & ~attackedBy[Us][PAWN];
 
     score += ThreatByPawnPush * popcount(b);
@@ -591,7 +586,7 @@ namespace {
     if (pos.count<QUEEN>(Them) == 1)
     {
         Square s = pos.square<QUEEN>(Them);
-        safeThreats = mobilityArea[Us] & ~stronglyProtected;
+        Bitboard safeThreats = mobilityArea[Us] & ~stronglyProtected;
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
 
