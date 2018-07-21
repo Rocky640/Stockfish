@@ -511,6 +511,7 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
+    constexpr Direction Down     = (Us == WHITE ? SOUTH   : NORTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
@@ -557,8 +558,8 @@ namespace {
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
-        // Attacks on weak non-pawns, or unlevered blocked  or low rank pawns
-        b =  weak & (nonPawnEnemies | ~mobilityArea[Them]) & attackedBy[Them][ALL_PIECES];
+        // Attacks on weak non-pawns, or blocked pawns
+        b =  weak & (nonPawnEnemies | shift<Down>(pos.pieces())) & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
 
