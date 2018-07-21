@@ -165,6 +165,7 @@ namespace {
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 16,  7);
+  constexpr Score OverloadBlocked    = S(  8,  4);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
@@ -558,9 +559,13 @@ namespace {
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
-        // Attacks on weak non-pawns, or blocked pawns
-        b =  weak & (nonPawnEnemies | shift<Down>(pos.pieces())) & attackedBy[Them][ALL_PIECES];
+        // Attacks on weakly protected non-pawns
+        b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
+        
+        // Attacks on weakly protected blocked pawns
+        b = weak & ~nonPawnEnemies & shift<Down>(pos.pieces()) & attackedBy[Them][ALL_PIECES];
+        score += OverloadBlocked * popcount(b);
     }
 
     // Bonus for enemy unopposed weak pawns
