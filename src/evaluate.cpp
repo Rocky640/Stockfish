@@ -165,7 +165,7 @@ namespace {
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 16,  7);
-  constexpr Score OverloadBlocked    = S( 24, 11);
+  constexpr Score OverloadBlocked    = S( 12,  7);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
