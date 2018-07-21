@@ -566,8 +566,7 @@ namespace {
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
     // Squares not completely unsafe, suitable for pawn attacks
-    safeForPawn = (~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES])
-                 & ~attackedBy[Them][PAWN];
+    safeForPawn = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
 
     b = pawn_attacks_bb<Us>(safeForPawn & pos.pieces(Us, PAWN)) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(b);
