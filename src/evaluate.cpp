@@ -557,7 +557,8 @@ namespace {
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
-        b =  weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
+        // Attacks on weak non-pawns, or unlevered blocked  or low rank pawns
+        b =  weak & (nonPawnEnemies | ~mobilityArea[Them]) & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
 
