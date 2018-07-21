@@ -129,16 +129,37 @@ namespace {
   // no (friendly) pawn on the rook file.
   constexpr Score RookOnFile[] = { S(20, 7), S(45, 20) };
 
-  // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
+  //constexpr Score Hanging            = S( 52, 30);
+  //constexpr Score Overload           = S( 16,  7);
+
+  // ThreatByMinor/ByRook[strong/weak/hanging][attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
-  constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(47, 120)
+  // Special PIECE_TYPE_NB = 0 is used for threat on a blocked pawn, and is added to the PAWN bonus
+
+  Score ThreatByMinor[3][PIECE_TYPE_NB] = {
+    { S( 9,-14), S(-2, -4), S(32, 46), S( 60, 51), S( 71, 135), S(35, 110) },//strongly defended
+    { S(-7, 19), S( 9, 22), S(47, 55), S( 84, 62), S( 81, 115), S(74, 122) },//slightly defended (weak)
+    { S(51, 65), S(54, 55), S(92, 63), S(120, 75), S(113, 152), S(99, 142) } //hanging
   };
 
-  constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(36, 38)
+  Score ThreatByRook[3][PIECE_TYPE_NB] = {
+    { S( 0, -8), S(-2,  6), S(10,  0), S(  2, -2), S( 7,  3), S(26, 50) }, //strongly defended
+    { S( 3, 43), S( 5, 14), S(49, 88), S( 48, 80), S(27, 44), S(53, 45) }, //slightly defended (weak)
+    { S(58, 50), S(51, 43), S(99,103), S(112,102), S(50, 60), S(86, 69) }  //hanging
   };
+
+   // ThreatByRank[strong/weak/hanging]
+  Score ThreatByRank[3] = {  S( 10,  1), S( 16,  1), S( 18,  4)};
+
+  // ThreatByKing[strong/weak/hanging]
+  Score ThreatByKing[3] = {  S( -7, -2), S( 45, 86), S( 83, 109)};
+
+  /*TUNE (SetRange(-30, 240), ThreatByMinor);
+  TUNE (SetRange(-30, 150), ThreatByRook);
+  TUNE (SetRange(-10,  50), ThreatByRank);
+  TUNE (SetRange(-30, 200), ThreatByKing);
+*/
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   constexpr Score PassedRank[RANK_NB] = {
@@ -158,19 +179,15 @@ namespace {
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CloseEnemies       = S(  6,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
-  constexpr Score Hanging            = S( 52, 30);
   constexpr Score HinderPassedPawn   = S(  4,  0);
   constexpr Score KingProtector      = S(  6,  6);
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
-  constexpr Score Overload           = S( 16,  7);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
-  constexpr Score ThreatByKing       = S( 23, 76);
   constexpr Score ThreatByPawnPush   = S( 45, 40);
-  constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(173,102);
   constexpr Score TrappedRook        = S( 92,  0);
   constexpr Score WeakQueen          = S( 50, 10);
@@ -511,9 +528,10 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
+    constexpr Direction Down     = (Us == WHITE ? SOUTH   : NORTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Bitboard b, bb, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats, blocked;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -530,35 +548,60 @@ namespace {
     // Enemies not strongly protected and under our attack
     weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
 
+    blocked = shift<Down>(pos.pieces());
+
     // Bonus according to the kind of attacking pieces
     if (defended | weak)
     {
-        b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        bb = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+
+        b = bb & ~attackedBy[Them][ALL_PIECES];
         while (b)
         {
             Square s = pop_lsb(&b);
-            score += ThreatByMinor[type_of(pos.piece_on(s))];
+            score += ThreatByMinor[2][type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank[2] * (int)relative_rank(Them, s);
+            else if (blocked & s)
+                score += ThreatByMinor[2][0];
         }
 
-        b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
+        b = bb & attackedBy[Them][ALL_PIECES];
         while (b)
         {
             Square s = pop_lsb(&b);
-            score += ThreatByRook[type_of(pos.piece_on(s))];
+            score += ThreatByMinor[bool(weak & s)][type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank[bool(weak & s)] * (int)relative_rank(Them, s);
+            else if (blocked & s)
+                score += ThreatByMinor[bool(weak & s)][0];
         }
 
-        // Bonus for king attacks on pawns or pieces which are not pawn-defended
-        if (weak & attackedBy[Us][KING])
-            score += ThreatByKing;
+        bb = (defended | weak) & attackedBy[Us][ROOK];
+        b = bb & ~attackedBy[Them][ALL_PIECES];
+        while (b)
+        {
+            Square s = pop_lsb(&b);
+            score += ThreatByRook[2][type_of(pos.piece_on(s))];
+            if (type_of(pos.piece_on(s)) != PAWN)
+                score += ThreatByRank[2] * (int)relative_rank(Them, s);
+            else if (blocked & s)
+                score += ThreatByRook[2][0];
+        }
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        b = bb & attackedBy[Them][ALL_PIECES];
+        while (b)
+        {
+            Square s = pop_lsb(&b);
+            score += ThreatByRook[bool(weak & s)][type_of(pos.piece_on(s))];
+            if (type_of(pos.piece_on(s)) != PAWN)
+                score += ThreatByRank[bool(weak & s)] * (int)relative_rank(Them, s);
+            else if (blocked & s)
+                score += ThreatByRook[bool(weak & s)][0];
+        }
 
-        b =  weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
-        score += Overload * popcount(b);
+        bb = (defended | weak) & attackedBy[Us][KING];
+        score += ThreatByKing[bb & ~attackedBy[Them][ALL_PIECES] ? 2 : 1 - bool(~weak & bb)];
     }
 
     // Bonus for enemy unopposed weak pawns
