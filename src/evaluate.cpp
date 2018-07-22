@@ -547,7 +547,7 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
+            if (type_of(pos.piece_on(s)) != PAWN && type_of(pos.piece_on(s)) != QUEEN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
