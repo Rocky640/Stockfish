@@ -309,10 +309,6 @@ namespace {
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
-        attackedBy[Us][Pt] |= b;
-        attackedBy[Us][ALL_PIECES] |= b;
-
         if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
@@ -323,6 +319,15 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
+
+        // Don't store rook x-rays in the other attack bb
+        if (Pt == ROOK)
+             b &= pos.attacks_from<Pt>(s);
+
+        attackedBy[Us][ALL_PIECES] |= b;
+        attackedBy[Us][Pt] |= b;
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
