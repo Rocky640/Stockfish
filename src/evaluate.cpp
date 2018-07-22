@@ -513,27 +513,24 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
+    Bitboard b, weak, nonPawnEnemies, stronglyProtected, safeThreats, targets;
     Score score = SCORE_ZERO;
 
-    // Non-pawn enemies
-    nonPawnEnemies = pos.pieces(Them) ^ pos.pieces(Them, PAWN);
+    targets        = pos.pieces(Them) & ~pos.pieces(QUEEN) & attackedBy[Us][ALL_PIECES];
+    nonPawnEnemies = pos.pieces(Them) & ~pos.pieces(PAWN);
 
     // Squares strongly protected by the enemy, either because they defend the
     // square with a pawn, or because they defend the square twice and we don't.
     stronglyProtected =  attackedBy[Them][PAWN]
                        | (attackedBy2[Them] & ~attackedBy2[Us]);
 
-    // Non-pawn enemies, strongly protected
-    defended = nonPawnEnemies & stronglyProtected;
-
-    // Enemies not strongly protected and under our attack
-    weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
-
     // Bonus according to the kind of attacking pieces
-    if (defended | weak)
+    if (targets)
     {
-        b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        // Enemies not strongly protected and under our attack
+        weak = targets & ~stronglyProtected;
+
+        b = (nonPawnEnemies | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -542,7 +539,7 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
+        b = weak & attackedBy[Us][ROOK];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -557,7 +554,7 @@ namespace {
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
-        b =  weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
+        b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
 
