@@ -542,7 +542,12 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
+        // exclude most x-ray attacks by rook through queen
+        if (attackedBy[Them][QUEEN] & pos.pieces(Us, ROOK))
+            b = (pos.pieces(Them, QUEEN) | weak) & attackedBy[Us][ROOK];
+        else
+            b = weak & attackedBy[Us][ROOK];
+
         while (b)
         {
             Square s = pop_lsb(&b);
