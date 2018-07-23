@@ -121,8 +121,8 @@ namespace {
   // contains bonuses for minor pieces if they occupy or can reach an outpost square, bigger if that
   // square is supported by a pawn, even more if opponent has no minor left which can capture
   constexpr Score Outpost[][3] = {
-    { S(22, 6), S(36,12), S(36,18) }, // Knight
-    { S( 9, 2), S(15, 5), S(15, 6) }  // Bishop
+    { S(22, 6), S(36,12), S(40,12) }, // Knight
+    { S( 9, 2), S(15, 5), S(17, 5) }  // Bishop
   };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
