@@ -319,6 +319,16 @@ namespace {
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
+        else if ((Pt == BISHOP || Pt == QUEEN) && attacks_bb<BISHOP>(s, pos.pieces(PAWN) | pos.pieces(Them)) & kingRing[Them])
+        {
+            kingAttackersCount[Us]++;
+            kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
+        }
+        else if ((Pt == ROOK || Pt == QUEEN) && attacks_bb<ROOK>(s, pos.pieces(PAWN) | pos.pieces(Them)) & kingRing[Them])
+        {
+            kingAttackersCount[Us]++;
+            kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
+        }
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -351,7 +361,7 @@ namespace {
                                      * (1 + popcount(blocked & CenterFiles));
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
+                if (more_than_one(Center & attacks_bb<BISHOP>(s, pos.pieces(PAWN) | s)))
                     score += LongDiagonalBishop;
             }
 
