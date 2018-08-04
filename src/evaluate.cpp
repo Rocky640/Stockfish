@@ -320,15 +320,9 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
         else if ((Pt == BISHOP || Pt == QUEEN) && attacks_bb<BISHOP>(s, pos.pieces(PAWN) | pos.pieces(Them)) & kingRing[Them])
-        {
-            kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
-        }
+            kingAttacksCount[Us] += 1;
         else if ((Pt == ROOK || Pt == QUEEN) && attacks_bb<ROOK>(s, pos.pieces(PAWN) | pos.pieces(Them)) & kingRing[Them])
-        {
-            kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
-        }
+            kingAttacksCount[Us] += 1;
 
         int mob = popcount(b & mobilityArea[Us]);
 
