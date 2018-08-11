@@ -51,11 +51,11 @@ namespace {
   };
   
   // Game stage bonuses - contains a bonus/malus, depending on the number of certain pieces
-  constexpr int GameStagePawns[]   = { 20, 43, 37, 12, 1, -4, 2, 19, 32 };
-  constexpr int GameStageKnights[] = { -6, 22, 42,  8 };
-  constexpr int GameStageBishops[] = { -2, 26, 40, -8 };
-  constexpr int GameStageRooks[]   = {  4, 24, 35, -7 };
-  constexpr int GameStageQueens[]  = {-13, 54,-28 };
+  constexpr int GameStagePawns[]   = {  0, 23, 17, -8, -19, -24, -18, -1, 12 };
+  constexpr int GameStageKnights[] = {  0, 28, 48,  14 };
+  constexpr int GameStageBishops[] = {  0, 28, 42, -6 };
+  constexpr int GameStageRooks[]   = {  0, 20, 31, -11 };
+  constexpr int GameStageQueens[]  = {  0, 67, -15 };
 
   // Endgame evaluation and scaling functions are accessed directly and not through
   // the function maps because they correspond to more than one material hash key.
