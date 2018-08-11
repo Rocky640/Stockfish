@@ -52,10 +52,10 @@ namespace {
  
   // Game stage bonuses - contains a bonus/malus, depending on the number of certain pieces
   constexpr int GameStagePawns[]   = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
-  constexpr int GameStageKnights[] = { 0, 256,  384, -352, -768 };
-  constexpr int GameStageBishops[] = { 0, 256,  288, -672, -768 };
-  constexpr int GameStageRooks[]   = { 0,   0, -144,-1136,-1280 };
-  constexpr int GameStageQueens[]  = { 0, 432,-1520,-1920,-2560 };
+  constexpr int GameStageKnights[] = { 0, 256,  384, -352 };
+  constexpr int GameStageBishops[] = { 0, 256,  288, -672 };
+  constexpr int GameStageRooks[]   = { 0,   0, -144,-1136 };
+  constexpr int GameStageQueens[]  = { 0, 432,-1520       };
 
   // Endgame evaluation and scaling functions are accessed directly and not through
   // the function maps because they correspond to more than one material hash key.
@@ -95,10 +95,10 @@ namespace {
 
    
    int bonus =  GameStagePawns  [std::min(pieceCount[Us][PAWN],   8)]
-              + GameStageKnights[std::min(pieceCount[Us][KNIGHT], 4)]
-              + GameStageBishops[std::min(pieceCount[Us][BISHOP], 4)]
-              + GameStageRooks  [std::min(pieceCount[Us][ROOK],   4)]
-              + GameStageQueens [std::min(pieceCount[Us][QUEEN],  4)];
+              + GameStageKnights[std::min(pieceCount[Us][KNIGHT], 3)]
+              + GameStageBishops[std::min(pieceCount[Us][BISHOP], 3)]
+              + GameStageRooks  [std::min(pieceCount[Us][ROOK],   3)]
+              + GameStageQueens [std::min(pieceCount[Us][QUEEN],  2)];
 
     // Second-degree polynomial material imbalance, by Tord Romstad
     for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
