@@ -51,11 +51,11 @@ namespace {
   };
  
   // Game stage bonuses - contains a bonus/malus, depending on the number of certain pieces
-  constexpr int GameStagePawns[]   = {  0, 23-4, 17-8, -8-12, -19-16, -24-20, -18-24, -1-28, 12-32 }; //-4
-  constexpr int GameStageKnights[] = {  0, 28-12, 48-24,  14-36, 0-48 }; //-12
-  constexpr int GameStageBishops[] = {  0, 28-12, 42-24, -6-36, 0-48 }; //-12
-  constexpr int GameStageRooks[]   = {  0, 20-20, 31-40, -11-60,0-80 }; //-20
-  constexpr int GameStageQueens[]  = {  0, 67-40, -15-80, 0-120, 0-160 }; //-40
+  constexpr int GameStagePawns[]   = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
+  constexpr int GameStageKnights[] = { 0, 256,  384, -352, -768 };
+  constexpr int GameStageBishops[] = { 0, 256,  288, -672, -768 };
+  constexpr int GameStageRooks[]   = { 0,   0, -144,-1136,-1280 };
+  constexpr int GameStageQueens[]  = { 0, 432,-1520,-1920,-2560 };
 
   // Endgame evaluation and scaling functions are accessed directly and not through
   // the function maps because they correspond to more than one material hash key.
@@ -93,18 +93,13 @@ namespace {
 
   constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
 
-   // Game stage coefficient k1, being the sum of game stage bonuses
-   int k1 = 0;
-   k1 += GameStagePawns[std::min(pieceCount[Us][PAWN], 8)];
-   k1 += GameStageKnights[std::min(pieceCount[Us][KNIGHT], 4)];
-   k1 += GameStageBishops[std::min(pieceCount[Us][BISHOP], 4)];
-   k1 += GameStageRooks[std::min(pieceCount[Us][ROOK], 4)];
-   k1 += GameStageQueens[std::min(pieceCount[Us][QUEEN], 4)];
-    
+   
+   int bonus =  GameStagePawns  [std::min(pieceCount[Us][PAWN],   8)]
+              + GameStageKnights[std::min(pieceCount[Us][KNIGHT], 4)]
+              + GameStageBishops[std::min(pieceCount[Us][BISHOP], 4)]
+              + GameStageRooks  [std::min(pieceCount[Us][ROOK],   4)]
+              + GameStageQueens [std::min(pieceCount[Us][QUEEN],  4)];
 
-  // Initial bonus
-    int bonus = k1 * 16;
-    
     // Second-degree polynomial material imbalance, by Tord Romstad
     for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
     {
