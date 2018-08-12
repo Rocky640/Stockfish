@@ -581,9 +581,9 @@ namespace {
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
     b |= shift<Up>(b & LowRanks) & ~pos.pieces();
 
-    // Storming pawns: bonus for not letting some hanging piece
+    // Bonus for not leaving some hanging piece after a pawn push
     weak = pawn_attacks_bb<Us>(shift<Down>(b)) & pos.pieces(Us) & attackedBy[Them][ALL_PIECES] & ~LowRanks;
-    score += PawnPushSide * popcount(weak & attackedBy2[Us]);
+    score += PawnPushSide * popcount(weak & (attackedBy2[Us] | pe->dble_attacks(Us)));
 
     // Keep only the squares which are relatively safe
     b &= ~attackedBy[Them][PAWN] & safe;
