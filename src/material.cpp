@@ -88,9 +88,8 @@ namespace {
   int imbalance(const int pieceCount[][PIECE_TYPE_NB]) {
 
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
-    constexpr int PawnCount[] = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
 
-    int bonus = PawnCount[pieceCount[Us][PAWN]];
+    int bonus = 0;
 
     // Second-degree polynomial material imbalance, by Tord Romstad
     for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
