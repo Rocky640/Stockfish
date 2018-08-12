@@ -30,12 +30,14 @@ using namespace std;
 namespace {
 
   // Polynomial material imbalance parameters
-
-  constexpr int QuadraticOurs[][PIECE_TYPE_NB] = {
+  int PAdjust=0;  int NAdjust=0;
+  int BAdjust=0;  int RAdjust=0; int QAdjust=0;
+  
+  int QuadraticOurs[][PIECE_TYPE_NB] = {
     //            OUR PIECES
     // pair pawn knight bishop rook queen
     {1443                               }, // Bishop pair
-    {  40,    0                         }, // Pawn
+    {  40,   52                         }, // Pawn
     {  32,  255, -67                    }, // Knight      OUR PIECES
     {   0,  104,   4,    0              }, // Bishop
     { -26,   -2,  47,   105,  -221      }, // Rook
@@ -53,7 +55,7 @@ namespace {
     {  97,  100, -42,   137,  268,    0 }  // Queen
   };
 
-  constexpr int PawnCount[] = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
+  //constexpr int PawnCount[] = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
 
   // Endgame evaluation and scaling functions are accessed directly and not through
   // the function maps because they correspond to more than one material hash key.
@@ -84,6 +86,16 @@ namespace {
           && pos.count<PAWN>(~us) >= 1;
   }
 
+  //Use some adjustments only for tuning, will be moved to types.h later
+  TUNE(SetRange(-30, 30), PAdjust, NAdjust, BAdjust, RAdjust, QAdjust);
+  
+  
+  TUNE(SetRange(1443-200,1443+200),QuadraticOurs[0][0]); //bishop pair
+  TUNE(SetRange(52-200,52+200)    ,QuadraticOurs[1][1]); //pawn
+  TUNE(SetRange(-67-200,-67+200)  ,QuadraticOurs[2][2]); //knight
+  TUNE(SetRange(-221-200,-221+200),QuadraticOurs[4][4]); //rook
+  TUNE(SetRange(-10-200,-10+200)  ,QuadraticOurs[5][5]); //Queen
+
   /// imbalance() calculates the imbalance by comparing the piece count of each
   /// piece type for both colors.
   template<Color Us>
@@ -91,7 +103,12 @@ namespace {
 
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
 
-    int bonus = PawnCount[pieceCount[Us][PAWN]];
+    //Use some adjustments only for tuning, will be moved to types.h later
+    int bonus = (pieceCount[Us][PAWN]   * PAdjust
+              + pieceCount[Us][KNIGHT] * NAdjust
+              + pieceCount[Us][BISHOP] * BAdjust
+              + pieceCount[Us][ROOK]   * RAdjust
+              + pieceCount[Us][QUEEN]  * QAdjust) * 16;
 
     // Second-degree polynomial material imbalance, by Tord Romstad
     for (int pt1 = NO_PIECE_TYPE; pt1 <= QUEEN; ++pt1)
