@@ -31,11 +31,11 @@ namespace {
   constexpr int QuadraticOurs[][PIECE_TYPE_NB] = {
     //            OUR PIECES
     // pair pawn knight bishop rook queen
-    {1667                               }, // Bishop pair
+    {1667-224                               }, // Bishop pair
     {  40,    0                         }, // Pawn
-    {  32,  255,  -3                    }, // Knight      OUR PIECES
+    {  32,  255,  -3-64                    }, // Knight      OUR PIECES
     {   0,  104,   4,    0              }, // Bishop
-    { -26,   -2,  47,   105,  -149      }, // Rook
+    { -26,   -2,  47,   105,  -149-72      }, // Rook
     {-189,   24, 117,   133,  -134, -10 }  // Queen
   };
 
@@ -50,12 +50,27 @@ namespace {
     {  97,  100, -42,   137,  268,    0 }  // Queen
   };
  
-  // Game stage bonuses - contains a bonus/malus, depending on the number of certain pieces
+  /*
+ 
   constexpr int GameStagePawns[]   = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
-  constexpr int GameStageKnights[] = { 0, 256,  384, -352 };
-  constexpr int GameStageBishops[] = { 0, 256,  288, -672 };
-  constexpr int GameStageRooks[]   = { 0,   0, -144,-1136 };
-  constexpr int GameStageQueens[]  = { 0, 432,-1520       };
+  constexpr int GameStageKnights[] = { 0, 256+1*64,  384+4*64, -352+9*64, -768+16*64, -960+25*64};
+  constexpr int GameStageBishops[] = { 0, 256,      288+1*224, -672+0,    -768+0, -960};
+  constexpr int GameStageRooks[]   = { 0,   0+1*72, -144+4*72,-1136+9*72 ,-1280+16*72, -1600+25*72 };
+  constexpr int GameStageQueens[]  = { 0, 432,-1520, -1920, -2560. -3200};
+*/
+
+
+  constexpr int GameStagePawns[]   = { 0, 304,  144, -320, -560, -704, -672, -464, -320 };
+  constexpr int GameStageKnights[] = { 0, 320,  640, 224, 256, 640 };
+  constexpr int GameStageBishops[] = { 0, 256,  512, -672, -768, -960};
+  constexpr int GameStageRooks[]   = { 0,  72,  144, -488, -128, 200 };
+  constexpr int GameStageQueens[]  = { 0, 432,-1520, -1920, -2560. -3200};
+
+            /*+ 320 * pieceCount[Us][KNIGHT]
+              + 256 * pieceCount[Us][BISHOP]
+              + 72  * pieceCount[Us][ROOK]
+              + 432 * pieceCount[Us][QUEEN];
+              */
 
   // Endgame evaluation and scaling functions are accessed directly and not through
   // the function maps because they correspond to more than one material hash key.
@@ -93,7 +108,6 @@ namespace {
 
   constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
 
-   
    int bonus =  GameStagePawns  [std::min(pieceCount[Us][PAWN],   8)]
               + GameStageKnights[std::min(pieceCount[Us][KNIGHT], 3)]
               + GameStageBishops[std::min(pieceCount[Us][BISHOP], 3)]
