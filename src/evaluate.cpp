@@ -166,6 +166,7 @@ namespace {
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 13,  6);
   constexpr Score PawnlessFlank      = S( 19, 84);
+  constexpr Score PawnPushSide       = S( 10, 10);
   constexpr Score RookOnPawn         = S( 10, 30);
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByKing       = S( 23, 76);
@@ -513,7 +514,8 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
-    constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Direction Down     = (Us == WHITE ? SOUTH   : NORTH);
+    constexpr Bitboard  LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank6BB | Rank7BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -577,7 +579,11 @@ namespace {
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
-    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
+    b |= shift<Up>(b & LowRanks) & ~pos.pieces();
+
+    // Storming pawns: bonus for supporting the squares which could be left uncontrolled
+    weak = pawn_attacks_bb<Us>(shift<Down>(b)) & ~(pos.pieces(Them, PAWN) | LowRanks);
+    score += PawnPushSide * popcount(weak & attackedBy2[Us]);
 
     // Keep only the squares which are relatively safe
     b &= ~attackedBy[Them][PAWN] & safe;
