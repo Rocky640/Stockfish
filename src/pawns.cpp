@@ -33,7 +33,7 @@ namespace {
 
   // Pawn penalties
  constexpr Score Isolated = S( 5, 15);
- constexpr Score Backward = S( 9, 24);
+ constexpr Score Backward[2] = { S( 9, 24), S(4, 12) };
  constexpr Score Doubled  = S(11, 56);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
@@ -108,9 +108,9 @@ namespace {
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
 
-        // A pawn is backward when it is behind all pawns of the same color
-        // on the adjacent files and cannot be safely advanced.
-        backward =  !(ourPawns & pawn_attack_span(Them, s + Up))
+        // A pawn is backward when if there is no neighbours behind
+        // and it cannot be safely advanced.
+        backward =  !(ourPawns & pawn_attack_span(Them, s))
                   && (stoppers & (leverPush | (s + Up)));
 
         // Passed pawns will be properly scored in evaluation because we need
@@ -139,7 +139,7 @@ namespace {
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
         else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed;
+            score -= Backward[bool(phalanx)], e->weakUnopposed[Us] += !opposed;
 
         if (doubled && !supported)
             score -= Doubled;
