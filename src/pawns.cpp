@@ -68,8 +68,9 @@ namespace {
   template<Color Us>
   Score evaluate(const Position& pos, Pawns::Entry* e) {
 
-    constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
-    constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Color     Them    = (Us == WHITE ? BLACK : WHITE);
+    constexpr Direction Up      = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -139,7 +140,7 @@ namespace {
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
         else if (backward)
-            score -= Backward[bool(phalanx)], e->weakUnopposed[Us] += !opposed;
+            score -= Backward[bool(phalanx & LowRanks)], e->weakUnopposed[Us] += !opposed;
 
         if (doubled && !supported)
             score -= Doubled;
