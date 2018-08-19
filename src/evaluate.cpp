@@ -202,6 +202,7 @@ namespace {
     Material::Entry* me;
     Pawns::Entry* pe;
     Bitboard mobilityArea[COLOR_NB];
+    Bitboard fileOpeners[COLOR_NB];
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
@@ -253,11 +254,14 @@ namespace {
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
-    // are excluded from the mobility area...
+    // are excluded from the mobility area
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
 
-    // ... but their blocked levered pawns are always included
-    mobilityArea[Us] |= pos.pieces(Them, PAWN) & shift<Up>(pos.pieces() & ~LowRanks) & pe->pawn_attacks(Us);
+    // Find the pawns in the enemy camp which are blocked, or the free square is controlled by our pawn
+    b = pos.pieces(Them, PAWN) & shift<Up>(pos.pieces() | pe->pawn_attacks(Us));
+    
+    // Our pawns on rank 4 and above which levers such pawns are file openers
+    fileOpeners[Us] = pawn_attacks_bb<Them>(b) & pos.pieces(Us, PAWN) & ~LowRanks;
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -380,14 +384,14 @@ namespace {
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
 
             // Bonus for rook on an open or semi-open file
-            if (pe->semiopen_file(Us, file_of(s)))
-                score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
+            if (pe->semiopen_file(Us, file_of(s)) | (b & fileOpeners[Us]))
+                score += RookOnFile[pe->semiopen_file(Them, file_of(s)) && !(b & fileOpeners[Us])];
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
             {
                 File kf = file_of(pos.square<KING>(Us));
-                if ((kf < FILE_E) == (file_of(s) < kf))
+                if (    (kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
