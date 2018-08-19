@@ -835,6 +835,9 @@ namespace {
     if (abs(v) > LazyThreshold)
        return pos.side_to_move() == WHITE ? v : -v;
 
+    // Increase material weight 
+    score += make_score(v / 100, v / 100);
+
     // Main evaluation begins here
 
     initialize<WHITE>();
