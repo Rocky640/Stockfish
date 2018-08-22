@@ -165,7 +165,7 @@ namespace {
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 13,  6);
-  constexpr Score PassiveRook        = S(  6, 13);
+  constexpr Score PassiveRook        = S(  0, 10);
   constexpr Score PawnlessFlank      = S( 19, 84);
   constexpr Score RookOnPawn         = S( 10, 30);
   constexpr Score SliderOnQueen      = S( 42, 21);
@@ -260,7 +260,7 @@ namespace {
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
-    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];    
+    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
     attackedBy[Us][7] = 0;
 
@@ -390,9 +390,9 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
 
-            if (!more_than_one(b & mobilityArea[Us] & rank_bb(s)))
+            if (!(b & rank_bb(s) & mobilityArea[Us] & ~pos.pieces(Us)))
                 attackedBy[Us][7] |= b & rank_bb(s);
-            if (!more_than_one(b & mobilityArea[Us] & file_bb(s)))
+            if (!(b & file_bb(s) & mobilityArea[Us] & ~pos.pieces(Us)))
                 attackedBy[Us][7] |= b & file_bb(s);
         }
 
