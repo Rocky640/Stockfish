@@ -165,6 +165,7 @@ namespace {
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 13,  6);
+  constexpr Score PassiveRook        = S(  6, 13);
   constexpr Score PawnlessFlank      = S( 19, 84);
   constexpr Score RookOnPawn         = S( 10, 30);
   constexpr Score SliderOnQueen      = S( 42, 21);
@@ -206,7 +207,7 @@ namespace {
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type. Special "piece types" which
-    // is also calculated is ALL_PIECES.
+    // is also calculated is ALL_PIECES, and LOW_MOB = 7
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
@@ -259,8 +260,9 @@ namespace {
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
-    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
+    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];    
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+    attackedBy[Us][7] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -387,6 +389,11 @@ namespace {
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
+
+            if (!more_than_one(b & mobilityArea[Us] & rank_bb(s)))
+                attackedBy[Us][7] |= b & rank_bb(s);
+            if (!more_than_one(b & mobilityArea[Us] & file_bb(s)))
+                attackedBy[Us][7] |= b & file_bb(s);
         }
 
         if (Pt == QUEEN)
@@ -569,6 +576,11 @@ namespace {
 
         b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
+
+        // Bonus for attacks which ties a rook along a low mobility ray of action
+        b = weak & attackedBy[Them][7];
+        score += PassiveRook * popcount(b);
+
     }
 
     // Bonus for enemy unopposed weak pawns
