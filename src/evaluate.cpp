@@ -158,7 +158,7 @@ namespace {
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CloseEnemies       = S(  6,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
-  constexpr Score Hanging            = S( 57, 32);
+  constexpr Score Hanging            = S( 28, 16);
   constexpr Score HinderPassedPawn   = S(  8,  0);
   constexpr Score KingProtector      = S(  6,  6);
   constexpr Score KnightOnQueen      = S( 21, 11);
@@ -565,7 +565,7 @@ namespace {
         if (weak & attackedBy[Us][KING])
             score += ThreatByKing;
 
-        score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        score += Hanging * (2 * popcount(weak & ~attackedBy[Them][ALL_PIECES]));
         score += Hanging * popcount(weak & attackedBy2[Us] & ~attackedBy[Them][ALL_PIECES]);
 
         b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
