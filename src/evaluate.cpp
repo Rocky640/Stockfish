@@ -567,7 +567,7 @@ namespace {
 
         b = weak & ~attackedBy[Them][ALL_PIECES];
         score += Hanging * (2 * popcount(b)
-                              + popcount(b & attackedBy2[Us]));
+                              + popcount(b & pos.pieces(PAWN) & attackedBy2[Us]));
 
         b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
