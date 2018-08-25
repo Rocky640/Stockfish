@@ -566,6 +566,7 @@ namespace {
             score += ThreatByKing;
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
+        score += Hanging * popcount(weak & attackedBy2[Us] & ~attackedBy[Them][ALL_PIECES]);
 
         b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
