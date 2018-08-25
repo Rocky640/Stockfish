@@ -206,7 +206,7 @@ namespace {
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type. Special "piece types" which
-    // is also calculated is ALL_PIECES.
+    // is also calculated is ALL_PIECES and VERT_FORWARD.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
@@ -261,6 +261,8 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+
+    attackedBy[Us][VERT_FORWARD] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -396,6 +398,9 @@ namespace {
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
         }
+
+        if (Pt == ROOK || Pt == QUEEN)
+            attackedBy[Us][VERT_FORWARD] |= pos.attacks_from<ROOK>(s) & forward_file_bb(Us, s);
     }
     if (T)
         Trace::add(Pt, Us, score);
@@ -435,7 +440,7 @@ namespace {
         int kingDanger = 0;
         unsafeChecks = 0;
 
-        promo = shift<Down>(pe->passed_pawns(Them)) & TRank1BB;
+        promo = shift<Down>(pe->passed_pawns(Them) & ~attackedBy[Us][VERT_FORWARD]) & TRank1BB;
 
         // Attacked squares defended at most once by our queen or king
         weak =  attackedBy[Them][ALL_PIECES]
@@ -450,7 +455,7 @@ namespace {
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
 
         // Enemy queen safe checks
-        if ((b1 | b2) & ((attackedBy[Them][QUEEN] & ~attackedBy[Us][QUEEN]) | promo) & safe)
+        if ((b1 | b2) & ((attackedBy[Them][QUEEN] | promo) & ~attackedBy[Us][QUEEN]) & safe)
             kingDanger += QueenSafeCheck;
 
         b1 &= attackedBy[Them][ROOK];
@@ -585,7 +590,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are relatively safe
-    b &= ~attackedBy[Them][PAWN] & safe;
+    b &= ~attackedBy[Them][PAWN] & (safe | shift<Up>(attackedBy[Us][VERT_FORWARD]));
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
@@ -632,7 +637,7 @@ namespace {
       return std::min(distance(pos.square<KING>(c), s), 5);
     };
 
-    Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
+    Bitboard b, squaresToQueen, defendedSquares, unsafeSquares;
     Score score = SCORE_ZERO;
 
     b = pe->passed_pawns(Us);
@@ -671,12 +676,10 @@ namespace {
                 // in the pawn's path attacked or occupied by the enemy.
                 defendedSquares = unsafeSquares = squaresToQueen = forward_file_bb(Us, s);
 
-                bb = forward_file_bb(Them, s) & pos.pieces(ROOK, QUEEN) & pos.attacks_from<ROOK>(s);
-
-                if (!(pos.pieces(Us) & bb))
+                if (!(attackedBy[Us][VERT_FORWARD] & s))
                     defendedSquares &= attackedBy[Us][ALL_PIECES];
 
-                if (!(pos.pieces(Them) & bb))
+                if (!(attackedBy[Them][VERT_FORWARD] & s))
                     unsafeSquares &= attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
