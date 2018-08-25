@@ -411,9 +411,12 @@ namespace {
     constexpr Color    Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Bitboard Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
+    constexpr Direction Down     = (Us == WHITE ? SOUTH   : NORTH);
+    constexpr Bitboard  TRank1BB = (Us == WHITE ? Rank1BB : Rank8BB);
+
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard kingFlank, weak, b, b1, b2, safe, unsafeChecks;
+    Bitboard kingFlank, weak, b, b1, b2, safe, unsafeChecks, promo;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
@@ -432,6 +435,8 @@ namespace {
         int kingDanger = 0;
         unsafeChecks = 0;
 
+        promo = shift<Down>(pe->passed_pawns(Them)) & TRank1BB;
+
         // Attacked squares defended at most once by our queen or king
         weak =  attackedBy[Them][ALL_PIECES]
               & ~attackedBy2[Us]
@@ -445,7 +450,7 @@ namespace {
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
 
         // Enemy queen safe checks
-        if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
+        if ((b1 | b2) & ((attackedBy[Them][QUEEN] & ~attackedBy[Us][QUEEN]) | promo) & safe)
             kingDanger += QueenSafeCheck;
 
         b1 &= attackedBy[Them][ROOK];
@@ -464,7 +469,7 @@ namespace {
             unsafeChecks |= b2;
 
         // Enemy knights checks
-        b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
+        b = pos.attacks_from<KNIGHT>(ksq) & (attackedBy[Them][KNIGHT] | promo);
         if (b & safe)
             kingDanger += KnightSafeCheck;
         else
