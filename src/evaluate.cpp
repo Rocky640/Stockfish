@@ -262,7 +262,7 @@ namespace {
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
-    attackedBy[Us][VERT_FORWARD] = 0;
+    attackedBy[Us][VERTICAL] = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -400,7 +400,7 @@ namespace {
         }
 
         if (Pt == ROOK || Pt == QUEEN)
-            attackedBy[Us][VERT_FORWARD] |= pos.attacks_from<ROOK>(s) & forward_file_bb(Us, s);
+            attackedBy[Us][VERTICAL] |= pos.attacks_from<ROOK>(s) & file_bb(s);
     }
     if (T)
         Trace::add(Pt, Us, score);
@@ -440,7 +440,7 @@ namespace {
         int kingDanger = 0;
         unsafeChecks = 0;
 
-        promo = shift<Down>(pe->passed_pawns(Them) & ~attackedBy[Us][VERT_FORWARD]) & TRank1BB;
+        promo = shift<Down>(pe->passed_pawns(Them) & ~attackedBy[Us][VERTICAL]) & TRank1BB;
 
         // Attacked squares defended at most once by our queen or king
         weak =  attackedBy[Them][ALL_PIECES]
@@ -590,7 +590,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are relatively safe
-    b &= ~attackedBy[Them][PAWN] & (safe | shift<Up>(attackedBy[Us][VERT_FORWARD]));
+    b &= ~attackedBy[Them][PAWN] & (safe | shift<Up>(attackedBy[Us][VERTICAL]));
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
@@ -676,10 +676,10 @@ namespace {
                 // in the pawn's path attacked or occupied by the enemy.
                 defendedSquares = unsafeSquares = squaresToQueen = forward_file_bb(Us, s);
 
-                if (!(attackedBy[Us][VERT_FORWARD] & s))
+                if (!(attackedBy[Us][VERTICAL] & (s - Up)))
                     defendedSquares &= attackedBy[Us][ALL_PIECES];
 
-                if (!(attackedBy[Them][VERT_FORWARD] & s))
+                if (!(attackedBy[Them][VERTICAL] & s))
                     unsafeSquares &= attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
