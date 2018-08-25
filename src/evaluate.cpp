@@ -729,14 +729,15 @@ namespace {
     // Find the available squares for our pieces inside the area defined by SpaceMask
     Bitboard safe =   SpaceMask
                    & ~pos.pieces(Us, PAWN)
-                   & ~attackedBy[Them][PAWN];
+                   & ~attackedBy[Them][PAWN]
+                   & (attackedBy2[Us] | (attackedBy[Us][ALL_PIECES] & ~attackedBy[Us][PAWN]) | pos.pieces(Us));
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
-    int bonus = popcount(safe) + popcount(behind & safe);
+    int bonus = popcount(safe) + popcount((behind | Center) & safe);
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
     Score score = make_score(bonus * weight * weight / 16, 0);
