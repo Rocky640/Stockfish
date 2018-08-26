@@ -137,10 +137,10 @@ namespace {
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
 
         else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
+            score -= Isolated, e->weakUnopposed[Us] += !opposed * 2;
 
         else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed << bool(LowRank & s);
+            score -= Backward, e->weakUnopposed[Us] += !opposed * ((LowRank & s) ? 3 : 2);
 
         if (doubled && !supported)
             score -= Doubled;
