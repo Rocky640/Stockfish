@@ -70,9 +70,11 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Bitboard AdvancedRanks = (Us == WHITE ? Rank6BB | Rank7BB : Rank3BB | Rank2BB);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
+    
     Square s;
     bool opposed, backward;
     Score score = SCORE_ZERO;
@@ -81,7 +83,7 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->ppCreators[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
@@ -122,14 +124,11 @@ namespace {
             && popcount(phalanx)   >= popcount(leverPush))
             e->passedPawns[Us] |= s;
 
-        else if (   stoppers == SquareBB[s + Up]
-                 && relative_rank(Us, s) >= RANK_5)
-        {
-            b = shift<Up>(supported) & ~theirPawns;
-            while (b)
-                if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
-                    e->passedPawns[Us] |= s;
-        }
+        // Store the squares which, if occupied by our pawn,
+        // would challenge an adjacent stopper at knight distance or a front stopper
+        else if (   !more_than_one(stoppers)
+                 && (stoppers & AdvancedRanks & (PseudoAttacks[KNIGHT][s] | (s + Up))))
+            e->ppCreators[Us] |= PawnAttacks[Them][lsb(stoppers)] & !file_bb(f);
 
         // Score this pawn
         if (supported | phalanx)
@@ -144,6 +143,9 @@ namespace {
         if (doubled && !supported)
             score -= Doubled;
     }
+
+    // Exclude squares attacked by 2 enemy pawns
+    e->ppCreators[Us] &= !dble_attacks_bb<Them>(pos.pieces(Them, PAWN));
 
     return score;
   }

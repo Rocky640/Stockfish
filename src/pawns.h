@@ -40,6 +40,7 @@ struct Entry {
   int weak_unopposed(Color c) const { return weakUnopposed[c]; }
   int pawn_asymmetry() const { return asymmetry; }
   int open_files() const { return openFiles; }
+  Bitboard pp_creators(Color c) { return ppCreators[c]; }
 
   int semiopen_file(Color c, File f) const {
     return semiopenFiles[c] & (1 << f);
@@ -64,6 +65,7 @@ struct Entry {
   Key key;
   Score scores[COLOR_NB];
   Bitboard passedPawns[COLOR_NB];
+  Bitboard ppCreators[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
   Square kingSquares[COLOR_NB];

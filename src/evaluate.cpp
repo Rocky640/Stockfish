@@ -170,6 +170,8 @@ namespace {
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByKing       = S( 23, 76);
   constexpr Score ThreatByPawnPush   = S( 45, 40);
+  constexpr Score ThreatByPpCreator  = S( 30, 30);
+
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(173,102);
   constexpr Score TrappedRook        = S( 92,  0);
@@ -579,13 +581,15 @@ namespace {
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
+    score += ThreatByPpCreator * popcount(pe->pp_creators(Us) & (b | pos.pieces(Us, PAWN)));
+
     // Keep only the squares which are relatively safe
     b &= ~attackedBy[Them][PAWN] & safe;
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
     score += ThreatByPawnPush * popcount(b);
-
+    
     // Our safe or protected pawns
     b = pos.pieces(Us, PAWN) & safe;
 
