@@ -133,7 +133,7 @@ namespace {
                         e->passedPawns[Us] |= s;
             }
             else if (stoppers & PseudoAttacks[KNIGHT][s])
-                if (PawnAttacks[Then][lsb(&stoppers)] & ~pos.pieces(Them, PAWN)
+                if (PawnAttacks[Them][lsb(stoppers)] & ~pos.pieces(Them, PAWN)
                     & (pos.pieces(PAWN) | shift<Up>(pos.pieces(Us, PAWN))))
                 e->passedPawns[Us] |= s;
         }
