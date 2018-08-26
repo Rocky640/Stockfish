@@ -140,7 +140,7 @@ namespace {
             score -= Isolated, e->weakUnopposed[Us] += !opposed * 2;
 
         else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed * ((LowRank & s) ? 3 : 2);
+            score -= Backward, e->weakUnopposed[Us] += !opposed * ((LowRank & s) ? 5 : 2);
 
         if (doubled && !supported)
             score -= Doubled;
