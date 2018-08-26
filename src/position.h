@@ -314,9 +314,11 @@ inline bool Position::pawn_passed(Color c, Square s) const {
 }
 
 inline bool Position::advanced_pawn_push(Move m) const {
+  constexpr Bitboard include = Rank4BB | Rank5BB;
   return   type_of(moved_piece(m)) == PAWN
         && (   (relative_rank(sideToMove, to_sq(m)) > RANK_5)
-            || (PawnAttacks[sideToMove][to_sq(m)] & pieces(~sideToMove, PAWN)));
+            || (   (to_sq(m) & include)
+                && (PawnAttacks[sideToMove][to_sq(m)] & pieces(~sideToMove, PAWN))));
 }
 
 inline Key Position::key() const {
