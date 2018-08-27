@@ -170,7 +170,7 @@ namespace {
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByKing       = S( 23, 76);
   constexpr Score ThreatByPawnPush   = S( 45, 40);
-  constexpr Score ThreatByPpCreator  = S( 30, 30);
+  constexpr Score ThreatByPpCreator  = S( 45, 40);
 
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(173,102);
@@ -589,7 +589,7 @@ namespace {
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
     score += ThreatByPawnPush * popcount(b);
-    
+
     // Our safe or protected pawns
     b = pos.pieces(Us, PAWN) & safe;
 
