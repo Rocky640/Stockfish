@@ -125,9 +125,10 @@ namespace {
             e->passedPawns[Us] |= s;
 
         // Store the squares which, if occupied by our pawn,
-        // would challenge an adjacent stopper at knight distance or a front stopper
+        // would challenge an adjacent unsupported stopper at knight distance or a front stopper
         else if (   !more_than_one(stoppers)
-                 && (stoppers & AdvancedRanks & (PseudoAttacks[KNIGHT][s] | (s + Up))))
+                 && (stoppers & AdvancedRanks & (PseudoAttacks[KNIGHT][s] | (s + Up)))
+                 && !(PawnAttacks[Us][lsb(stoppers)] & pos.pieces(Them, PAWN)))
             e->ppCreators[Us] |= PawnAttacks[Them][lsb(stoppers)] & ~file_bb(f);
 
         // Score this pawn
