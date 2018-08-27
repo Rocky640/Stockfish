@@ -72,7 +72,7 @@ namespace {
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Bitboard AdvancedRanks = (Us == WHITE ? Rank6BB | Rank7BB : Rank3BB | Rank2BB);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
     
     Square s;
@@ -128,7 +128,7 @@ namespace {
         // would challenge an adjacent stopper at knight distance or a front stopper
         else if (   !more_than_one(stoppers)
                  && (stoppers & AdvancedRanks & (PseudoAttacks[KNIGHT][s] | (s + Up))))
-            e->ppCreators[Us] |= PawnAttacks[Them][lsb(stoppers)] & !file_bb(f);
+            e->ppCreators[Us] |= PawnAttacks[Them][lsb(stoppers)] & ~file_bb(f);
 
         // Score this pawn
         if (supported | phalanx)
