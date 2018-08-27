@@ -145,7 +145,7 @@ namespace {
     }
 
     // Exclude squares attacked by 2 enemy pawns
-    e->ppCreators[Us] &= !dble_attacks_bb<Them>(pos.pieces(Them, PAWN));
+    e->ppCreators[Us] &= ~dble_attacks_bb<Them>(pos.pieces(Them, PAWN));
 
     return score;
   }
