@@ -322,8 +322,7 @@ namespace {
         else if ((Pt == ROOK  || Pt == QUEEN) && (PseudoAttacks[ROOK][s] & kingRing[Them]))
         {
             kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
-            
+            //kingAttackersWeight[Us] += KingAttackWeights[Pt] / 2;
         }
 
         int mob = popcount(b & mobilityArea[Us]);
