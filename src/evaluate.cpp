@@ -726,10 +726,11 @@ namespace {
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
 
-    // Find the available squares for our pieces inside the area defined by SpaceMask
+    // Find the available squares for our minor pieces inside the area defined by SpaceMask
     Bitboard safe =   SpaceMask
                    & ~pos.pieces(Us, PAWN)
-                   & ~attackedBy[Them][PAWN];
+                   & ~attackedBy[Them][PAWN]
+                   & (pos.pieces(Us) | attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
