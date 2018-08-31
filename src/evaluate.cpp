@@ -730,7 +730,7 @@ namespace {
     Bitboard safe =   SpaceMask
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN]
-                   & (pos.pieces(Us) | attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+                   & (pos.pieces(Us) | attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP] | attackedBy[Us][QUEEN]);
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
