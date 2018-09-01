@@ -575,8 +575,9 @@ namespace {
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
-    // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
+    // Find squares where our pawns can push on the next move,
+    // excluding some possibly weakening moves
+    b  = shift<Up>(pos.pieces(Us, PAWN) & ~file_bb(pos.square<KING>(Us))) & ~pos.pieces();
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are relatively safe
