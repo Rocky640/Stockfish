@@ -758,8 +758,10 @@ namespace {
     int outflanking =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK))
                      - distance<Rank>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
 
-    bool pawnsOnBothFlanks =   (pos.pieces(PAWN) & QueenSide)		
-                            && (pos.pieces(PAWN) & KingSide);
+    Bitboard strongSidePawns = pos.pieces(eg > VALUE_DRAW ? WHITE : BLACK, PAWN);
+
+    bool pawnsOnBothFlanks =   (strongSidePawns & QueenSide)
+                            && (strongSidePawns & KingSide );
 
     // Compute the initiative bonus for the attacking side
     int complexity =   8 * pe->pawn_asymmetry()
