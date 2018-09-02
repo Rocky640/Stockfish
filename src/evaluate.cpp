@@ -325,7 +325,7 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
 
-        if ((b & kingRing[Them]) && (mob < 3))
+        if ((b & kingRing[Us]) && (mob < 3))
             lowMobilityDefenders[Us] |= s;
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
