@@ -236,6 +236,8 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAttacksCount[WHITE].
     int kingAttacksCount[COLOR_NB];
+
+    Bitboard lowMobilityDefenders[COLOR_NB];
   };
 
 
@@ -276,6 +278,7 @@ namespace {
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
+        lowMobilityDefenders[Us] = 0;
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
     else
@@ -321,6 +324,9 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+
+        if ((b & kingRing[Them]) && (mob < 3))
+            lowMobilityDefenders[Us] |= s;
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -477,7 +483,7 @@ namespace {
         kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                      +  69 * kingAttacksCount[Them]
                      + 185 * popcount(kingRing[Us] & weak)
-                     + 129 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
+                     + 129 * popcount(pos.blockers_for_king(Us) | lowMobilityDefenders[Us] | unsafeChecks)
                      +   4 * tropism
                      - 873 * !pos.count<QUEEN>(Them)
                      -   6 * mg_value(score) / 8
