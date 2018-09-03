@@ -334,7 +334,7 @@ namespace {
 
                 // If outpost is protected twice, penalize opponent rook on that file
                 if (more_than_one(PawnAttacks[Them][s] & pos.pieces(Us, PAWN))
-                    & file_bb(s) & pos.pieces(Them, ROOK))
+                    && (file_bb(s) & pos.pieces(Them, ROOK)))
                     score += RookOnFile[0];
             }
 
