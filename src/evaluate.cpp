@@ -167,6 +167,7 @@ namespace {
   constexpr Score Overload           = S( 13,  6);
   constexpr Score PawnlessFlank      = S( 19, 84);
   constexpr Score RookOnPawn         = S( 10, 30);
+  constexpr Score RookOnOutpost      = S( 10,  4);
   constexpr Score SliderOnQueen      = S( 42, 21);
   constexpr Score ThreatByKing       = S( 23, 76);
   constexpr Score ThreatByPawnPush   = S( 45, 40);
@@ -331,11 +332,10 @@ namespace {
             if (bb & s)
             {
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
-
                 // If outpost is protected twice, penalize opponent rook on that file
-                if (more_than_one(PawnAttacks[Them][s] & pos.pieces(Us, PAWN))
+                if (    more_than_one(PawnAttacks[Them][s] & pos.pieces(Us, PAWN))
                     && (file_bb(s) & pos.pieces(Them, ROOK)))
-                    score += RookOnFile[0];
+                    score += RookOnOutpost;
             }
 
             else if (bb &= b & ~pos.pieces(Us))
