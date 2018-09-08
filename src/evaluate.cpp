@@ -88,8 +88,11 @@ namespace {
   constexpr Value LazyThreshold  = Value(1500);
   constexpr Value SpaceThreshold = Value(12222);
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
-  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 77, 55, 44, 10 };
+  // KingAttackWeights[unsafe][PieceType] contains king attack weights by piece type
+  constexpr int KingAttackWeights[][PIECE_TYPE_NB] = {
+     { 0, 0, 77-10, 55-10, 44-10, 10-10 },
+     { 0, 0, 77+10, 55+10, 44+10, 10+10 }
+  };
 
   // Penalties for enemy's safe checks
   constexpr int QueenSafeCheck  = 780;
@@ -219,6 +222,7 @@ namespace {
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
     // and h6. It is set to 0 when king safety evaluation is skipped.
     Bitboard kingRing[COLOR_NB];
+    Bitboard unsafeKingRing[COLOR_NB];
 
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
@@ -275,6 +279,8 @@ namespace {
         else if (file_of(pos.square<KING>(Us)) == FILE_A)
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
+        unsafeKingRing[Us] = kingRing[Us] & ~attackedBy[Us][PAWN];
+
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
@@ -316,7 +322,7 @@ namespace {
         if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt];
+            kingAttackersWeight[Us] += KingAttackWeights[bool(b & unsafeKingRing[Them])][Pt];
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
