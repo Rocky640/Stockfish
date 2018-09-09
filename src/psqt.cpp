@@ -35,6 +35,11 @@ namespace PSQT {
 // type on a given square a (middlegame, endgame) score pair is assigned. Table
 // is defined for files A..D and white side: it is symmetric for black side and
 // second half of the files.
+
+constexpr int AD = -23;
+constexpr int RD = 0; // a bishop on a central rank is already "active"
+constexpr int LD = 0; // a bishop on a long diagonal is already handled by master
+
 constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
   { },
   { // Pawn
@@ -57,14 +62,14 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
    { S(-195,-109), S(-67,-89), S(-42,-50), S(-29,-13) }
   },
   { // Bishop
-   { S(-49,-58), S(- 7,-31), S(-10,-37), S(-34,-19) },
-   { S(-24,-34), S(  9, -9), S( 15,-14), S(  1,  4) },
-   { S( -9,-23), S( 22,  0), S( -3, -3), S( 12, 16) },
-   { S(  4,-26), S(  9, -3), S( 18, -5), S( 40, 16) },
-   { S( -8,-26), S( 27, -4), S( 13, -7), S( 30, 14) },
-   { S(-17,-24), S( 14, -2), S( -6,  0), S(  6, 13) },
-   { S(-19,-34), S(-13,-10), S(  7,-12), S(-11,  6) },
-   { S(-47,-55), S( -7,-32), S(-17,-36), S(-29,-17) }
+   { S(-49+LD,-58),S(- 7+AD,-31),S(-10+AD,-37),S(-34+AD,-19) },
+   { S(-24+AD,-34),S(  9+LD, -9),S( 15+AD,-14),S(  1+AD,  4) },
+   { S( -9+AD,-23),S( 22+AD,  0),S( -3+LD, -3),S( 12+AD, 16) },
+   { S(  4+RD,-26),S(  9+RD, -3),S( 18+RD, -5),S( 40+RD, 16) },
+   { S( -8+RD,-26),S( 27+RD, -4),S( 13+RD, -7),S( 30+RD, 14) },
+   { S(-17+AD,-24),S( 14+AD, -2),S( -6+LD,  0),S(  6+AD, 13) },
+   { S(-19+AD,-34),S(-13+LD,-10),S(  7+AD,-12),S(-11+AD,  6) },
+   { S(-47+LD,-55),S( -7+AD,-32),S(-17+AD,-36),S(-29+AD,-17) }
   },
   { // Rook
    { S(-25, 0), S(-16, 0), S(-16, 0), S(-9, 0) },

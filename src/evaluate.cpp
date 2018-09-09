@@ -76,7 +76,8 @@ namespace {
   constexpr Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
-  constexpr Bitboard Center      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+  constexpr Bitboard Center      = (Rank4BB | Rank5BB) &  (FileDBB | FileEBB);
+  constexpr Bitboard BishopMask  = (Rank4BB | Rank5BB) & ~(FileABB | FileHBB);
 
   constexpr Bitboard KingFlank[FILE_NB] = {
     QueenSide ^ FileDBB, QueenSide, QueenSide,
@@ -162,6 +163,7 @@ namespace {
   constexpr Score HinderPassedPawn   = S(  8,  0);
   constexpr Score KingProtector      = S(  6,  6);
   constexpr Score KnightOnQueen      = S( 21, 11);
+  constexpr Score ActiveBishop       = S( 23,  0);
   constexpr Score LongDiagonalBishop = S( 46,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
   constexpr Score Overload           = S( 13,  6);
@@ -350,9 +352,13 @@ namespace {
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
                                      * (1 + popcount(blocked & CenterFiles));
 
-                // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
+                // Bonus for bishop which can "see" squares on rank 4 and 5
+                bb = attacks_bb<BISHOP>(s, pos.pieces(PAWN));
+
+                if (more_than_one(bb & Center))
                     score += LongDiagonalBishop;
+                else if (more_than_one(bb & BishopMask))
+                    score += ActiveBishop;
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
