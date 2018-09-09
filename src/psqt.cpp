@@ -36,9 +36,10 @@ namespace PSQT {
 // is defined for files A..D and white side: it is symmetric for black side and
 // second half of the files.
 
-constexpr int AD = -23;
+constexpr int AD = -12;
 constexpr int RD = 0; // a bishop on a central rank is already "active"
 constexpr int LD = 0; // a bishop on a long diagonal is already handled by master
+constexpr int ED = 0; // a bishop on D1 E1 or D8 E* cannot be active by our definition
 
 constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
   { },
@@ -62,14 +63,14 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
    { S(-195,-109), S(-67,-89), S(-42,-50), S(-29,-13) }
   },
   { // Bishop
-   { S(-49+LD,-58),S(- 7+AD,-31),S(-10+AD,-37),S(-34+AD,-19) },
+   { S(-49+LD,-58),S(- 7+AD,-31),S(-10+AD,-37),S(-34+ED,-19) },
    { S(-24+AD,-34),S(  9+LD, -9),S( 15+AD,-14),S(  1+AD,  4) },
    { S( -9+AD,-23),S( 22+AD,  0),S( -3+LD, -3),S( 12+AD, 16) },
    { S(  4+RD,-26),S(  9+RD, -3),S( 18+RD, -5),S( 40+RD, 16) },
    { S( -8+RD,-26),S( 27+RD, -4),S( 13+RD, -7),S( 30+RD, 14) },
    { S(-17+AD,-24),S( 14+AD, -2),S( -6+LD,  0),S(  6+AD, 13) },
    { S(-19+AD,-34),S(-13+LD,-10),S(  7+AD,-12),S(-11+AD,  6) },
-   { S(-47+LD,-55),S( -7+AD,-32),S(-17+AD,-36),S(-29+AD,-17) }
+   { S(-47+LD,-55),S( -7+AD,-32),S(-17+AD,-36),S(-29+ED,-17) }
   },
   { // Rook
    { S(-25, 0), S(-16, 0), S(-16, 0), S(-9, 0) },
