@@ -97,6 +97,16 @@ namespace {
   constexpr int BishopSafeCheck = 435;
   constexpr int KnightSafeCheck = 790;
 
+  int SW[][5] = {
+      { 0, 16, 32, 48, 64}, //safe space on rank 2
+      { 0, 16, 32, 48, 64}, //safe space on rank 3
+      { 0, 16, 32, 48, 64}, //safe space on rank 4
+      { 0, 16, 32, 48, 64}, //safe space on rank 2 and behind a pawn
+      { 0, 16, 32, 48, 64}, //safe space on rank 3 and behind a pawn
+      { 0, 16, 32, 48, 64}  //safe space on rank 4 and behind a pawn
+  };
+  TUNE(SetRange(-128, 128), SW);
+
 #define S(mg, eg) make_score(mg, eg)
 
   // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
@@ -722,12 +732,12 @@ namespace {
         return SCORE_ZERO;
 
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
-    constexpr Bitboard SpaceMask =
-      Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
-                  : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+    constexpr Bitboard TRank2 = (Us == WHITE ? Rank2BB : Rank7BB);
+    constexpr Bitboard TRank3 = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard TRank4 = (Us == WHITE ? Rank4BB : Rank5BB);
 
     // Find the available squares for our pieces inside the area defined by SpaceMask
-    Bitboard safe =   SpaceMask
+    Bitboard safe =   CenterFiles
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN];
 
@@ -736,10 +746,16 @@ namespace {
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
-    int bonus = popcount(safe) + popcount(behind & safe);
+    int bonus  = SW[0][popcount(         safe & TRank2)]
+               + SW[1][popcount(         safe & TRank3)]
+               + SW[2][popcount(         safe & TRank4)]
+               + SW[3][popcount(behind & safe & TRank2)]
+               + SW[4][popcount(behind & safe & TRank3)]
+               + SW[5][popcount(behind & safe & TRank4)];
+
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
-    Score score = make_score(bonus * weight * weight / 16, 0);
+    Score score = make_score(bonus * weight * weight / 256, 0);
 
     if (T)
         Trace::add(SPACE, Us, score);
