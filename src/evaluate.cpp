@@ -722,12 +722,12 @@ namespace {
         return SCORE_ZERO;
 
     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
-    constexpr Bitboard SpaceMask =
-      Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
-                  : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+    constexpr Bitboard LowRanks =
+        Us == WHITE ? (Rank2BB | Rank3BB) : (Rank7BB | Rank6BB);
+    constexpr Bitboard TRank4 = Us == WHITE ? Rank4BB : Rank5BB;
 
     // Find the available squares for our pieces inside the area defined by SpaceMask
-    Bitboard safe =   SpaceMask
+    Bitboard safe =   CenterFiles
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN];
 
@@ -736,7 +736,9 @@ namespace {
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
-    int bonus = 18 * popcount(safe) + 15 * popcount(behind & safe) - 9;
+    int bonus =  18 * popcount(safe & LowRanks)
+               + 14 * popcount(safe & Trank4)
+               + 15 * popcount((safe & behind) & (lowRanks | Trank4));
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
     Score score = make_score(bonus * weight * weight / 256, 0);
