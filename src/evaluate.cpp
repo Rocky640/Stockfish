@@ -736,10 +736,10 @@ namespace {
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
 
-    int bonus = popcount(safe) + popcount(behind & safe);
+    int bonus = 18 * popcount(safe) + 15 * popcount(behind & safe) - 9;
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
 
-    Score score = make_score(bonus * weight * weight / 16, 0);
+    Score score = make_score(bonus * weight * weight / 256, 0);
 
     if (T)
         Trace::add(SPACE, Us, score);
