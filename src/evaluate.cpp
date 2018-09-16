@@ -731,10 +731,13 @@ namespace {
                    & ~pos.pieces(Us, PAWN)
                    & ~attackedBy[Them][PAWN];
 
-    // Find all squares which are at most three squares behind some friendly pawn
+    // Find all squares which are at most three squares behind some friendly pawn...
     Bitboard behind = pos.pieces(Us, PAWN);
     behind |= (Us == WHITE ? behind >>  8 : behind <<  8);
     behind |= (Us == WHITE ? behind >> 16 : behind << 16);
+
+    // ...or which are otherwise well defended.
+    behind |= attackedBy2[Us];
 
     int bonus = popcount(safe) + popcount(behind & safe);
     int weight = pos.count<ALL_PIECES>(Us) - 2 * pe->open_files();
