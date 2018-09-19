@@ -163,7 +163,7 @@ namespace {
   constexpr Score KingProtector      = S(  6,  6);
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 46,  0);
-  constexpr Score MinorBehindPawn    = S( 16,  0);
+  constexpr Score MinorBehindPawn    = S(  8,  0);
   constexpr Score Overload           = S( 13,  6);
   constexpr Score PawnlessFlank      = S( 19, 84);
   constexpr Score RookOnPawn         = S( 10, 30);
@@ -336,6 +336,8 @@ namespace {
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
+                score += MinorBehindPawn * 2;
+             else if (pos.pieces(PAWN) & forward_file_bb(Us, s))
                 score += MinorBehindPawn;
 
             // Penalty if the piece is far from the king
