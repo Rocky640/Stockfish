@@ -214,9 +214,7 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // Lines between our major pieces, or between a major and friendly passed pawns,
-    // or low mobility squares for major pieces. If a minor occupies, or attacks
-    // one of those squares, we exclude it from the mobility area calculation.
+    // Orthogonal lines without pawns between our major pieces
     Bitboard majorLines[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king, plus (only for a
@@ -330,10 +328,7 @@ namespace {
         if (Pt > BISHOP)
             mob = popcount(b & mobilityArea[Us]);
         else
-        {
             mob = popcount(b & mobilityArea[Us] & ~majorLines[Us]);
-            if (mob && (majorLines[Us] & s)) mob -= 1;
-        }
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -401,16 +396,13 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
 
-            bb = PseudoAttacks[ROOK][s] & (pos.pieces(Us, ROOK, QUEEN) | pe->passed_pawns(Us));
+            bb = PseudoAttacks[ROOK][s] & pos.pieces(Us, ROOK, QUEEN);
             while (bb)
             {
                 Square s2 = pop_lsb(&bb);
                 if (!(BetweenBB[s][s2] & pos.pieces(PAWN)))
                     majorLines[Us] |= BetweenBB[s][s2];
             }
-
-            if (mob < 3)
-                majorLines[Us] |= b;
         }
 
         if (Pt == QUEEN)
@@ -419,9 +411,6 @@ namespace {
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
-
-            if (mob < 3)
-                majorLines[Us] |= b;
         }
     }
     if (T)
