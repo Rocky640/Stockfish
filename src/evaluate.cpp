@@ -214,6 +214,11 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    // Lines between our major pieces, or between a major and friendly passed pawns,
+    // or low mobility squares for major pieces. If a minor occupies, or attacks
+    // one of those squares, we exclude it from the mobility area calculation.
+    Bitboard majorLines[COLOR_NB];
+
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
@@ -255,6 +260,7 @@ namespace {
     // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
     // are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
+    majorLines[Us] = 0;
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
@@ -294,6 +300,7 @@ namespace {
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
+    int mob;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -320,7 +327,13 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
+        if (Pt > BISHOP)
+            mob = popcount(b & mobilityArea[Us]);
+        else
+        {
+            mob = popcount(b & mobilityArea[Us] & ~majorLines[Us]);
+            if (mob && (majorLines[Us] & s)) mob -= 1;
+        }
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -387,6 +400,17 @@ namespace {
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
+
+            bb = PseudoAttacks[ROOK][s] & (pos.pieces(Us, ROOK, QUEEN) | pe->passed_pawns(Us));
+            while (bb)
+            {
+                Square s2 = pop_lsb(&bb);
+                if (!(BetweenBB[s][s2] & pos.pieces(PAWN)))
+                    majorLines[Us] |= BetweenBB[s][s2];
+            }
+
+            if (mob < 3)
+                majorLines[Us] |= b;
         }
 
         if (Pt == QUEEN)
@@ -395,6 +419,9 @@ namespace {
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
+
+            if (mob < 3)
+                majorLines[Us] |= b;
         }
     }
     if (T)
@@ -841,11 +868,12 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Pieces should be evaluated first (populate attack tables)
-    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
+    // Populate the attacks table starting with major pieces.
+    score +=  pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+
+    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
+            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>();
 
     score += mobility[WHITE] - mobility[BLACK];
 
