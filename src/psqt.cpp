@@ -122,5 +122,5 @@ void init() {
       }
   }
 }
-TUNE(SetRange(-200, 200), Bonus[QUEEN], init);
+TUNE(SetRange(-100, 100), Bonus[PAWN], init);
 } // namespace PSQT
