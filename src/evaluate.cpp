@@ -117,6 +117,15 @@ namespace {
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
 
+  // Adjustment[PieceType-2][cannot/can improve] is only for pieces with
+  // 1-mobility according to new prospects. ### This can be simplified to 1 dimension.
+  constexpr Score LowMobilityAdjustment[][2] = {
+      { S(-10, -12), S( 25, 14) },
+      { S(-14, -18), S( 18, 10) },
+      { S(-15, -30), S(  6, 23) },
+      { S( -9, -10), S( 12, 11) }
+  };
+
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they occupy or can reach an outpost square, bigger if that
   // square is supported by a pawn.
@@ -323,6 +332,14 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        if (mob == 1)
+        {
+            Square ss = lsb(b & mobilityArea[Us]);
+            bool canimprove =   !(pos.pieces(Us)& ss)
+                              && (popcount(pos.attacks_from<Pt>(ss)) > 2);
+            mobility[Us] += LowMobilityAdjustment[Pt - 2][canimprove];
+        }
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
