@@ -104,7 +104,7 @@ namespace {
         lever      = theirPawns & PawnAttacks[Us][s];
         leverPush  = theirPawns & PawnAttacks[Us][s + Up];
         doubled    = ourPawns   & (s - Up);
-        neighbours = ourPawns   & adjacent_files_bb(f) & DistanceRingBB[s][1];
+        neighbours = ourPawns   & adjacent_files_bb(f);
         phalanx    = neighbours & rank_bb(s);
         supported  = neighbours & rank_bb(s - Up);
 
@@ -135,7 +135,7 @@ namespace {
         if (supported | phalanx)
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
 
-        else if (!neighbours)
+        else if (!(neighbours & passed_pawn_mask(Us, s)))
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
         else if (backward)
