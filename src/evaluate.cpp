@@ -566,13 +566,6 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s) / 2;
         }
 
-        b = (weak | pos.pieces(Them, QUEEN)) & attackedByX[Us];
-        while (b)
-        {
-            Square s = pop_lsb(&b);
-            score += WeakPiece[type_of(pos.piece_on(s))];
-        }
-
         if (weak & attackedBy[Us][KING])
             score += ThreatByKing;
 
@@ -581,6 +574,10 @@ namespace {
         b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
+
+    b = (pos.pieces(Them) & (pos.pieces(QUEEN) | ~stronglyProtected)) & attackedByX[Us];
+    while (b)
+        score += WeakPiece[type_of(pos.piece_on(pop_lsb(&b)))];
 
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
