@@ -141,7 +141,7 @@ namespace {
   };
 
   // WeakPiece[PieceType] contains penalty according to the piece behind a blocker.
-  // It applies if this piece is undefended or is a Queen.
+  // It applies if this piece behind is undefended or is a Queen.
   constexpr Score WeakPiece[PIECE_TYPE_NB] = {
     S(0, 0), S(5, 1), S(16, 3), S(16, 3), S(25, 5), S(50, 10)
   };
@@ -575,7 +575,7 @@ namespace {
         score += Overload * popcount(b);
     }
 
-    b = (pos.pieces(Them) & (pos.pieces(QUEEN) | ~stronglyProtected)) & attackedByX[Us];
+    b = (pos.pieces(Them) & (pos.pieces(QUEEN) | ~attackedBy[Them][ALL_PIECES])) & attackedByX[Us];
     while (b)
         score += WeakPiece[type_of(pos.piece_on(pop_lsb(&b)))];
 
