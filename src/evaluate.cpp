@@ -217,6 +217,8 @@ namespace {
     // attacked by a given color if we remove exactly one piece in each direction
     Bitboard attackedByX[COLOR_NB];
 
+    Bitboard nonPawns[COLOR_NB];
+
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
@@ -270,6 +272,7 @@ namespace {
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
     attackedByX[Us] = 0;
+    nonPawns[Us] = pos.pieces(Us) & ~pos.pieces(PAWN);
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -323,7 +326,7 @@ namespace {
         attackedBy[Us][ALL_PIECES] |= b;
 
         if (Pt == BISHOP || Pt == ROOK)
-            attackedByX[Us] |= attacks_bb<Pt>(s, pos.pieces() & ~b) & ~b;
+            attackedByX[Us] |= attacks_bb<Pt>(s, pos.pieces() ^ nonPawns[Them]) & ~b;
 
         if (b & kingRing[Them])
         {
@@ -519,11 +522,8 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
+    Bitboard b, weak, defended, stronglyProtected, safe;
     Score score = SCORE_ZERO;
-
-    // Non-pawn enemies
-    nonPawnEnemies = pos.pieces(Them) & ~pos.pieces(PAWN);
 
     // Squares strongly protected by the enemy, either because they defend the
     // square with a pawn, or because they defend the square twice and we don't.
@@ -531,7 +531,7 @@ namespace {
                        | (attackedBy2[Them] & ~attackedBy2[Us]);
 
     // Non-pawn enemies, strongly protected
-    defended = nonPawnEnemies & stronglyProtected;
+    defended = nonPawns[Them] & stronglyProtected;
 
     // Enemies not strongly protected and under our attack
     weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
@@ -571,7 +571,7 @@ namespace {
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
-        b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
+        b = weak & nonPawns[Them] & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
 
@@ -597,7 +597,7 @@ namespace {
     // Our safe or protected pawns
     b = pos.pieces(Us, PAWN) & safe;
 
-    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
+    b = pawn_attacks_bb<Us>(b) & nonPawns[Them];
     score += ThreatBySafePawn * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
