@@ -155,7 +155,7 @@ namespace {
   constexpr int PassedDanger[RANK_NB] = { 0, 0, 0, 3, 7, 11, 20 };
 
   // Assorted bonuses and penalties
-  constexpr Score Invasion           = S(  5,  0);
+  constexpr Score Invasion           = S(  8,  0);
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CloseEnemies       = S(  6,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
@@ -257,9 +257,8 @@ namespace {
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
 
     // Initialise attackedBy bitboards for kings and pawns
-    attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
+    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
-    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
     // Init our king safety tables only if we are going to use them
@@ -396,6 +395,17 @@ namespace {
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
         }
+    }
+
+    if (Pt == QUEEN)
+    {
+        constexpr Bitboard Camp = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB
+                                               : Rank8BB | Rank7BB | Rank6BB | Rank5BB);
+
+        mobility[Us] += Invasion * popcount(attackedBy[Us][ALL_PIECES] & ~Camp);
+
+        //finish the all pieces initialisation
+        attackedBy[Us][ALL_PIECES] |= attackedBy[Us][PAWN];
     }
     if (T)
         Trace::add(Pt, Us, score);
@@ -609,9 +619,6 @@ namespace {
 
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
-
-    // Bonus according to number of squares attacked in the opponent half of the board
-    score += Invasion * popcount(attackedBy[Us][ALL_PIECES] & ~Camp);
 
     if (T)
         Trace::add(THREAT, Us, score);
@@ -844,8 +851,9 @@ namespace {
     // Pieces should be evaluated first (populate attack tables)
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
+
+    score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
 
