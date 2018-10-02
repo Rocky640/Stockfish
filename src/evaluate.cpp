@@ -159,6 +159,7 @@ namespace {
   constexpr Score CloseEnemies       = S(  6,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 57, 32);
+  constexpr Score Invasion           = S(  0,  6);
   constexpr Score KingProtector      = S(  6,  6);
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 46,  0);
@@ -513,6 +514,8 @@ namespace {
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  Camp     = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB
+                                                : Rank8BB | Rank7BB | Rank6BB | Rank5BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -606,6 +609,9 @@ namespace {
 
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
+
+    b = attackedBy[Us][ALL_PIECES] & (~attackedBy[Us][PAWN] | attackedBy2[Us]);
+    score += Invasion * popcount(b & mobilityArea[Us] & ~Camp);
 
     if (T)
         Trace::add(THREAT, Us, score);
