@@ -155,7 +155,7 @@ namespace {
   constexpr int PassedDanger[RANK_NB] = { 0, 0, 0, 3, 7, 11, 20 };
 
   // Assorted bonuses and penalties
-  constexpr Score Invasion           = S(  8,  0);
+  constexpr Score Invasion           = S(  0,  8);
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CloseEnemies       = S(  6,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
