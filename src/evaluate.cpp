@@ -436,19 +436,20 @@ namespace {
               & ~attackedBy2[Us]
               & (~attackedBy[Us][ALL_PIECES] | attackedBy[Us][KING] | attackedBy[Us][QUEEN]);
 
-        // Analyse the safe enemy's checks which are possible on next move
+        // Analyse the safe enemy's checks which are possible on next moves
         safe  = ~pos.pieces(Them);
         safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
 
-        b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
-        b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+        b  = pos.pieces(Them, QUEEN, PAWN) | (pos.pieces(Us) ^ pos.pieces(Us, QUEEN));
+        b1 = attacks_bb<ROOK  >(ksq, b);
+        b2 = attacks_bb<BISHOP>(ksq, b);
 
         // Enemy queen safe checks
         if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
             kingDanger += QueenSafeCheck;
 
-        b1 &= attackedBy[Them][ROOK];
-        b2 &= attackedBy[Them][BISHOP];
+        b1 &= attackedBy[Them][  ROOK] | pos.pieces(Them, ROOK);
+        b2 &= attackedBy[Them][BISHOP] | pos.pieces(Them, BISHOP);
 
         // Enemy rooks checks
         if (b1 & safe)
