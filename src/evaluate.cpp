@@ -91,11 +91,11 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 77, 55, 44, 10 };
 
-  // Penalties for enemy's safe checks
-  constexpr int QueenSafeCheck  = 780;
-  constexpr int RookSafeCheck   = 880;
-  constexpr int BishopSafeCheck = 435;
-  constexpr int KnightSafeCheck = 790;
+  // Penalties for enemy's safe checks, more if king cannot escape (even if possible blocking)
+  constexpr int QueenSafeCheck[]  = {780+100 , 780};
+  constexpr int RookSafeCheck[]   = {880+100 , 880};
+  constexpr int BishopSafeCheck[] = {435+200 , 435};
+  constexpr int KnightSafeCheck[] = {790+100 , 790};
 
 #define S(mg, eg) make_score(mg, eg)
 
@@ -412,7 +412,7 @@ namespace {
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard kingFlank, weak, b, b1, b2, safe, unsafeChecks;
+    Bitboard kingFlank, weak, b, b1, b2, safe, bescape, unsafeChecks;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
@@ -443,29 +443,36 @@ namespace {
         b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
         b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
 
+        bescape = attackedBy[Us][KING] & ~(attackedBy[Them][ALL_PIECES] | pos.pieces(Us));
+
         // Enemy queen safe checks
-        if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
-            kingDanger += QueenSafeCheck;
+        b = (b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN];
+        while (b)
+            kingDanger += QueenSafeCheck[bool(bescape & ~PseudoAttacks[QUEEN][pop_lsb(&b)])];
 
         b1 &= attackedBy[Them][ROOK];
         b2 &= attackedBy[Them][BISHOP];
 
         // Enemy rooks checks
-        if (b1 & safe)
-            kingDanger += RookSafeCheck;
+        b = b1 & safe;
+        if (b)
+            while (b)
+                kingDanger += RookSafeCheck[bool(bescape & ~PseudoAttacks[ROOK][pop_lsb(&b)])];
         else
             unsafeChecks |= b1;
 
         // Enemy bishops checks
-        if (b2 & safe)
-            kingDanger += BishopSafeCheck;
+        b = b2 & safe;
+        if (b)
+            while (b)
+                kingDanger += BishopSafeCheck[bool(bescape & ~PseudoAttacks[BISHOP][pop_lsb(&b)])];
         else
             unsafeChecks |= b2;
 
         // Enemy knights checks
         b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
         if (b & safe)
-            kingDanger += KnightSafeCheck;
+            kingDanger += KnightSafeCheck[bool(bescape)];
         else
             unsafeChecks |= b;
 
