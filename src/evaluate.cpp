@@ -191,7 +191,7 @@ namespace {
     template<Color Us> void initialize();
     template<Color Us, PieceType Pt> Score pieces();
     template<Color Us> Score king() const;
-    template<Color Us> Score threats() const;
+    template<Color Us> Score threats();
     template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
     ScaleFactor scale_factor(Value eg) const;
@@ -212,6 +212,8 @@ namespace {
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
+
+    Bitboard safePush[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
@@ -440,8 +442,10 @@ namespace {
         safe  = ~pos.pieces(Them);
         safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
 
-        b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
-        b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+        b =  (pos.pieces() ^ pos.pieces(Us, QUEEN))
+           | (safePush[Us] & attackedBy[Us][ALL_PIECES]);
+        b1 = attacks_bb<ROOK  >(ksq, b);
+        b2 = attacks_bb<BISHOP>(ksq, b);
 
         // Enemy queen safe checks
         if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
@@ -508,7 +512,7 @@ namespace {
   // Evaluation::threats() assigns bonuses according to the types of the
   // attacking and the attacked pieces.
   template<Tracing T> template<Color Us>
-  Score Evaluation<T>::threats() const {
+  Score Evaluation<T>::threats() {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
@@ -580,6 +584,7 @@ namespace {
 
     // Keep only the squares which are relatively safe
     b &= ~attackedBy[Them][PAWN] & safe;
+    safePush[Us] = b;
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
@@ -843,10 +848,11 @@ namespace {
 
     score += mobility[WHITE] - mobility[BLACK];
 
-    score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
+    score +=  threats<WHITE>() - threats<BLACK>()
             + passed< WHITE>() - passed< BLACK>()
             + space<  WHITE>() - space<  BLACK>();
+
+    score +=  king<   WHITE>() - king<   BLACK>();
 
     score += initiative(eg_value(score));
 
