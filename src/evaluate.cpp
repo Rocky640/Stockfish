@@ -448,8 +448,8 @@ namespace {
         if ((b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN])
             kingDanger += QueenSafeCheck;
 
-        b1 &= attackedBy[Them][  ROOK] | pos.pieces(Them, ROOK);
-        b2 &= attackedBy[Them][BISHOP] | pos.pieces(Them, BISHOP);
+        b1 &= attackedBy[Them][  ROOK];
+        b2 &= attackedBy[Them][BISHOP];
 
         // Enemy rooks checks
         if (b1 & safe)
