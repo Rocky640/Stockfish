@@ -290,9 +290,10 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard TRank5BB = (Us == WHITE ? Rank5BB : Rank4BB);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, bb, b2;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -329,9 +330,17 @@ namespace {
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
-
-            else if (bb &= b & ~pos.pieces(Us))
-                score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)];
+            else
+            {
+                // Consider also outpost if all opponent side pawns are blocked by a knight or rook,
+                // or by some of our piece
+                b2 =   shift<Down>(pawn_attack_span(Us, s) & pos.pieces(Them, PAWN))
+                    & ~(pos.pieces(Them, KNIGHT, ROOK) | pos.pieces(Us) | rank_bb(s));
+                if ((TRank5BB & s) & !b2)
+                    score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
+                else if (bb &= b & ~pos.pieces(Us))
+                    score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)];
+            }
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
