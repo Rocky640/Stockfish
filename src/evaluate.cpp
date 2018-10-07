@@ -418,20 +418,14 @@ namespace {
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
 
-    // Penalty when our king is on a pawnless flank
     kingFlank = KingFlank[file_of(ksq)];
-
-    if (!(pos.pieces(PAWN) & kingFlank))
-        score -= PawnlessFlank;
 
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank but not defended by our pawns.
     b1 = attackedBy[Them][ALL_PIECES] & kingFlank & Camp;
     b2 = b1 & attackedBy2[Them] & ~attackedBy[Us][PAWN];
 
-    // King tropism bonus, to anticipate slow motion attacks on our king
     int tropism = popcount(b1) + popcount(b2);
-    score -= CloseEnemies * tropism;
 
     // Main king safety evaluation
     if (kingAttackersCount[Them] > 1 - pos.count<QUEEN>(Them))
@@ -481,6 +475,12 @@ namespace {
             score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
         }
     }
+
+    if (!(pos.pieces(PAWN) & kingFlank))
+        score -= PawnlessFlank;
+
+    // King tropism bonus, to anticipate slow motion attacks on our king
+    score -= CloseEnemies * tropism;
 
     if (T)
         Trace::add(KING, Us, score);
