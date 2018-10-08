@@ -213,6 +213,8 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    Rank rankReach[SQUARE_NB];
+
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
@@ -320,8 +322,9 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
-
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        rankReach[s] = relative_rank(Us, frontmost_sq(Us, b | s));
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
@@ -543,7 +546,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += ThreatByMinor[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank * (int)rankReach[s];
 
             else if (pos.blockers_for_king(Them) & s)
                 score += ThreatByRank * (int)relative_rank(Them, s) / 2;
@@ -555,7 +558,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+                score += ThreatByRank * (int)rankReach[s];
 
             else if (pos.blockers_for_king(Them) & s)
                 score += ThreatByRank * (int)relative_rank(Them, s) / 2;
