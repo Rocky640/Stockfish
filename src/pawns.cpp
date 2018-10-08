@@ -35,7 +35,6 @@ namespace {
   constexpr Score Backward = S( 9, 24);
   constexpr Score Doubled  = S(11, 56);
   constexpr Score Isolated = S( 5, 15);
-  constexpr Score TwoOnOne = S( 5, 15);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -74,6 +73,7 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
+    Bitboard singleStopped = 0;
     Bitboard singleStoppers = 0;
     Bitboard singleStoppersFor2 = 0;
     Square s;
@@ -127,8 +127,10 @@ namespace {
 
         else if (relative_rank(Us, s) >= RANK_4 && !more_than_one(stoppers))
         {
-            singleStoppersFor2 |= singleStoppers & s;
-            singleStoppers     |= s;
+            assert(stoppers);
+            singleStoppersFor2 |= singleStoppers & stoppers;
+            singleStoppers     |= stoppers;
+            singleStopped      |= s;
         }
 
         // Score this pawn
@@ -148,10 +150,13 @@ namespace {
     while (singleStoppersFor2)
     {
         // Find our many advanced pawns which are stopped only by this enemy pawn...
-        b = ourPawns & passed_pawn_mask(Them, pop_lsb(&singleStoppersFor2));
+        b = singleStopped & passed_pawn_mask(Them, pop_lsb(&singleStoppersFor2));
+        assert(more_than_one(b));
 
-        // ...and consider the front most as a candidate passer.
-        e->passedPawns[Us] |= frontmost_sq(Us, b);
+        // Consider the frontmost as a candidate passer
+        // only if the pawns are not all on the same file.
+        if (b & ~file_bb(lsb(b)))
+          e->passedPawns[Us] |= frontmost_sq(Us, b);
     }
 
     return score;
