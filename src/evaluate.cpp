@@ -262,6 +262,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+    rankReach[pos.square<KING>(Us)] = relative_rank(Us, pos.square<KING>(Us));
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -307,6 +308,8 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
                          : pos.attacks_from<Pt>(s);
 
+        rankReach[s] = relative_rank(Us, frontmost_sq(Us, b));
+
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
@@ -323,8 +326,6 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
-
-        rankReach[s] = relative_rank(Us, frontmost_sq(Us, b | s));
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
