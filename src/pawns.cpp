@@ -71,7 +71,7 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
 
-    Bitboard neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard lastStoppers, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush, blocked;
     Square s;
     bool opposed, backward;
@@ -82,7 +82,7 @@ namespace {
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
     e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
-    e->lastStoppers[Us] = e->holding2[Us] = 0;
+    lastStoppers = e->lastStoppersFor2[Us] = e->holding2[Us] = 0;
     e->semiopenFiles[Us] = 0xFF;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
@@ -128,7 +128,10 @@ namespace {
             e->passedPawns[Us] |= s;
 
         else if (!more_than_one(stoppers))
-            e->lastStoppers[Us] |= stoppers;
+        {
+            e->lastStoppersFor2[Us] |= lastStoppers & stoppers;
+            lastStoppers |= stoppers;
+        }
 
         // Score this pawn
         if (supported | phalanx)
@@ -189,8 +192,8 @@ Entry* probe(const Position& pos) {
   e->scores[WHITE] = evaluate<WHITE>(pos, e);
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
 
-  e->passedPawns[WHITE] |= shift<SOUTH>(e->lastStoppers[WHITE] & e->holding2[BLACK]);
-  e->passedPawns[BLACK] |= shift<NORTH>(e->lastStoppers[BLACK] & e->holding2[WHITE]);
+  e->passedPawns[WHITE] |= shift<SOUTH>(e->lastStoppersFor2[WHITE] & e->holding2[BLACK]);
+  e->passedPawns[BLACK] |= shift<NORTH>(e->lastStoppersFor2[BLACK] & e->holding2[WHITE]);
 
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
