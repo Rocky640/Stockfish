@@ -308,8 +308,6 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
                          : pos.attacks_from<Pt>(s);
 
-        rankReach[s] = (int)relative_rank(Us, frontmost_sq(Us, (b & mobilityArea[Us]) | SquareBB[s]));
-
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
@@ -326,6 +324,8 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        rankReach[s] = (int)relative_rank(Us, frontmost_sq(Us, (b & mobilityArea[Us]) | SquareBB[s]));
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
