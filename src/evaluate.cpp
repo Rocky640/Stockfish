@@ -133,11 +133,11 @@ namespace {
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
   constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(47, 120)
+    S(0, 0), S(0, 31), S(39-16, 42-3), S(57-16, 44-3), S(68-16, 112-3), S(47-16, 120-3)
   };
 
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(36, 38)
+    S(0, 0), S(0, 24), S(38-16, 71-3), S(38-16, 61-3), S(0-16, 38-3), S(36-16, 38-3)
   };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
@@ -213,7 +213,7 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    Rank rankReach[SQUARE_NB];
+    int rankReach[SQUARE_NB];
 
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
@@ -262,7 +262,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
-    rankReach[pos.square<KING>(Us)] = relative_rank(Us, pos.square<KING>(Us));
+    rankReach[pos.square<KING>(Us)] = (int) relative_rank(Us, pos.square<KING>(Us));
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -308,7 +308,7 @@ namespace {
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
                          : pos.attacks_from<Pt>(s);
 
-        rankReach[s] = relative_rank(Us, frontmost_sq(Us, b));
+        rankReach[s] = (int)relative_rank(Us, frontmost_sq(Us, b & mobilityArea[Us]));
 
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
