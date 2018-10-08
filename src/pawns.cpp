@@ -71,7 +71,7 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
 
-    Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
+    Bitboard neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush, blocked;
     Square s;
     bool opposed, backward;
@@ -128,7 +128,7 @@ namespace {
             e->passedPawns[Us] |= s;
 
         else if (!more_than_one(stoppers))
-            laststoppers[Us] |= stoppers;
+            e->lastStoppers[Us] |= stoppers;
 
         // Score this pawn
         if (supported | phalanx)
@@ -189,8 +189,8 @@ Entry* probe(const Position& pos) {
   e->scores[WHITE] = evaluate<WHITE>(pos, e);
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
 
-  e->passedPawns[WHITE] |= shift<SOUTH>(lastStoppers[WHITE] & holding2[BLACK]);
-  e->passedPawns[BLACK] |= shift<NORTH>(lastStoppers[BLACK] & holding2[WHITE]);
+  e->passedPawns[WHITE] |= shift<SOUTH>(e->lastStoppers[WHITE] & e->holding2[BLACK]);
+  e->passedPawns[BLACK] |= shift<NORTH>(e->lastStoppers[BLACK] & e->holding2[WHITE]);
 
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
