@@ -325,7 +325,7 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
-        rankReach[s] = (int)relative_rank(Us, frontmost_sq(Us, (b & mobilityArea[Us]) | SquareBB[s]));
+        rankReach[s] = (int)relative_rank(Us, frontmost_sq(Us, (b & pos.pieces(Them)) | SquareBB[s]));
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
