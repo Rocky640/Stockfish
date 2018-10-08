@@ -70,6 +70,7 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Bitboard  TRank4BB = (Us == WHITE ? Rank4BB : Rank5BB);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -149,13 +150,9 @@ namespace {
 
     while (singleStoppersFor2)
     {
-        // Find our many advanced pawns which are stopped only by this enemy pawn...
-        b = singleStopped & passed_pawn_mask(Them, pop_lsb(&singleStoppersFor2));
-        assert(more_than_one(b));
-
-        // Consider the frontmost as a candidate passer
-        // only if the pawns are not all on the same file.
-        if (b & ~file_bb(lsb(b)))
+        s = pop_lsb(&singleStoppersFor2);
+        b = singleStopped & (PawnAttacks[Them][s - Up] | (s - Up));
+        if (more_than_one(b))
           e->passedPawns[Us] |= frontmost_sq(Us, b);
     }
 
