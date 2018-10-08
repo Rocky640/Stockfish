@@ -35,6 +35,7 @@ namespace {
   constexpr Score Backward = S( 9, 24);
   constexpr Score Doubled  = S(11, 56);
   constexpr Score Isolated = S( 5, 15);
+  constexpr Score TwoOnOne = S( 5, 15);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -73,6 +74,8 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
+    Bitboard singleStoppers = 0;
+    Bitboard singleStoppersFor2 = 0;
     Square s;
     bool opposed, backward;
     Score score = SCORE_ZERO;
@@ -122,13 +125,10 @@ namespace {
             && popcount(phalanx)   >= popcount(leverPush))
             e->passedPawns[Us] |= s;
 
-        else if (   stoppers == SquareBB[s + Up]
-                 && relative_rank(Us, s) >= RANK_5)
+        else if (relative_rank(Us, s) >= RANK_4 && !more_than_one(stoppers))
         {
-            b = shift<Up>(supported) & ~theirPawns;
-            while (b)
-                if (!more_than_one(theirPawns & PawnAttacks[Us][pop_lsb(&b)]))
-                    e->passedPawns[Us] |= s;
+            singleStoppersFor2 |= singleStoppers & s;
+            singleStoppers     |= s;
         }
 
         // Score this pawn
@@ -143,6 +143,15 @@ namespace {
 
         if (doubled && !supported)
             score -= Doubled;
+    }
+
+    while (singleStoppersFor2)
+    {
+        // Find our many advanced pawns which are stopped only by this enemy pawn...
+        b = ourPawns & passed_pawn_mask(Them, pop_lsb(&singleStoppersFor2));
+
+        // ...and consider the front most as a candidate passer.
+        e->passedPawns[Us] |= frontmost_sq(Us, b);
     }
 
     return score;
