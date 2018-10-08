@@ -70,7 +70,6 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
-    constexpr Bitboard  TRank4BB = (Us == WHITE ? Rank4BB : Rank5BB);
 
     Bitboard b, neighbours, stoppers, doubled, supported, phalanx;
     Bitboard lever, leverPush;
@@ -126,7 +125,7 @@ namespace {
             && popcount(phalanx)   >= popcount(leverPush))
             e->passedPawns[Us] |= s;
 
-        else if (relative_rank(Us, s) >= RANK_4 && !more_than_one(stoppers))
+        else if (!more_than_one(stoppers))
         {
             assert(stoppers);
             singleStoppersFor2 |= singleStoppers & stoppers;
@@ -148,12 +147,13 @@ namespace {
             score -= Doubled;
     }
 
+    singleStoppersFor2 &= (Us == WHITE ? Rank6BB | Rank7BB : Rank3BB | Rank2BB);
     while (singleStoppersFor2)
     {
         s = pop_lsb(&singleStoppersFor2);
         b = singleStopped & (PawnAttacks[Them][s - Up] | (s - Up));
         if (more_than_one(b))
-          e->passedPawns[Us] |= frontmost_sq(Us, b);
+          e->passedPawns[Us] |= (s - Up);
     }
 
     return score;
