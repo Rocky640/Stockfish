@@ -446,7 +446,7 @@ namespace {
         // Enemy queen safe checks
         b = (b1 | b2) & attackedBy[Them][QUEEN] & safe & ~attackedBy[Us][QUEEN];
         if (b)
-            kingDanger += QueenSafeCheck[bool(b & attackedBy[Us][ksq])];
+            kingDanger += QueenSafeCheck[bool(b & attackedBy[Us][KING])];
 
         b1 &= attackedBy[Them][ROOK];
         b2 &= attackedBy[Them][BISHOP];
