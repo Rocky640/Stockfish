@@ -172,6 +172,7 @@ namespace {
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(173,102);
   constexpr Score TrappedRook        = S( 92,  0);
+  constexpr Score UnsafePinner       = S( 20,  0);
   constexpr Score WeakQueen          = S( 50, 10);
   constexpr Score WeakUnopposedPawn  = S(  5, 29);
 
@@ -563,6 +564,9 @@ namespace {
 
         if (weak & attackedBy[Us][KING])
             score += ThreatByKing;
+
+        if (weak & pos.pinner(Them))
+            score += UnsafePinner;
 
         score += Hanging * popcount(weak & ~attackedBy[Them][ALL_PIECES]);
 
