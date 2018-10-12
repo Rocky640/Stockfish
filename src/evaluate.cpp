@@ -215,10 +215,6 @@ namespace {
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
     // and h6. It is set to 0 when king safety evaluation is skipped.
     Bitboard kingRing[COLOR_NB];
-
-    // kingAttackersCount[color] is the number of pieces of the given color
-    // which attack a square in the kingRing of the enemy king.
-    int kingAttackersCount[COLOR_NB];
   };
 
 
@@ -257,11 +253,9 @@ namespace {
 
         else if (file_of(pos.square<KING>(Us)) == FILE_A)
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
-
-        kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
     }
     else
-        kingRing[Us] = kingAttackersCount[Them] = 0;
+        kingRing[Us] = 0;
   }
 
 
@@ -294,9 +288,6 @@ namespace {
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
-
-        if (b & kingRing[Them])
-            kingAttackersCount[Us]++;
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -404,8 +395,11 @@ namespace {
 
     int tropism = popcount(b1) + popcount(b2);
 
+    Bitboard attackedByPieces = attackedBy[Them][ALL_PIECES] ^ attackedBy[Them][PAWN];
+    int attackedSquares = (kingRing[Us] ? popcount(attackedByPieces & kingRing[Us]) : 0);
+
     // Main king safety evaluation
-    if (kingAttackersCount[Them] > 1 - pos.count<QUEEN>(Them))
+    if (attackedSquares)
     {
         int kingDanger = 0;
         unsafeChecks = 0;
@@ -452,7 +446,7 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
-        kingDanger +=  100 * (kingAttackersCount[Them] + popcount(attackedBy2[Them] & kingRing[Us]))
+        kingDanger +=  110 * (attackedSquares + popcount(attackedBy2[Them] & kingRing[Us]))  
                      + 185 * popcount(kingRing[Us] & weak)
                      + 129 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
                      +   4 * tropism
