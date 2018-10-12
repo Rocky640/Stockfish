@@ -382,7 +382,7 @@ namespace {
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard kingFlank, weak, b, b1, b2, safe, unsafeChecks;
+    Bitboard kingFlank, weak, b, b1, b2, pieceAttacks, safe, unsafeChecks;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
@@ -395,11 +395,10 @@ namespace {
 
     int tropism = popcount(b1) + popcount(b2);
 
-    Bitboard attackedByPieces = attackedBy[Them][ALL_PIECES] ^ attackedBy[Them][PAWN];
-    int attackedSquares = (kingRing[Us] ? popcount(attackedByPieces & kingRing[Us]) : 0);
+    pieceAttacks = kingRing[Us] & (attackedBy[Them][ALL_PIECES] ^ attackedBy[Them][PAWN]);
 
     // Main king safety evaluation
-    if (attackedSquares)
+    if (pieceAttacks)
     {
         int kingDanger = 0;
         unsafeChecks = 0;
@@ -446,7 +445,7 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
-        kingDanger +=  110 * (attackedSquares + popcount(attackedBy2[Them] & kingRing[Us]))  
+        kingDanger +=  110 * (popcount(pieceAttacks) + popcount(attackedBy2[Them] & kingRing[Us]))
                      + 185 * popcount(kingRing[Us] & weak)
                      + 129 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
                      +   4 * tropism
