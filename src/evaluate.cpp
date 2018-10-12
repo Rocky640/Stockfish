@@ -88,9 +88,6 @@ namespace {
   constexpr Value LazyThreshold  = Value(1500);
   constexpr Value SpaceThreshold = Value(12222);
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
-  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 77, 55, 44, 10 };
-
   // Penalties for enemy's safe checks
   constexpr int QueenSafeCheck  = 780;
   constexpr int RookSafeCheck   = 880;
@@ -222,19 +219,6 @@ namespace {
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
     int kingAttackersCount[COLOR_NB];
-
-    // kingAttackersWeight[color] is the sum of the "weights" of the pieces of
-    // the given color which attack a square in the kingRing of the enemy king.
-    // The weights of the individual piece types are given by the elements in
-    // the KingAttackWeights array.
-    int kingAttackersWeight[COLOR_NB];
-
-    // kingAttacksCount[color] is the number of attacks by the given color to
-    // squares directly adjacent to the enemy king. Pieces which attack more
-    // than one square are counted multiple times. For instance, if there is
-    // a white knight on g5 and black's king is on g8, this white knight adds 2
-    // to kingAttacksCount[WHITE].
-    int kingAttacksCount[COLOR_NB];
   };
 
 
@@ -275,7 +259,6 @@ namespace {
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
-        kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
     else
         kingRing[Us] = kingAttackersCount[Them] = 0;
@@ -313,11 +296,7 @@ namespace {
         attackedBy[Us][ALL_PIECES] |= b;
 
         if (b & kingRing[Them])
-        {
             kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
-        }
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -473,9 +452,8 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
-        kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
-                     +  69 * kingAttacksCount[Them]
-                     + 185 * popcount(kingRing[Us] & weak)
+        kingDanger +=  110 * (kingAttackersCount[Them] + popcount(attackedBy2[Them] & kingRing[Us]))
+                     + 200 * popcount(kingRing[Us] & weak)
                      + 129 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
                      +   4 * tropism
                      - 873 * !pos.count<QUEEN>(Them)
