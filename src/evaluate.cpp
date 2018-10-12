@@ -382,23 +382,27 @@ namespace {
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
-    Bitboard kingFlank, weak, b, b1, b2, pieceAttacks, safe, unsafeChecks;
+    Bitboard kingFlank, weak, b, b1, b2, safe, unsafeChecks;
 
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
 
-    // Find the squares that opponent attacks in our king flank, and the squares
+    // Find the squares that opponent attacks in our 3x5 (or 4x5) king flank, and the squares
     // which are attacked twice in that flank but not defended by our pawns.
     kingFlank = KingFlank[file_of(ksq)];
     b1 = attackedBy[Them][ALL_PIECES] & kingFlank & Camp;
     b2 = b1 & attackedBy2[Them] & ~attackedBy[Us][PAWN];
 
-    int tropism = popcount(b1) + popcount(b2);
+    int tropism2 = popcount(b1) + popcount(b2);
 
-    pieceAttacks = kingRing[Us] & (attackedBy[Them][ALL_PIECES] ^ attackedBy[Them][PAWN]);
+    // Similarly, for the 3x3 kingRing
+    b1 = attackedBy[Them][ALL_PIECES] & kingRing[Us];
+    b2 = b1 & attackedBy2[Them] & ~attackedBy[Us][PAWN];
+
+    int tropism1 = popcount(b1) + popcount(b2);
 
     // Main king safety evaluation
-    if (pieceAttacks)
+    if (tropism1 > 1 - pos.count<QUEEN>(Them))
     {
         int kingDanger = 0;
         unsafeChecks = 0;
@@ -445,10 +449,10 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
-        kingDanger +=  110 * (popcount(pieceAttacks) + popcount(attackedBy2[Them] & kingRing[Us]))
+        kingDanger +=  110 * tropism1
+                     +   4 * tropism2
                      + 185 * popcount(kingRing[Us] & weak)
                      + 129 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
-                     +   4 * tropism
                      - 873 * !pos.count<QUEEN>(Them)
                      -   6 * mg_value(score) / 8
                      -   30;
@@ -467,7 +471,7 @@ namespace {
         score -= PawnlessFlank;
 
     // King tropism bonus, to anticipate slow motion attacks on our king
-    score -= CloseEnemies * tropism;
+    score -= CloseEnemies * tropism2;
 
     if (T)
         Trace::add(KING, Us, score);
