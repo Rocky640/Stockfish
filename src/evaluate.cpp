@@ -172,7 +172,6 @@ namespace {
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(173,102);
   constexpr Score TrappedRook        = S( 92,  0);
-  constexpr Score WeakQueen          = S( 50, 10);
   constexpr Score WeakUnopposedPawn  = S(  5, 29);
 
 #undef S
@@ -387,14 +386,6 @@ namespace {
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
         }
-
-        if (Pt == QUEEN)
-        {
-            // Penalty if any relative pin or discovered attack against the queen
-            Bitboard queenPinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
-                score -= WeakQueen;
-        }
     }
     if (T)
         Trace::add(Pt, Us, score);
@@ -604,7 +595,13 @@ namespace {
         b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
-        score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
+        if (b)
+        {
+            Bitboard queenPinners;
+            weak = pos.slider_blockers(pos.pieces(Us, ROOK, BISHOP), s, queenPinners);
+
+            score += SliderOnQueen * popcount((b & safe & attackedBy2[Us]) | weak);
+        }
     }
 
     if (T)
