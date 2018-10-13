@@ -590,7 +590,7 @@ namespace {
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
 
-        score += KnightOnQueen * bool(b & safe);
+        score += KnightOnQueen * popcount(b & safe);
 
         b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
@@ -600,7 +600,7 @@ namespace {
             Bitboard queenPinners;
             weak = pos.slider_blockers(pos.pieces(Us, ROOK, BISHOP), s, queenPinners);
 
-            score += SliderOnQueen * bool((b & safe & attackedBy2[Us]) | weak);
+            score += SliderOnQueen * (popcount(b & safe & attackedBy2[Us]) +bool(weak));
         }
     }
 
