@@ -237,7 +237,7 @@ namespace {
     int kingAttacksCount[COLOR_NB];
 
     Bitboard pawnPush[COLOR_NB];
-    Bitboard outpostSquares[COLOR_NB];
+    Bitboard outpostSquares[COLOR_NB][2];
   };
 
 
@@ -273,7 +273,11 @@ namespace {
     pawnPush[Us] |= shift<Up>(pawnPush[Us] & LowRanks) & ~pos.pieces();
 
     // Find squares suitable for opponent outposts
-    outpostSquares[Them] = OutpostMask & ~pawn_attacks_bb<Us>(ourPawns | pawnPush[Us]);
+    outpostSquares[Them][1] = OutpostMask & ~pawn_attacks_bb<Us>(ourPawns | pawnPush[Us]);
+
+    ourPawns |= shift<Up>(ourPawns);
+    ourPawns |= shift<Up>(ourPawns);
+    outpostSquares[Them][0] = OutpostMask & ~pawn_attacks_bb<Us>(ourPawns);
     
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -339,11 +343,11 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
-            if (outpostSquares[Us] & s)
-                score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
+            if (outpostSquares[Us][1] & s)
+                score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * (1 + bool(outpostSquares[Us][0] & s));
 
             else {
-                bb = outpostSquares[Us] & b & ~pos.pieces(Us);
+                bb = outpostSquares[Us][0] & b & ~pos.pieces(Us);
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)] * bool(bb);
             }
 
