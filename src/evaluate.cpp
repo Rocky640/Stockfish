@@ -272,10 +272,10 @@ namespace {
     pawnPush[Us]  = shift<Up>(ourPawns) & ~pos.pieces();
     pawnPush[Us] |= shift<Up>(pawnPush[Us] & LowRanks) & ~pos.pieces();
 
-    // Find squares where our pawns can push on the next moves
-    // (if we move our piece in the way)
-    b  = shift<Up>(ourPawns) & ~pos.pieces(Us);
-    b |= shift<Up>(b & LowRanks) & ~pos.pieces(Us);
+    // Find squares where our pawns can push on the next move
+    // on a board with only pawns.
+    b  = shift<Up>(ourPawns) & ~pos.pieces(PAWN);
+    b |= shift<Up>(b & LowRanks) & ~pos.pieces(PAWN);
 
     // Find squares suitable for opponent outposts
     outpostSquares[Them] = OutpostMask & ~pawn_attacks_bb<Us>(ourPawns | b);
