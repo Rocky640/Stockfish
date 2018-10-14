@@ -272,8 +272,12 @@ namespace {
     pawnPush[Us]  = shift<Up>(ourPawns) & ~pos.pieces();
     pawnPush[Us] |= shift<Up>(pawnPush[Us] & LowRanks) & ~pos.pieces();
 
+    // Pawns blocked by enemy pieces
+    b  = shift<Up>(ourPawns) & ~pos.pieces(Them);
+    b |= shift<Up>(b & LowRanks) & ~pos.pieces(Us);
+
     // Find squares suitable for opponent outposts
-    outpostSquares[Them] = OutpostMask & ~pawn_attacks_bb<Us>(ourPawns | pawnPush[Us]);
+    outpostSquares[Them] = OutpostMask & ~pawn_attacks_bb<Us>(ourPawns | b);
     
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
