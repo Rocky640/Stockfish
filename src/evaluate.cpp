@@ -141,7 +141,7 @@ namespace {
   };
   
   constexpr Score WeakPiece[PIECE_TYPE_NB] = {
-    S(0, 0), S(4, 1), S(16, 3), S(16, 3), S(25, 5), S( 50, 10)
+    S(0, 0), S(5, 0), S(15, 3), S(17, 3), S(29, 2), S(50, 10)
   };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
