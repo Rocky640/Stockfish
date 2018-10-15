@@ -139,6 +139,11 @@ namespace {
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
     S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(51, 38)
   };
+  
+  Score WeakPiece[PIECE_TYPE_NB] = {
+    S(0, 0), S(4, 1), S(16, 3), S(16, 3), S(25, 5), S( 50, 10)
+  };
+  TUNE(SetRange(0, 100), WeakPiece);
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   constexpr Score PassedRank[RANK_NB] = {
@@ -172,7 +177,6 @@ namespace {
   constexpr Score ThreatByRank       = S( 16,  3);
   constexpr Score ThreatBySafePawn   = S(173,102);
   constexpr Score TrappedRook        = S( 92,  0);
-  constexpr Score WeakQueen          = S( 50, 10);
   constexpr Score WeakUnopposedPawn  = S(  5, 29);
 
 #undef S
@@ -212,6 +216,8 @@ namespace {
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
+
+    Bitboard attackedByX[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
@@ -260,6 +266,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+    attackedByX[Us]            = 0;
 
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
@@ -307,6 +314,8 @@ namespace {
 
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
+        else if (Pt == BISHOP || Pt == ROOK)
+            attackedByX[Us] |= attacks_bb<Pt>(s, pos.pieces(QUEEN, PAWN) | (pos.pieces() & ~b));
 
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
@@ -386,14 +395,6 @@ namespace {
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
-        }
-
-        if (Pt == QUEEN)
-        {
-            // Penalty if any relative pin or discovered attack against the queen
-            Bitboard queenPinners;
-            if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
-                score -= WeakQueen;
         }
     }
     if (T)
@@ -563,6 +564,10 @@ namespace {
         b = weak & nonPawnEnemies & attackedBy[Them][ALL_PIECES];
         score += Overload * popcount(b);
     }
+
+    b = attackedByX[Us] & pos.pieces(Them) & (pos.pieces(QUEEN) | ~attackedBy[Them][ALL_PIECES]);
+    while (b)
+        score += WeakPiece[type_of(pos.piece_on(pop_lsb(&b)))];
 
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
