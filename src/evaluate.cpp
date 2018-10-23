@@ -248,11 +248,11 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
-    Bitboard b = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces(Them)) & (FileDBB | FileEBB);
+    Bitboard b = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces(Them, PAWN)) & (FileDBB | FileEBB);
     b = more_than_one(b) ? shift<Down>(LowRanks) : LowRanks;
 
     // Find our pawns that are blocked or on rank 2 or 3.
-    // If center is blocked, do not consider pawns on rank 3 as blocking.
+    // But if center is blocked, do not consider mobile pawns on rank 3 as blocking.
     b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | b);
 
     // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
