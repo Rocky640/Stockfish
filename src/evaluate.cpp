@@ -248,12 +248,18 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
-    // Find our pawns that are blocked or on the first two ranks
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
-
-    // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
-    // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
+    Bitboard b = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces(Them, PAWN)) & (FileDBB | FileEBB);
+    if (more_than_one(b))
+       // Exclude all our pieces from the the mobility area when center is blocked
+       mobilityArea[Us] = ~(pos.pieces(Us) | pe->pawn_attacks(Them));
+    else
+    {
+       // Find our pawns that are blocked or on the first two ranks
+       b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+       // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
+       // are excluded from the mobility area.
+       mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
+    }
 
     // Initialise attackedBy bitboards for kings and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
