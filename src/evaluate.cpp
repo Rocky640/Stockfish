@@ -249,7 +249,7 @@ namespace {
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
-    constexpr Bitboard TRank2BB = (Us == WHITE ? Rank2BB : Rank3BB);
+    constexpr Bitboard TRank2BB = (Us == WHITE ? Rank2BB : Rank7BB);
 
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
