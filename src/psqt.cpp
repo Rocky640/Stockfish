@@ -87,7 +87,7 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
    { S(-1,-74), S(-4,-55), S(-1,-43), S( 0,-30) }
   },
   { // King
-   { S(272,  0), S(325, 41), S(273, 80), S(190, 93) },
+   { S(272,  0), S(325, 41), S(293, 80), S(190, 93) },
    { S(277, 57), S(305, 98), S(241,138), S(183,131) },
    { S(198, 86), S(253,138), S(168,165), S(120,173) },
    { S(169,103), S(191,152), S(136,168), S(108,169) },
@@ -122,8 +122,8 @@ void init() {
       }
   }
   // A king on f1/f8 deserve a lower mg score than a king on c1/c8
-  psq[W_KING][SQ_F1] -= make_score(30, 0);
-  psq[B_KING][SQ_F8] += make_score(30, 0);
+  psq[W_KING][SQ_F1] -= make_score(60, 0);
+  psq[B_KING][SQ_F8] += make_score(60, 0);
 }
 
 } // namespace PSQT
