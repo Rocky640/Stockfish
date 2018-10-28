@@ -121,6 +121,9 @@ void init() {
           psq[~pc][~s] = -psq[pc][s];
       }
   }
+  // A king on f1/f8 deserve a lower mg score than a king on c1/c8
+  psq[W_KING][SQ_F1] -= make_score(30, 0);
+  psq[B_KING][SQ_F8] += make_score(30, 0);
 }
 
 } // namespace PSQT
