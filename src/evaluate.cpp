@@ -330,7 +330,7 @@ namespace {
             if (bb & s)
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
 
-            else if (bb &= b & ~pos.pieces(Us))
+            else if (bb &= b & (~pos.pieces(Us) | pos.pieces(Us, KNIGHT, BISHOP)))
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)];
 
             // Knight and Bishop bonus for being right behind a pawn
