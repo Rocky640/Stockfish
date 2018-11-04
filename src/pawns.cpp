@@ -262,7 +262,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
       if (pos.can_castle(Us | QUEEN_SIDE))
          bonusC = std::max(bonusC, evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)));
 
-     bonus = (bonus + bonusC * 2) / 3;
+     bonus = (2 * bonus + bonusC) / 3;
   }
 
   return make_score(bonus, -16 * minKingPawnDistance);
