@@ -251,12 +251,15 @@ namespace {
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
+    // If king can still castle, assume king already on the safest shelter position
+    Square ksq = pe->best_shelter(Us);
+
     // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
     // are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
+    mobilityArea[Us] = ~(b | ksq | pos.pieces(Us, QUEEN) | pe->pawn_attacks(Them));
 
     // Initialise attackedBy bitboards for kings and pawns
-    attackedBy[Us][KING] = pos.attacks_from<KING>(pos.square<KING>(Us));
+    attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
@@ -265,13 +268,13 @@ namespace {
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
     {
         kingRing[Us] = attackedBy[Us][KING];
-        if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
+        if (relative_rank(Us, ksq) == RANK_1)
             kingRing[Us] |= shift<Up>(kingRing[Us]);
 
-        if (file_of(pos.square<KING>(Us)) == FILE_H)
+        if (file_of(ksq) == FILE_H)
             kingRing[Us] |= shift<WEST>(kingRing[Us]);
 
-        else if (file_of(pos.square<KING>(Us)) == FILE_A)
+        else if (file_of(ksq) == FILE_A)
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
@@ -338,7 +341,7 @@ namespace {
                 score += MinorBehindPawn;
 
             // Penalty if the piece is far from the king
-            score -= KingProtector * distance(s, pos.square<KING>(Us));
+            score -= KingProtector * distance(s, pe->best_shelter(Us));
 
             if (Pt == BISHOP)
             {
@@ -411,11 +414,14 @@ namespace {
     constexpr Bitboard Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
-    const Square ksq = pos.square<KING>(Us);
+    
     Bitboard kingFlank, weak, b, b1, b2, safe, unsafeChecks;
 
     // King shelter and enemy pawns storm
-    Score score = pe->king_safety<Us>(pos, ksq);
+    Score score = pe->king_safety<Us>(pos, pos.square<KING>(Us));
+    
+    // When we still have some castling rights, prefer the best shelter position
+    const Square ksq = pe->best_shelter(Us);
 
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank but not defended by our pawns.
