@@ -260,7 +260,7 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
          bonusC = evaluate_shelter<Us>(pos, relative_square(Us, SQ_G1));
 
       if (pos.can_castle(Us | QUEEN_SIDE))
-         bonusC = std::min(bonusC, evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)));
+         bonusC = std::max(bonusC, evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)));
 
      bonus = (bonus + bonusC * 2) / 3;
   }
