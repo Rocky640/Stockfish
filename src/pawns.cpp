@@ -248,15 +248,16 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
       while (!(DistanceRingBB[ksq][++minKingPawnDistance] & pawns)) {}
 
   Value bonus = evaluate_shelter<Us>(pos, ksq);
+  int choices = 1;
 
   // If we can castle use the bonus after the castling if it is bigger
   if (pos.can_castle(Us | KING_SIDE))
-      bonus = std::max(bonus, evaluate_shelter<Us>(pos, relative_square(Us, SQ_G1)));
+      bonus += evaluate_shelter<Us>(pos, relative_square(Us, SQ_G1)), choices++;
 
   if (pos.can_castle(Us | QUEEN_SIDE))
-      bonus = std::max(bonus, evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)));
+      bonus += evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)), choices++;
 
-  return make_score(bonus, -16 * minKingPawnDistance);
+  return make_score(bonus / choices, -16 * minKingPawnDistance);
 }
 
 // Explicit template instantiation
