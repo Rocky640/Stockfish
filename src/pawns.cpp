@@ -247,10 +247,12 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   if (pawns)
       while (!(DistanceRingBB[ksq][++minKingPawnDistance] & pawns)) {}
 
-  Value bonus = evaluate_shelter<Us>(pos, ksq);
-  int choices = 1;
+  // Weighting the possible long-term castling options,
+  // and double the weight of current position.
 
-  // If we can castle use the bonus after the castling if it is bigger
+  Value bonus = evaluate_shelter<Us>(pos, ksq) * 2;
+  int choices = 2;
+
   if (pos.can_castle(Us | KING_SIDE))
       bonus += evaluate_shelter<Us>(pos, relative_square(Us, SQ_G1)), choices++;
 
