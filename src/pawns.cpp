@@ -250,16 +250,17 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   // Weighting the possible long-term castling options,
   // and double the weight of current position.
 
-  Value bonus = evaluate_shelter<Us>(pos, ksq) * 2;
-  int choices = 2;
+  Value bonus = Value(0);
 
   if (pos.can_castle(Us | KING_SIDE))
-      bonus += evaluate_shelter<Us>(pos, relative_square(Us, SQ_G1)), choices++;
+      bonus =                 evaluate_shelter<Us>(pos, relative_square(Us, SQ_G1));
 
   if (pos.can_castle(Us | QUEEN_SIDE))
-      bonus += evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)), choices++;
+      bonus = std::min(bonus, evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)));
 
-  return make_score(bonus / choices, -16 * minKingPawnDistance);
+  bonus += evaluate_shelter<Us>(pos, ksq) * 2;
+
+  return make_score(bonus / (2 + pos.can_castle(Us)), -16 * minKingPawnDistance);
 }
 
 // Explicit template instantiation
