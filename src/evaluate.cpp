@@ -251,7 +251,8 @@ namespace {
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
-    // If king can still castle, assume king already on the safest shelter position
+    // If king can still castle, find best shelter square with a call to king_sagety
+    pe->king_safety<Us>(pos, pos.square<KING>(Us));
     Square ksq = pe->best_shelter(Us);
 
     // Squares occupied by those pawns, by our king or queen, or controlled by enemy pawns
