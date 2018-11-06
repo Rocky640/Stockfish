@@ -474,7 +474,7 @@ namespace {
         unsafeChecks &= mobilityArea[Them];
 
         // Increase attackers weight when the king is in the center
-        int weight = (kingAttackersWeight[Them] * 4 + bool(CenterFiles & ksq)) / 4;
+        int weight = (kingAttackersWeight[Them] * (4 + bool(CenterFiles & ksq))) / 4;
 
         kingDanger +=        kingAttackersCount[Them] * weight
                      +  69 * kingAttacksCount[Them]
