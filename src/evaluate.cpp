@@ -473,7 +473,10 @@ namespace {
         // the square is in the attacker's mobility area.
         unsafeChecks &= mobilityArea[Them];
 
-        kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
+        // Increase attackers weight when the king is in the center
+        int weight = (kingAttackersWeight[Them] * 4 + bool(CenterFiles & ksq)) / 4;
+
+        kingDanger +=        kingAttackersCount[Them] * weight
                      +  69 * kingAttacksCount[Them]
                      + 185 * popcount(kingRing[Us] & weak)
                      + 150 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
