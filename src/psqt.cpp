@@ -87,14 +87,19 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
    { S(-1,-74), S(-4,-55), S(-1,-43), S( 0,-30) }
   },
   { // King
-   { S(272,  0), S(325, 41), S(273, 80), S(190, 93) },
-   { S(277, 57), S(305, 98), S(241,138), S(183,131) },
+   { S(269,  0), S(350, 41), S(283, 80), S(201, 93) },
+   { S(292, 57), S(302, 98), S(245,138), S(192,131) },
    { S(198, 86), S(253,138), S(168,165), S(120,173) },
    { S(169,103), S(191,152), S(136,168), S(108,169) },
    { S(145, 98), S(176,166), S(112,197), S(69, 194) },
    { S(122, 87), S(159,164), S(85, 174), S(36, 189) },
    { S(87,  40), S(120, 99), S(64, 128), S(25, 141) },
    { S(64,   5), S(87,  60), S(49,  75), S(0,   75) }
+  },
+  { // Assymetric mg scores for a King on king side for first 2 ranks
+      // FILE_H                              FILE_E
+   { S(273,  0), S(326, 41), S(261, 80), S(184, 93) }, //RANK_1
+   { S(280, 57), S(300, 98), S(222,138), S(184,131) }  //RANK_2
   }
 };
 
@@ -117,10 +122,13 @@ void init() {
       for (Square s = SQ_A1; s <= SQ_H8; ++s)
       {
           File f = std::min(file_of(s), ~file_of(s));
-          psq[ pc][ s] = score + Bonus[pc][rank_of(s)][f];
+          bool assy = pc == W_KING && rank_of(s) < RANK_3 && file_of(s) > FILE_D;
+          psq[ pc][ s] = score + Bonus[pc+assy][rank_of(s)][f];
           psq[~pc][~s] = -psq[pc][s];
       }
   }
 }
+
+TUNE(SetRange(-500, 500), psq, init); //and will edit manually the ck to 15
 
 } // namespace PSQT
