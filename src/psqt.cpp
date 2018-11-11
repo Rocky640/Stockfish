@@ -35,7 +35,7 @@ namespace PSQT {
 // type on a given square a (middlegame, endgame) score pair is assigned. Table
 // is defined for files A..D and white side: it is symmetric for black side and
 // second half of the files.
-constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
+Score B[][RANK_NB][int(FILE_NB) / 2] = {
   { },
   { // Pawn
    { S(  0, 0), S(  0,  0), S(  0, 0), S( 0, 0) },
@@ -108,7 +108,7 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
 Score psq[PIECE_NB][SQUARE_NB];
 
 // init() initializes piece-square tables: the white halves of the tables are
-// copied from Bonus[] adding the piece value, then the black halves of the
+// copied from B[] adding the piece value, then the black halves of the
 // tables are initialized by flipping and changing the sign of the white scores.
 void init() {
 
@@ -123,12 +123,16 @@ void init() {
       {
           File f = std::min(file_of(s), ~file_of(s));
           bool assy = pc == W_KING && rank_of(s) < RANK_3 && file_of(s) > FILE_D;
-          psq[ pc][ s] = score + Bonus[pc+assy][rank_of(s)][f];
+          psq[ pc][ s] = score + B[pc+assy][rank_of(s)][f];
           psq[~pc][~s] = -psq[pc][s];
       }
   }
 }
 
-TUNE(SetRange(-500, 500), psq, init); //and will edit manually the ck to 15
+TUNE(SetRange(-500, 500), B, init); //use setrange to make sure 0's are included
+                                        //but don't put any real constraint on the range.
+                                        //UPDATE_ON_LAST was set to true directly in code.
+                                        //will edit manually the ck=15 for the king,
+                                        //and ck=10 for the other pieces
 
 } // namespace PSQT
