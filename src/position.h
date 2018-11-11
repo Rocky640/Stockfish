@@ -101,6 +101,8 @@ public:
   int can_castle(CastlingRight cr) const;
   bool castling_impeded(CastlingRight cr) const;
   Square castling_rook_square(CastlingRight cr) const;
+  bool legal_ks(Square s, Bitboard attacked) const;
+  template<Color> int legal_km(Bitboard attacked) const;
 
   // Checking
   Bitboard checkers() const;
@@ -270,6 +272,38 @@ inline int Position::can_castle(Color c) const {
 
 inline bool Position::castling_impeded(CastlingRight cr) const {
   return byTypeBB[ALL_PIECES] & castlingPath[cr];
+}
+
+inline bool Position::legal_ks(Square s, Bitboard b) const {
+  return !((byTypeBB[ALL_PIECES] | b) & s);
+}
+
+template<Color c>
+inline int Position::legal_km(Bitboard b) const {
+  //To do: adapt for Chess960
+
+  Square ksq = square<KING>(c);
+  if (ksq != relative_square(c, SQ_E1)) return 0;
+
+  int legalCount = 0;
+
+  //Queen side test
+  if (legal_ks(Square(ksq-1), b))
+  {
+      legalCount += 1;
+      CastlingRight crQ = (c == WHITE ? WHITE_OOO : BLACK_OOO);
+      legalCount += can_castle(crQ) && legal_ks(Square(ksq-2), b) && legal_ks(Square(ksq-3), 0);
+  }
+
+  //King side test
+  if (legal_ks(Square(ksq+1), b))
+  {
+      legalCount += 1;
+      CastlingRight crK = (c == WHITE ? WHITE_OO : BLACK_OO);
+      legalCount += can_castle(crK) && legal_ks(Square(ksq+2), b);
+  }
+  
+  return legalCount;
 }
 
 inline Square Position::castling_rook_square(CastlingRight cr) const {

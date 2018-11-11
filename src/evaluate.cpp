@@ -417,6 +417,8 @@ namespace {
     // King shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos, ksq);
 
+    score += make_score(10 * pos.legal_km<Us>(attackedBy[Them][ALL_PIECES]), 0);
+
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank but not defended by our pawns.
     kingFlank = KingFlank[file_of(ksq)];
