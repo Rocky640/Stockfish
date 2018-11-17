@@ -158,6 +158,7 @@ namespace {
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CloseEnemies       = S(  6,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
+  constexpr Score BadKnight          = S(  0, 20);
   constexpr Score Hanging            = S( 57, 32);
   constexpr Score KingProtector      = S(  6,  6);
   constexpr Score KnightOnQueen      = S( 21, 11);
@@ -339,6 +340,10 @@ namespace {
 
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
+
+            if (Pt == KNIGHT)
+                if (!(b & ~(mobilityArea[Us] | attackedBy[Them][BISHOP])))
+                    score -= BadKnight;
 
             if (Pt == BISHOP)
             {
@@ -827,10 +832,11 @@ namespace {
     initialize<BLACK>();
 
     // Pieces should be evaluated first (populate attack tables)
-    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
+    score +=  pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+
+    score += pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>();
 
     score += mobility[WHITE] - mobility[BLACK];
 
