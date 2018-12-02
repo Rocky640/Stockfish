@@ -273,6 +273,7 @@ namespace {
         else if (file_of(pos.square<KING>(Us)) == FILE_A)
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
+        kingRing[Us] &= ~dble_attacks_bb<Us>(pos.pieces(Us, PAWN));
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
@@ -287,8 +288,6 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
-    constexpr Direction DownRight = (Us == WHITE ? SOUTH_EAST : NORTH_WEST);
-    constexpr Direction DownLeft  = (Us == WHITE ? SOUTH_WEST : NORTH_EAST);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -311,7 +310,7 @@ namespace {
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
-        if (b & kingRing[Them] & ~(shift<DownRight>(pos.pieces(Them,PAWN)) & shift<DownLeft>(pos.pieces(Them,PAWN))))
+        if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
@@ -419,7 +418,9 @@ namespace {
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank.
     kingFlank = KingFlank[file_of(ksq)];
-    b1 = attackedBy[Them][ALL_PIECES] & kingFlank & Camp;
+    b1 =   attackedBy[Them][ALL_PIECES]
+         & ~dble_attacks_bb<Us>(pos.pieces(Us, PAWN))
+         & kingFlank & Camp;
     b2 = b1 & attackedBy2[Them];
 
     int tropism = popcount(b1) + popcount(b2);
