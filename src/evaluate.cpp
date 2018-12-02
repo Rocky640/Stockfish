@@ -304,14 +304,15 @@ namespace {
             b &= LineBB[pos.square<KING>(Us)][s];
 
         // Attacked squares, including x-ray attacks for sliders
-        bx = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
-           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
-           : Pt ==  QUEEN ? attacks_bb< QUEEN>(s, pos.pieces() ^ pos.pieces(Us, QUEEN, ROOK))
-                          : b;
+        bx = Pt == BISHOP ?   attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
+           : Pt ==   ROOK ?   attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
+           : Pt ==  QUEEN ?   attacks_bb<BISHOP>(s, pos.pieces() ^ (pos.pieces(Us, BISHOP) & PseudoAttacks[BISHOP][s]))
+                            | attacks_bb<  ROOK>(s, pos.pieces() ^ (pos.pieces(Us, ROOK  ) & PseudoAttacks[  ROOK][s]))
+           : b;
 
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & bx;
         attackedBy[Us][Pt] |= b;
-        attackedBy[Us][ALL_PIECES] |= b;
+        attackedBy[Us][ALL_PIECES] |= bx;
 
         if (bx & kingRing[Them])
         {
