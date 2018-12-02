@@ -318,10 +318,10 @@ namespace {
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
-            kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
+            kingAttacksCount[Us] += popcount(bx & attackedBy[Them][KING]);
         }
 
-        int mob = popcount((Pt == ROOK ? bx : b) & mobilityArea[Us]);
+        int mob = popcount((Pt == QUEEN ? b : bx) & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
