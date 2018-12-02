@@ -88,8 +88,9 @@ namespace {
   constexpr Value LazyThreshold  = Value(1500);
   constexpr Value SpaceThreshold = Value(12222);
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
-  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 77, 55, 44, 10 };
+  // KingAttackWeights[PieceType] contains king attack weights by piece type.
+  // bonus is increased if the piece attacks some squares not defended by pawn.
+  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 77-5, 55-5, 44-5, 10-5 };
 
   // Penalties for enemy's safe checks
   constexpr int QueenSafeCheck  = 780;
@@ -312,7 +313,8 @@ namespace {
         if (b & kingRing[Them] & ~double_pawn_attacks_bb<Them>(pos.pieces(Them, PAWN)))
         {
             kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt];
+            bool weakdefense = b & kingRing[Them] & ~attackedBy[Them][PAWN];
+            kingAttackersWeight[Us] += KingAttackWeights[Pt] + 10 * weakdefense;
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
