@@ -274,7 +274,7 @@ namespace {
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
-        kingRing[Us] &= ~dble_attacks_bb<Us>(pos.pieces(Us, PAWN));
+        kingRing[Us] &= ~dble_attacks_bb<Us>(pos.pieces(Us, PAWN) & ~pos.blockers_for_king(Us));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
   }
