@@ -287,6 +287,8 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Direction DownRight = (Us == WHITE ? SOUTH_EAST : NORTH_WEST);
+    constexpr Direction DownLeft  = (Us == WHITE ? SOUTH_WEST : NORTH_EAST);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -309,7 +311,7 @@ namespace {
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
-        if (b & kingRing[Them])
+        if (b & kingRing[Them] & ~(shift<DownRight>(pos.pieces(Them,PAWN)) & shift<DownLeft>(pos.pieces(Them,PAWN))))
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
