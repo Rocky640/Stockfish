@@ -201,8 +201,8 @@ namespace {
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
-    // attacked by a given color and piece type. Special "piece types" which
-    // is also calculated is ALL_PIECES.
+    // attacked by a given color and piece type, exlucding x-rays.
+	// Special "piece types" which is also calculated is ALL_PIECES.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
@@ -289,7 +289,7 @@ namespace {
                                                    : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, bx, bb;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -297,26 +297,30 @@ namespace {
 
     while ((s = *pl++) != SQ_NONE)
     {
-        // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
-                         : pos.attacks_from<Pt>(s);
+        // Directly attacked squares
+        b = pos.attacks_from<Pt>(s);
 
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
+        // Attacked squares, including x-ray attacks for sliders
+        bx = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
+           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
+           : Pt ==  QUEEN ? attacks_bb< QUEEN>(s, pos.pieces() ^ pos.pieces(Us, QUEEN, ROOK))
+                          : b;
+
+        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & bx;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
-        if (b & kingRing[Them])
+        if (bx & kingRing[Them])
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        int mob = popcount(b & mobilityArea[Us]);
+        int mob = popcount((Pt == ROOK ? bx : b) & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
