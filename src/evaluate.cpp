@@ -274,6 +274,11 @@ namespace {
             kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
+
+        b  = pos.pieces(Them, PAWN) & shift<Up>(pos.pieces());
+        b |= double_pawn_attacks_bb<Us>(pos.pieces(Us, PAWN));
+        kingRing[Us] &= ~b;
+
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
   }
@@ -309,7 +314,7 @@ namespace {
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
-        if (b & kingRing[Them] & ~double_pawn_attacks_bb<Them>(pos.pieces(Them, PAWN)))
+        if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
