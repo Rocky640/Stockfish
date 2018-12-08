@@ -23,6 +23,7 @@
 #include <cstring>   // For std::memset
 #include <iomanip>
 #include <sstream>
+#include <cmath>
 
 #include "bitboard.h"
 #include "evaluate.h"
@@ -71,7 +72,7 @@ namespace Trace {
 
 using namespace Trace;
 
-namespace {
+namespace Eval {
 
   constexpr Bitboard QueenSide   = FileABB | FileBBB | FileCBB | FileDBB;
   constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
@@ -104,9 +105,7 @@ namespace {
   constexpr Score MobilityBonus[][32] = {
     { S(-62,-81), S(-53,-56), S(-12,-30), S( -4,-14), S(  3,  8), S( 13, 15), // Knights
       S( 22, 23), S( 28, 27), S( 33, 33) },
-    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
-      S( 55, 54), S( 63, 57), S( 63, 65), S( 68, 73), S( 81, 78), S( 81, 86),
-      S( 91, 88), S( 98, 97) },
+    {  },                                                                     // Bishops are handled elsewhere
     { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rooks
       S(  9,112), S( 16,118), S( 30,132), S( 29,142), S( 32,155), S( 38,165),
       S( 46,166), S( 48,169), S( 58,171) },
@@ -116,6 +115,8 @@ namespace {
       S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
+
+  Score BishopMob[2][SQUARE_NB][16] = {};
 
   // Outpost[knight/bishop][supported by pawn] contains bonuses for minor
   // pieces if they occupy or can reach an outpost square, bigger if that
@@ -864,6 +865,75 @@ namespace {
     return  (pos.side_to_move() == WHITE ? v : -v) // Side to move point of view
            + Eval::Tempo;
   }
+/*
+  Score BD[RANK_NB][int(FILE_NB) / 2] = {
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
+	  S(37, 75), S(37, 75),S(37, 75),S(37, 75)
+  };
+  */
+  int BFmg[RANK_NB][int(FILE_NB) / 2] = {
+	  110, 110, 110, 110,
+	  110, 110, 110, 110,
+	  110, 110, 110, 110,
+	  110, 110, 110, 110,
+	  110, 110, 110, 110,
+	  110, 110, 110, 110,
+	  110, 110, 110, 110,
+	  110, 110, 110, 110
+  };
+  int BFeg[RANK_NB][int(FILE_NB) / 2] = {
+	  145, 145, 145, 145,
+	  145, 145, 145, 145,
+	  145, 145, 145, 145,
+	  145, 145, 145, 145,
+	  145, 145, 145, 145,
+	  145, 145, 145, 145,
+	  145, 145, 145, 145,
+	  145, 145, 145, 145
+  };
+  int BFLogmg[RANK_NB][int(FILE_NB) / 2] = {
+	  8,8,8,8,
+	  8,8,8,8,
+	  8,8,8,8,
+	  8,8,8,8,
+	  8,8,8,8,
+	  8,8,8,8,
+	  8,8,8,8,
+	  8,8,8,8
+  };
+  int BFLogeg[RANK_NB][int(FILE_NB) / 2] = {
+	  13,13,13,13,
+	  13,13,13,13,
+	  13,13,13,13,
+	  13,13,13,13,
+	  13,13,13,13,
+	  13,13,13,13,
+	  13,13,13,13,
+	  13,13,13,13
+  };
+  
+  TUNE(SetRange(0, 200), BFmg,    BFeg);
+  TUNE(SetRange(0,  20), BFLogmg, BFLogeg, init);
+  
+/// Eval::init() initializes the bishop mobility tablesome tables needed by evaluation. A formula reduces
+/// independent parameters and allows easier tuning.
+void init() {
+
+  for (Square s = SQ_A1; s <= SQ_H8; ++s)
+	  for (int m = 0; m < 16; ++m)
+	  {
+		Rank r = rank_of(s);
+		File f = std::min(file_of(s), ~file_of(s));
+		BishopMob[WHITE][s][m] = -make_score(37,75) +make_score(BFmg[r  ][f]*log10(m+BFLogmg[r  ][f]/10),BFeg[r  ][f]*log10(m+BFLogeg[r  ][f]/10));
+		BishopMob[BLACK][s][m] = -make_score(37,75) +make_score(BFmg[8-r][f]*log10(m+BFLogmg[8-r][f]/10),BFeg[8-r][f]*log10(m+BFLogeg[8-r][f]/10));
+	  }
+}
 
 } // namespace
 

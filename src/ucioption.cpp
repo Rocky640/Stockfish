@@ -210,7 +210,7 @@ string Tune::next(string& names, bool pop) {
 
 static void on_tune(const UCI::Option& o) {
 
-  if (!Tune::update_on_last || LastOption == &o)
+  if (LastOption == &o)
       Tune::read_options();
 }
 
