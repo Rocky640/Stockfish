@@ -866,76 +866,65 @@ namespace Eval {
     return  (pos.side_to_move() == WHITE ? v : -v) // Side to move point of view
            + Eval::Tempo;
   }
-/*
-  Score BD[RANK_NB][int(FILE_NB) / 2] = {
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75),
-	  S(37, 75), S(37, 75),S(37, 75),S(37, 75)
-  };
-  */
+
   int BFmg[RANK_NB][int(FILE_NB) / 2] = {
-	  110, 110, 110, 110,
-	  110, 110, 110, 110,
-	  110, 110, 110, 110,
-	  110, 110, 110, 110,
-	  110, 110, 110, 110,
-	  110, 110, 110, 110,
-	  110, 110, 110, 110,
-	  110, 110, 110, 110
+      {110, 110, 110, 110},
+      {110, 110, 110, 110},
+	  {110, 110, 110, 110},
+	  {110, 110, 110, 110},
+	  {110, 110, 110, 110},
+	  {110, 110, 110, 110},
+	  {110, 110, 110, 110},
+	  {110, 110, 110, 110}
   };
   int BFeg[RANK_NB][int(FILE_NB) / 2] = {
-	  145, 145, 145, 145,
-	  145, 145, 145, 145,
-	  145, 145, 145, 145,
-	  145, 145, 145, 145,
-	  145, 145, 145, 145,
-	  145, 145, 145, 145,
-	  145, 145, 145, 145,
-	  145, 145, 145, 145
+      {145, 145, 145, 145},
+      {145, 145, 145, 145},
+      {145, 145, 145, 145},
+	  {145, 145, 145, 145},
+	  {145, 145, 145, 145},
+	  {145, 145, 145, 145},
+	  {145, 145, 145, 145},
+	  {145, 145, 145, 145}
   };
   int BFLogmg[RANK_NB][int(FILE_NB) / 2] = {
-	  8,8,8,8,
-	  8,8,8,8,
-	  8,8,8,8,
-	  8,8,8,8,
-	  8,8,8,8,
-	  8,8,8,8,
-	  8,8,8,8,
-	  8,8,8,8
+      {8,8,8,8},
+      {8,8,8,8},
+	  {8,8,8,8},
+	  {8,8,8,8},
+	  {8,8,8,8},
+	  {8,8,8,8},
+	  {8,8,8,8},
+	  {8,8,8,8}
   };
   int BFLogeg[RANK_NB][int(FILE_NB) / 2] = {
-	  13,13,13,13,
-	  13,13,13,13,
-	  13,13,13,13,
-	  13,13,13,13,
-	  13,13,13,13,
-	  13,13,13,13,
-	  13,13,13,13,
-	  13,13,13,13
+      {13,13,13,13},
+      {13,13,13,13},
+	  {13,13,13,13},
+	  {13,13,13,13},
+	  {13,13,13,13},
+	  {13,13,13,13},
+	  {13,13,13,13},
+	  {13,13,13,13}
   };
   
   TUNE(SetRange(0, 200), BFmg,    BFeg);
-  TUNE(SetRange(0,  20), BFLogmg, BFLogeg, init);
+  TUNE(SetRange(1,  20), BFLogmg, BFLogeg, init);
   
 /// Eval::init() initializes the bishop mobility tablesome tables needed by evaluation. A formula reduces
 /// independent parameters and allows easier tuning.
 void init() {
 
   for (Square s = SQ_A1; s <= SQ_H8; ++s)
-	  for (int m = 0; m < 16; ++m)
-	  {
-		Rank r = rank_of(s);
-		File f = std::min(file_of(s), ~file_of(s));
-		BishopMob[WHITE][s][m] = -make_score(37,75)
-		                         +make_score(BFmg[r][f] * log10(m + BFLogmg[r][f] / 10),
-		                                     BFeg[r][f] * log10(m + BFLogeg[r][f] / 10));
-		BishopMob[BLACK][~s][m] = BishopMob[WHITE][s][m];
-	  }
+      for (int m = 0; m < 16; ++m)
+      {
+        Rank r = rank_of(s);
+        File f = std::min(file_of(s), ~file_of(s));
+        BishopMob[WHITE][s][m] = -make_score(37,75)
+                                 +make_score(BFmg[r][f] * log10(m + BFLogmg[r][f] / 10.0),
+                                             BFeg[r][f] * log10(m + BFLogeg[r][f] / 10.0));
+        BishopMob[BLACK][~s][m] = BishopMob[WHITE][s][m];
+      }
 }
 
 } // namespace
