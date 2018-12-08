@@ -319,7 +319,8 @@ namespace Eval {
 
         int mob = popcount(b & mobilityArea[Us]);
 
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
+        
+        mobility[Us] += (Pt == BISHOP) ? BishopMob[Us][s][mob] : MobilityBonus[Pt - 2][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
@@ -930,8 +931,10 @@ void init() {
 	  {
 		Rank r = rank_of(s);
 		File f = std::min(file_of(s), ~file_of(s));
-		BishopMob[WHITE][s][m] = -make_score(37,75) +make_score(BFmg[r  ][f]*log10(m+BFLogmg[r  ][f]/10),BFeg[r  ][f]*log10(m+BFLogeg[r  ][f]/10));
-		BishopMob[BLACK][s][m] = -make_score(37,75) +make_score(BFmg[8-r][f]*log10(m+BFLogmg[8-r][f]/10),BFeg[8-r][f]*log10(m+BFLogeg[8-r][f]/10));
+		BishopMob[WHITE][s][m] = -make_score(37,75)
+		                         +make_score(BFmg[r][f] * log10(m + BFLogmg[r][f] / 10),
+		                                     BFeg[r][f] * log10(m + BFLogeg[r][f] / 10));
+		BishopMob[BLACK][~s][m] = BishopMob[WHITE][s][m];
 	  }
 }
 
