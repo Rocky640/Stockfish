@@ -257,7 +257,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
-
+    attackedBy[Us][7] = 0;
     kingRing[Us] = kingAttackersCount[Them] = 0;
 
     // Init our king safety tables only if we are going to use them
@@ -377,16 +377,21 @@ namespace {
                 score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
 
             // Penalty when trapped by the king, even more if the king cannot castle
-            else if (mob <= 3)
+            else
             {
-                File kf = file_of(pos.square<KING>(Us));
-                if ((kf < FILE_E) == (file_of(s) < kf))
-                    score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.castling_rights(Us));
-            }
+                attackedBy[Us][7] |= b & forward_file_bb(Us, s);
+				if (mob <= 3)
+				{
+					File kf = file_of(pos.square<KING>(Us));
+					if ((kf < FILE_E) == (file_of(s) < kf))
+						score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.castling_rights(Us));
+				}
+			}
         }
 
         if (Pt == QUEEN)
         {
+            attackedBy[Us][7] |= b & forward_file_bb(Us, s);
             // Penalty if any relative pin or discovered attack against the queen
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
@@ -573,7 +578,7 @@ namespace {
     b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
 
     // Keep only the squares which are relatively safe
-    b &= ~attackedBy[Them][PAWN] & safe;
+    b &= ~attackedBy[Them][PAWN] & (safe | shift<Up>(attackedBy[Us][7]));
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
