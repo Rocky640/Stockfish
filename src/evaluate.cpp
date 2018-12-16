@@ -558,10 +558,10 @@ namespace {
         score += Hanging * popcount(weak & b);
     }
 
-    // Bonus for restricting their piece moves
-    restricted =   attackedBy[Them][ALL_PIECES]
-                & ~stronglyProtected
-                &  attackedBy[Us][ALL_PIECES];
+    // Bonus for restricting their piece moves or fighting potential outposts
+    restricted =   attackedBy[Us][ALL_PIECES] & attackedBy[Them][ALL_PIECES]
+                & ~(stronglyProtected & pe->pawn_attacks_span(Us));
+
     score += RestrictedPiece * popcount(restricted);
 
     // Bonus for enemy unopposed weak pawns
