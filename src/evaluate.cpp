@@ -263,10 +263,10 @@ namespace {
     // Init our king safety tables only if we are going to use them
     if (pos.non_pawn_material(Them) >= RookValueMg + KnightValueMg)
     {
-        ksq = make_square(std::max(FILE_B, std::min(FILE_G, file_of(ksq))),
-                          std::max(RANK_2, std::min(RANK_7, rank_of(ksq))));
+        Square rsq = make_square(std::max(FILE_B, std::min(FILE_G, file_of(ksq))),
+                                 std::max(RANK_2, std::min(RANK_7, rank_of(ksq))));
 
-        kingRing[Us] = PseudoAttacks[KING][ksq];
+        kingRing[Us] = PseudoAttacks[KING][rsq] | rsq;
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
         kingRing[Us] &= ~double_pawn_attacks_bb<Us>(pos.pieces(Us, PAWN));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
