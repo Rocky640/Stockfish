@@ -267,8 +267,8 @@ namespace {
                           std::max(RANK_2, std::min(RANK_7, rank_of(ksq))));
 
         kingRing[Us] = PseudoAttacks[KING][ksq];
-
         kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
+        kingRing[Us] &= ~double_pawn_attacks_bb<Us>(pos.pieces(Us, PAWN));
         kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
     }
   }
@@ -304,7 +304,7 @@ namespace {
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
-        if (b & kingRing[Them] & ~double_pawn_attacks_bb<Them>(pos.pieces(Them, PAWN)))
+        if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
