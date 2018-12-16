@@ -508,6 +508,8 @@ namespace {
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  LowRanks = (Us == WHITE ? Rank8BB | Rank7BB | Rank6BB :
+                                                  Rank1BB | Rank2BB | Rank3BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe, restricted;
     Score score = SCORE_ZERO;
@@ -559,9 +561,9 @@ namespace {
     }
 
     // Bonus for restricting their piece moves
-    restricted =   attackedBy[Them][ALL_PIECES]
-                & ~stronglyProtected
-                &  attackedBy[Us][ALL_PIECES];
+    restricted =   attackedBy[Us][ALL_PIECES] & attackedBy[Them][ALL_PIECES]
+                & (~stronglyProtected | LowRanks);
+
     score += RestrictedPiece * popcount(restricted);
 
     // Bonus for enemy unopposed weak pawns
