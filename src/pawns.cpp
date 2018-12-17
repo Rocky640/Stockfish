@@ -67,8 +67,8 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
 	constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard BlockingFilesWest = FileBBB | FileCBB;
-    constexpr Bitboard BlockingFilesEast = FileFBB | FileGBB;
+    constexpr Bitboard BlockingFilesWest = FileBBB;
+    constexpr Bitboard BlockingFilesEast = FileFBB;
     constexpr Direction DownWest = (Us == WHITE ? SOUTH_WEST : NORTH_WEST);
     constexpr Direction DownEast = (Us == WHITE ? SOUTH_EAST : NORTH_EAST);
 
@@ -146,12 +146,12 @@ namespace {
             score -= Doubled;
     }
 
-    // Find squares to avoid for a bishop on edge files which would be blocked by
-    // some friendly blocking pawns.
+    // Find squares to avoid for a bishop on file a/h which would be blocked by
+    // some friendly blocking pawns on b/g
     b  = ourPawns & shift<Down>(theirPawns);
     b |= ourPawns & shift<Down>(b);
-    b1 = b & BlockingFilesWest, b1 |= shift<DownWest>(b1), b1 |= shift<DownWest>(b1);
-    b2 = b & BlockingFilesEast, b2 |= shift<DownEast>(b2), b2 |= shift<DownEast>(b2);
+    b1 = b & BlockingFilesWest, b1 |= shift<DownWest>(b1);
+    b2 = b & BlockingFilesEast, b2 |= shift<DownEast>(b2);
     e->blockedBishop[Us] = b1 | b2;
 
     return score;
