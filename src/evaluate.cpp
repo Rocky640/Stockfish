@@ -207,7 +207,7 @@ namespace {
 
     // attackedBy2[color] are the squares attacked by 2 pieces of a given color,
     // possibly via x-ray or by one pawn and one piece. Diagonal x-ray through
-    // pawn or squares attacked by 2 pawns are not explicitly added.
+    // pawn is included but not squares only attacked by 2 pawns.
     Bitboard attackedBy2[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king, plus (only for a
@@ -386,6 +386,16 @@ namespace {
             }
         }
 
+        if (Pt == BISHOP || Pt == QUEEN)
+        {
+            // Update the attackedBy2 with advanced pawn attacked backed by the bishop
+            bb = pos.pieces(Us, PAWN) & b & OutpostRanks;
+            while (bb)
+            {
+                Square s2 = pop_lsb(&bb);
+                attackedBy2[Us] |= PawnAttacks[Us][s2] & LineBB[s][s2];
+            }
+        }
         if (Pt == QUEEN)
         {
             // Penalty if any relative pin or discovered attack against the queen
