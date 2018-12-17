@@ -317,9 +317,31 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
+        if (Pt == BISHOP)
+            b &= ~pe->blocked_bishop(Us);
+
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        if (Pt == BISHOP)
+		{
+			// Penalty according to number of pawns on the same color square as the
+			// bishop, bigger when the center files are blocked with pawns.
+			Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
+
+			score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
+								 * (1 + popcount(blocked & CenterFiles));
+
+			// Bonus for bishop on a long diagonal which can "see" both center squares
+			if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
+				score += LongDiagonalBishop;
+			if (pe->blocked_bishop(Us) & s) 
+			{
+				score -= RestrictedPiece;
+				continue;
+			}
+		}
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
@@ -337,20 +359,6 @@ namespace {
 
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
-
-            if (Pt == BISHOP)
-            {
-                // Penalty according to number of pawns on the same color square as the
-                // bishop, bigger when the center files are blocked with pawns.
-                Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
-
-                score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
-                                     * (1 + popcount(blocked & CenterFiles));
-
-                // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
-                    score += LongDiagonalBishop;
-            }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially

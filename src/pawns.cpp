@@ -66,8 +66,13 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+	constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
+    constexpr Bitboard BlockingFilesWest = FileBBB | FileCBB;
+    constexpr Bitboard BlockingFilesEast = FileFBB | FileGBB;
+    constexpr Direction DownWest = (Us == WHITE ? SOUTH_WEST : NORTH_WEST);
+    constexpr Direction DownEast = (Us == WHITE ? SOUTH_EAST : NORTH_EAST);
 
-    Bitboard b, neighbours, stoppers, doubled, support, phalanx;
+    Bitboard b, b1, b2, neighbours, stoppers, doubled, support, phalanx;
     Bitboard lever, leverPush;
     Square s;
     bool opposed, backward;
@@ -104,8 +109,8 @@ namespace {
         phalanx    = neighbours & rank_bb(s);
         support    = neighbours & rank_bb(s - Up);
 
-        // A pawn is backward when it is behind all pawns of the same color
-        // on the adjacent files and cannot be safely advanced.
+        // A pawn is backward when it is behind all pawns of
+        // the same color on the adjacent files and cannot be safely advanced.
         backward =  !(ourPawns & pawn_attack_span(Them, s + Up))
                   && (stoppers & (leverPush | (s + Up)));
 
@@ -140,6 +145,14 @@ namespace {
         if (doubled && !support)
             score -= Doubled;
     }
+
+    // Find squares to avoid for a bishop on edge files which would be blocked by
+    // some friendly blocking pawns.
+    b  = ourPawns & shift<Down>(theirPawns);
+    b |= ourPawns & shift<Down>(b);
+    b1 = b & BlockingFilesWest, b1 |= shift<DownWest>(b1), b1 |= shift<DownWest>(b1);
+    b2 = b & BlockingFilesEast, b2 |= shift<DownEast>(b2), b2 |= shift<DownEast>(b2);
+    e->blockedBishop[Us] = b1 | b2;
 
     return score;
   }
