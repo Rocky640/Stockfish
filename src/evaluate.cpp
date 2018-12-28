@@ -668,6 +668,9 @@ namespace {
                 else if (defendedSquares & blockSq)
                     k += 4;
 
+                if (pos.count<BISHOP>(Us) > 1)
+                    k += 4;
+
                 bonus += make_score(k * w, k * w);
             }
         } // rank > RANK_3
