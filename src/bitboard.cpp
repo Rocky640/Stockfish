@@ -25,7 +25,6 @@
 
 uint8_t PopCnt16[1 << 16];
 int SquareDistance[SQUARE_NB][SQUARE_NB];
-
 Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
@@ -157,6 +156,14 @@ void Bitboards::init() {
               LineBB[s1][s2] = (attacks_bb(pt, s1, 0) & attacks_bb(pt, s2, 0)) | s1 | s2;
               BetweenBB[s1][s2] = attacks_bb(pt, s1, SquareBB[s2]) & attacks_bb(pt, s2, SquareBB[s1]);
           }
+  }
+
+  for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
+  {
+      Bitboard b = PseudoAttacks[7][s1] = PseudoAttacks[KNIGHT][s1];
+
+      while (b)
+          PseudoAttacks[7][s1] |= PseudoAttacks[KNIGHT][pop_lsb(&b)];
   }
 }
 
