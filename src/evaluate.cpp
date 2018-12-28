@@ -121,10 +121,10 @@ namespace {
   // pieces if they occupy or can reach an outpost square, bigger if that
   // square is supported by a pawn.
   constexpr Score Outpost[][2] = {
-    { S(22, 6), S(36-6,12-4) }, // Knight
+    { S(22, 6), S(36,12) }, // Knight
     { S( 9, 2), S(15, 5) }  // Bishop
   };
-  const Score KnightSafe = S(12, 8);
+  const Score KnightSafe = S(6, 4);
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
@@ -324,8 +324,8 @@ namespace {
             if (bb & s)
             {
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
-                if (Pt == KNIGHT && !(PseudoAttacks[7][s] & pos.pieces(Them, KNIGHT)))
-                    score += KnightSafe;
+                if (Pt == KNIGHT)
+                    score += KnightSafe * (bool(PseudoAttacks[7][s] & pos.pieces(Them, KNIGHT)) ? 1 : -1);
             }
 
             else if (bb &= b & ~pos.pieces(Us))
