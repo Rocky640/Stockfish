@@ -153,7 +153,7 @@ namespace {
 
   // BishopPawns[unopposed/opposed] contains the factor applied to number of
   // pawn or blocking pawn for a bishop which has an enemy bishop on same color or not.
-  constexpr Score BishopPawns[] = { S(5, 8), S(2, 6) };
+  constexpr Score BishopPawns[] = { S(2, 6), S(5, 8) };
 
   // Assorted bonuses and penalties
   constexpr Score CloseEnemies       = S(  8,  0);
