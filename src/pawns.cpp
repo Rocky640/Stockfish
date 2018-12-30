@@ -143,6 +143,28 @@ namespace {
 
     return score;
   }
+  
+  template<Color Us>
+  void evaluate_outpost(const Position& pos, Pawns::Entry* e) {
+     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                                    : Rank5BB | Rank4BB | Rank3BB);
+     constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
+
+     e->pawnAttacksSpan[Them] |= ~OutpostRanks;
+
+     // potential supported outposts
+     Bitboard b = ~e->pawnAttacksSpan[Them] & e->pawnAttacks[Us];
+     Bitboard safe = ~(pos.pieces(PAWN) | e->pawnAttacks[Them]);
+     e->twoStep[Us][0] = e->twoStep[Us][1] = 0;
+     while (b)
+     {
+         Square s = pop_lsb(&b);
+         e->twoStep[Us][0] |= PseudoAttacks[KNIGHT][s];
+         e->twoStep[Us][1] |= attacks_bb<BISHOP>(s, pos.pieces(PAWN));
+     }
+     e->twoStep[Us][0] &= safe;
+     e->twoStep[Us][1] &= safe;
+  }
 
 } // namespace
 
@@ -185,6 +207,8 @@ Entry* probe(const Position& pos) {
   e->key = key;
   e->scores[WHITE] = evaluate<WHITE>(pos, e);
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
+  evaluate_outpost<WHITE>(pos, e);
+  evaluate_outpost<BLACK>(pos, e);
   e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
   e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
                           | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
