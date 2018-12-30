@@ -124,7 +124,6 @@ namespace {
     { S(22, 6), S(36,12) }, // Knight
     { S( 9, 2), S(15, 5) }  // Bishop
   };
-  const Score TwoStepOutpost = S(11, 3);
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
@@ -325,9 +324,6 @@ namespace {
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & s)] * 2;
             else if (bb &= b & ~pos.pieces(Us))
                 score += Outpost[Pt == BISHOP][bool(attackedBy[Us][PAWN] & bb)];
-            else if (Pt == KNIGHT)
-                if (bb & PseudoAttacks[7][s])
-                    score += TwoStepOutpost;
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
@@ -457,8 +453,8 @@ namespace {
         unsafeChecks |= b2;
 
     // Enemy knights checks
-    b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
-    if (b & safe)
+    b = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][7];
+    if (b & safe & attackedBy[Them][KNIGHT])
         kingDanger += KnightSafeCheck;
     else
         unsafeChecks |= b;
