@@ -152,6 +152,7 @@ namespace {
   };
 
   // Assorted bonuses and penalties
+  constexpr Score BishopPair         = S( 85,100);
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CloseEnemies       = S(  8,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
@@ -806,6 +807,10 @@ namespace {
     // the position object (material + piece square tables) and the material
     // imbalance. Score is computed internally from the white point of view.
     Score score = pos.psq_score() + me->imbalance() + pos.this_thread()->contempt;
+    if (pos.count<BISHOP>(WHITE) == 2)
+       score += BishopPair;
+    if (pos.count<BISHOP>(BLACK) == 2)
+       score -= BishopPair;
 
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
