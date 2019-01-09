@@ -134,7 +134,10 @@ namespace {
             score += Connected[opposed][bool(phalanx)][popcount(support)][relative_rank(Us, s)];
 
         else if (!neighbours)
-            score -= Isolated[!opposed && more_than_one(leverPush)], e->weakUnopposed[Us] += !opposed;
+        {
+            score -= Isolated[!opposed && more_than_one(leverPush) && (relative_rank(Us, s) == RANK_4)];
+            e->weakUnopposed[Us] += !opposed;
+        }
 
         else if (backward)
             score -= Backward, e->weakUnopposed[Us] += !opposed;
