@@ -140,6 +140,8 @@ namespace {
     S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(51, 38)
   };
 
+  constexpr Score ThreatByKing[2] = { S(24, 89), S(24, 120) };
+  
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   constexpr Score PassedRank[RANK_NB] = {
     S(0, 0), S(5, 18), S(12, 23), S(10, 31), S(57, 62), S(163, 167), S(271, 250)
@@ -164,7 +166,6 @@ namespace {
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
   constexpr Score SliderOnQueen      = S( 59, 18);
-  constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatByRank       = S( 13,  0);
   constexpr Score ThreatBySafePawn   = S(173, 94);
@@ -542,8 +543,9 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
-        if (weak & attackedBy[Us][KING])
-            score += ThreatByKing;
+        b = weak & attackedBy[Us][KING];
+        if (b)
+            score += ThreatByKing[bool(b & pos.pieces(PAWN) & shift<Up>(pos.pieces(Us)))];
 
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
