@@ -301,7 +301,7 @@ namespace {
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
+        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b & ~pos.pieces(Them, Pt);
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
