@@ -334,8 +334,8 @@ namespace {
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
 
-            // More penalty if the king is in the way in the endgame
-            score -= HinderMinor * bool(b & pos.square<KING>(Us));
+            // More penalty if pieces in the way in the endgame (including king)
+            score -= HinderMinor * bool(b & (pos.pieces(Us) ^ pos.pieces(Us, PAWN)));
 
             if (Pt == BISHOP)
             {
