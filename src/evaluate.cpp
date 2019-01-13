@@ -284,6 +284,7 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard Edges = Rank1BB | Rank8BB | FileABB | FileHBB;
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -335,7 +336,7 @@ namespace {
             score -= KingProtector * distance(s, pos.square<KING>(Us));
 
             // More penalty if pieces in the way in the endgame (including king)
-            score -= HinderMinor * bool(b & (pos.pieces(Us) ^ pos.pieces(Us, PAWN)));
+            score -= HinderMinor * bool(b & ~Edges & (pos.pieces(Us) ^ pos.pieces(Us, PAWN)));
 
             if (Pt == BISHOP)
             {
