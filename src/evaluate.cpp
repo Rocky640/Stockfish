@@ -157,7 +157,7 @@ namespace {
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 69, 36);
   constexpr Score KingProtector      = S(  7,  8);
-  constexpr Score HinderMinor        = S(  0, 15);
+  constexpr Score HinderMinor        = S( 10, 15);
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
@@ -319,6 +319,9 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+            // Some mobility adjustment when pieces are in the way
+            mobility[Us] -= HinderMinor * bool(b & (pos.pieces(Us) ^ pos.pieces(Us, PAWN)));
+
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & ~pe->pawn_attacks_span(Them);
             if (bb & s)
@@ -333,9 +336,6 @@ namespace {
 
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
-
-            // More penalty if pieces in the way in the endgame (including king)
-            score -= HinderMinor * bool(b & (pos.pieces(Us) ^ pos.pieces(Us, PAWN)));
 
             if (Pt == BISHOP)
             {
