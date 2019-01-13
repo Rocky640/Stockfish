@@ -308,16 +308,13 @@ namespace {
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
-        b &= ~pos.pieces(Them, Pt);
+        int mob = popcount(b & mobilityArea[Us]);
+        mobility[Us] += MobilityBonus[Pt - 2][mob];
 
+        b &= ~pos.pieces(Them, Pt);
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
-
-
-        int mob = popcount(b & mobilityArea[Us]);
-
-        mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
