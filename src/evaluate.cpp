@@ -285,7 +285,7 @@ namespace {
                                                    : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, bb, bx;
     Square s;
     Score score = SCORE_ZERO;
 
@@ -301,7 +301,15 @@ namespace {
         if (pos.blockers_for_king(Us) & s)
             b &= LineBB[pos.square<KING>(Us)][s];
 
-        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b & ~pos.pieces(Them, Pt);
+
+        bx = 0;
+        if (Pt != KNIGHT)
+        {
+            bb = b & pos.pieces(Them, Pt);
+            while (bb)
+                bx |= BetweenBB[pop_lsb(&bb)][s];
+        }
+        attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b & ~bx;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
