@@ -332,7 +332,7 @@ namespace {
             if (shift<Down>(pos.pieces(PAWN)) & s)
                 score += MinorBehindPawn;
             else if ((LowRanks & s) && (pe->semiopen_file(Us, file_of(s))))
-                score -= MinorBehindPawn;
+                score -= RestrictedPiece;
 
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
