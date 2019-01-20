@@ -283,6 +283,8 @@ namespace {
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard LowRanks     = (Us == WHITE ? Rank1BB | Rank2BB : Rank8BB | Rank7BB);
+
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -329,9 +331,12 @@ namespace {
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
                 score += MinorBehindPawn;
+            else if ((LowRanks & s) && (pe->semiopen_file(Us, file_of(s))))
+                score -= MinorBehindPawn;
 
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
+
 
             if (Pt == BISHOP)
             {
