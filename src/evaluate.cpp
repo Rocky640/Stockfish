@@ -337,7 +337,8 @@ namespace {
             {
                 // Penalty according to number of pawns on the same color square as the
                 // bishop, bigger when the center files are blocked with pawns.
-                Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
+                Bitboard blocked =  pos.pieces(Us, PAWN)
+                                  & (shift<Down>(pos.pieces()) | shift<Down + Down>(pos.pieces(PAWN)));
 
                 score -= BishopPawns * pe->pawns_on_same_color_squares(Us, s)
                                      * (1 + popcount(blocked & CenterFiles));
@@ -715,7 +716,7 @@ namespace {
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
     behind |= shift<Down>(behind);
-    behind |= shift<Down>(shift<Down>(behind));
+    behind |= shift<Down + Down>(behind);
 
     int bonus = popcount(safe) + popcount(behind & safe);
     int weight =  pos.count<ALL_PIECES>(Us)
