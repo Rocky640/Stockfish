@@ -153,6 +153,7 @@ namespace {
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  7);
+  constexpr Score BishopCanImprove   = S(  4,  4);
   constexpr Score CloseEnemies       = S(  8,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 69, 36);
@@ -345,6 +346,17 @@ namespace {
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
                     score += LongDiagonalBishop;
+
+                // Find the mobile pieces defended by this bishop, possibly though queen x-ray
+                b &= pos.pieces(Us) & ~blocked;
+
+                // Remove those pieces from the board, along with queens, 
+                // and evaluate new potential mobility
+                bb = attacks_bb<BISHOP>(s, pos.pieces() ^ (b | pos.pieces(QUEEN))); 
+                mob = popcount(bb & mobilityArea[Us] & ~b) - 2;
+
+                // Adjust according to prospects if bishop stays on square s
+                score += BishopCanImprove * mob;
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
@@ -718,8 +730,9 @@ namespace {
     behind |= shift<Down>(shift<Down>(behind));
 
     int bonus = popcount(safe) + popcount(behind & safe);
-    int weight =  pos.count<ALL_PIECES>(Us)
-                - 2 * popcount(pe->semiopenFiles[WHITE] & pe->semiopenFiles[BLACK]);
+    int weight =   pos.count<ALL_PIECES>(Us)
+	             + 2 * bool(pos.count<BISHOP>(Us) == 2)
+                 - 2 * popcount(pe->semiopenFiles[WHITE] & pe->semiopenFiles[BLACK]);
 
     Score score = make_score(bonus * weight * weight / 16, 0);
 
