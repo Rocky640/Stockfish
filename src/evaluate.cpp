@@ -153,7 +153,7 @@ namespace {
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  7);
-  constexpr Score BishopCanImprove   = S(  4,  4);
+  constexpr Score BishopCanImprove   = S(  2,  2);
   constexpr Score CloseEnemies       = S(  8,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score Hanging            = S( 69, 36);
@@ -353,7 +353,7 @@ namespace {
                 // Remove those pieces from the board, along with queens, 
                 // and evaluate new potential mobility
                 bb = attacks_bb<BISHOP>(s, pos.pieces() ^ (b | pos.pieces(QUEEN))); 
-                mob = popcount(bb & mobilityArea[Us] & ~b) - 2;
+                mob = popcount(bb & mobilityArea[Us] & ~b);
 
                 // Adjust according to prospects if bishop stays on square s
                 score += BishopCanImprove * mob;
