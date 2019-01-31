@@ -158,6 +158,7 @@ namespace {
   constexpr Score Hanging            = S( 69, 36);
   constexpr Score KingProtector      = S(  7,  8);
   constexpr Score KnightOnQueen      = S( 16, 12);
+  constexpr Score Granite            = S( 20,  0);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
   constexpr Score PawnlessFlank      = S( 17, 95);
@@ -592,6 +593,11 @@ namespace {
 
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
+	
+	// Penalty if our bishop is attacking a protected pawn which cannot be levered
+    b =   attackedBy[Us][BISHOP]
+	    & pos.pieces(Them, PAWN) & attackedBy[Them][PAWN] & ~pe->pawn_attacks_span(Us);
+	score -= Granite * popcount(b);
 
     if (T)
         Trace::add(THREAT, Us, score);
