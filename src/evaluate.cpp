@@ -77,6 +77,7 @@ namespace {
   constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
   constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
   constexpr Bitboard Center      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
+  constexpr Bitboard Edges       = FileABB | FileHBB;
 
   constexpr Bitboard KingFlank[FILE_NB] = {
     QueenSide ^ FileDBB, QueenSide, QueenSide,
@@ -268,6 +269,9 @@ namespace {
 
     else if (file_of(pos.square<KING>(Us)) == FILE_A)
         kingRing[Us] |= shift<EAST>(kingRing[Us]);
+	
+	if (relative_rank(Us, pos.square<KING>(Us)) <= RANK_2)
+	    kingRing[Us] |= shift<Up>(kingRing[Us]) & pos.pieces(Us, PAWN) & Edges;
 
     kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
     kingRing[Us] &= ~double_pawn_attacks_bb<Us>(pos.pieces(Us, PAWN));
