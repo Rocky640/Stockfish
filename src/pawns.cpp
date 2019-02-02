@@ -243,7 +243,7 @@ Score Entry::do_king_safety(const Position& pos) {
  
     
   // Init our king safety tables
-  kingRing[Us] = PseudoAttacks[Us][KING];
+  kingRing[Us] = PseudoAttacks[KING][ksq];
   if (relative_rank(Us, ksq) == RANK_1)
 	 kingRing[Us] |= shift<Up>(kingRing[Us]);
   
