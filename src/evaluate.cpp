@@ -210,18 +210,12 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // kingRing[color] are the squares adjacent to the king, plus (only for a
-    // king on its first rank) the squares two ranks in front. For instance,
-    // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
-    // and h6.
-    Bitboard kingRing[COLOR_NB];
-
     // kingAttackersCount[color] is the number of pieces of the given color
-    // which attack a square in the kingRing of the enemy king.
+    // which attack a square in the enemy king ring.
     int kingAttackersCount[COLOR_NB];
 
     // kingAttackersWeight[color] is the sum of the "weights" of the pieces of
-    // the given color which attack a square in the kingRing of the enemy king.
+    // the given color which attack a square in the enemy king ring.
     // The weights of the individual piece types are given by the elements in
     // the KingAttackWeights array.
     int kingAttackersWeight[COLOR_NB];
@@ -241,7 +235,6 @@ namespace {
   void Evaluation<T>::initialize() {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
-    constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
 
@@ -258,19 +251,7 @@ namespace {
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
-    // Init our king safety tables
-    kingRing[Us] = attackedBy[Us][KING];
-    if (relative_rank(Us, pos.square<KING>(Us)) == RANK_1)
-        kingRing[Us] |= shift<Up>(kingRing[Us]);
-
-    if (file_of(pos.square<KING>(Us)) == FILE_H)
-        kingRing[Us] |= shift<WEST>(kingRing[Us]);
-
-    else if (file_of(pos.square<KING>(Us)) == FILE_A)
-        kingRing[Us] |= shift<EAST>(kingRing[Us]);
-
-    kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
-    kingRing[Us] &= ~double_pawn_attacks_bb<Us>(pos.pieces(Us, PAWN));
+    kingAttackersCount[Them] = popcount(pe->king_ring(Us) & pe->pawn_attacks(Them));
     kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
   }
 
@@ -305,7 +286,7 @@ namespace {
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
 
-        if (b & kingRing[Them])
+        if (b & pe->king_ring(Them))
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
@@ -481,7 +462,7 @@ namespace {
 
     kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                  +  69 * kingAttacksCount[Them]
-                 + 185 * popcount(kingRing[Us] & weak)
+                 + 185 * popcount(pe->king_ring(Us) & weak)
                  + 150 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
                  +   5 * tropism * tropism / 16
                  - 873 * !pos.count<QUEEN>(Them)

@@ -234,14 +234,39 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
 template<Color Us>
 Score Entry::do_king_safety(const Position& pos) {
 
+  constexpr Direction Up = (Us == WHITE ? NORTH : SOUTH);
+
   Square ksq = pos.square<KING>(Us);
+  
   kingSquares[Us] = ksq;
   castlingRights[Us] = pos.castling_rights(Us);
-  int minKingPawnDistance = 0;
+ 
+    
+  // Init our king safety tables
+  kingRing[Us] = PseudoAttacks[Us][KING];
+  if (relative_rank(Us, ksq) == RANK_1)
+	 kingRing[Us] |= shift<Up>(kingRing[Us]);
+  
+  if (file_of(ksq) == FILE_H)
+	 kingRing[Us] |= shift<WEST>(kingRing[Us]);
 
+  else if (file_of(ksq) == FILE_A)
+	  kingRing[Us] |= shift<EAST>(kingRing[Us]);
+  
+  int minKingPawnDistance = 0;
   Bitboard pawns = pos.pieces(Us, PAWN);
+
   if (pawns)
+  {
+	  // new: add our pawns on rank 4 which can be targets
+	  if (relative_rank(Us, ksq) < RANK_3)
+	     kingRing[Us] |= shift<Up>(kingRing[Us]) & pawns;
+	
+	  // exclude squares double protected by pawns from the king ring
+	  kingRing[Us] &= ~double_pawn_attacks_bb<Us>(pawns);
+
       while (!(DistanceRingBB[ksq][++minKingPawnDistance] & pawns)) {}
+  }
 
   Value bonus = evaluate_shelter<Us>(pos, ksq);
 
