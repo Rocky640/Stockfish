@@ -784,7 +784,9 @@ namespace {
     // If scale is not already specific, scale down the endgame via general heuristics
     if (sf == SCALE_FACTOR_NORMAL)
     {
-        if (   pos.opposite_bishops()
+		if (pos.count<BISHOP>() == 4 || pos.count<KNIGHT>() == 4)
+			sf = 50;
+        else if (   pos.opposite_bishops()
             && pos.non_pawn_material(WHITE) == BishopValueMg
             && pos.non_pawn_material(BLACK) == BishopValueMg)
             sf = 8 + 4 * pe->pawn_asymmetry();
