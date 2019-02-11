@@ -626,7 +626,6 @@ namespace {
     Score score = SCORE_ZERO;
 
     b = pe->passed_pawns(Us);
-	int cnt = 0;
 
     while (b)
     {
@@ -635,7 +634,6 @@ namespace {
         assert(!(pos.pieces(Them, PAWN) & forward_file_bb(Us, s + Up)));
 
         int r = relative_rank(Us, s);
-
         Score bonus = PassedRank[r];
 
         if (r > RANK_3)
@@ -688,16 +686,16 @@ namespace {
         if (   !pos.pawn_passed(Us, s + Up)
             || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
             bonus = bonus / 2;
+			
+		// Use full score for most advanced pawn (right most from the respective point of view
+		// of the players and scale down the remaining pawns
+		if ((Us == WHITE) ? !b : score == SCORE_ZERO)
+			score  = bonus + PassedFile[file_of(s)];
 		else
-			cnt += 1;
-
-        score += bonus + PassedFile[file_of(s)];
+			score += (bonus + PassedFile[file_of(s)] * 3) / 4;
+		
     }
 
-	// Down scale according to number of passed pawns
-	if (cnt > 1)
-		score = (score * (9 - cnt)) / 8;
-	
     if (T)
         Trace::add(PASSED, Us, score);
 
