@@ -680,6 +680,18 @@ namespace {
 
                 bonus += make_score(k * w, k * w);
             }
+			
+			// Test if their king is blocker, with spare moves from other pieces,
+			// and we have maybe one bishop left which can't check the king 
+			else if (pos.square<KING>(Them) == blockSq
+				&& pos.non_pawn_material(Us) <= BishopValueMg
+			    && pos.non_pawn_material(Them) >= BishopValueMg)
+			{
+				if (   !pos.non_pawn_material(Us)
+			        || (bool(DarkSquares & blockSq) != bool(DarkSquares & pos.pieces(Us, BISHOP))))
+				bonus = bonus / 2;
+			}
+			
         } // rank > RANK_3
 
         // Scale down bonus for candidate passers which need more than one
