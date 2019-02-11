@@ -626,6 +626,7 @@ namespace {
     Score score = SCORE_ZERO;
 
     b = pe->passed_pawns(Us);
+	int cnt = 0;
 
     while (b)
     {
@@ -687,10 +688,16 @@ namespace {
         if (   !pos.pawn_passed(Us, s + Up)
             || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
             bonus = bonus / 2;
+		else
+			cnt += 1;
 
         score += bonus + PassedFile[file_of(s)];
     }
 
+	// Down scale according to number of passed pawns
+	if (cnt > 1)
+		score = (score * (9 - cnt)) / 8;
+	
     if (T)
         Trace::add(PASSED, Us, score);
 
