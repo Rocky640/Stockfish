@@ -692,7 +692,7 @@ namespace {
 		if ((Us == WHITE) ? !b : score == SCORE_ZERO)
 			score += bonus + PassedFile[file_of(s)];
 		else
-			score += (bonus + PassedFile[file_of(s)] * 7) / 8;
+			score += ((bonus + PassedFile[file_of(s)]) * 7) / 8;
 		
     }
 
