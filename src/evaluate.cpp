@@ -688,11 +688,11 @@ namespace {
             bonus = bonus / 2;
 			
 		// Use full score for most advanced pawn (right most from the respective point of view
-		// of the players and scale down the remaining pawns
+		// of the players) and scale down the remaining pawns
 		if ((Us == WHITE) ? !b : score == SCORE_ZERO)
-			score  = bonus + PassedFile[file_of(s)];
+			score += bonus + PassedFile[file_of(s)];
 		else
-			score += (bonus + PassedFile[file_of(s)] * 3) / 4;
+			score += (bonus + PassedFile[file_of(s)] * 7) / 8;
 		
     }
 
