@@ -314,8 +314,11 @@ inline bool Position::pawn_passed(Color c, Square s) const {
 }
 
 inline bool Position::advanced_pawn_push(Move m) const {
-  return   type_of(moved_piece(m)) == PAWN
-        && relative_rank(sideToMove, from_sq(m)) > RANK_4;
+  //pawn moving to rank 6 or 7, or blocker in front of a passed pawn on rank 5 or more moving away 
+  return   type_of(moved_piece(m)) == PAWN ? relative_rank(sideToMove, from_sq(m)) > RANK_4
+		 : from_sq(m) < SQ_A4 && (pieces(BLACK, PAWN) & (to_sq(m)+NORTH)) ? pawn_passed(BLACK, to_sq(m)+NORTH)
+		 : from_sq(m) > SQ_H5 && (pieces(WHITE, PAWN) & (to_sq(m)+SOUTH)) ? pawn_passed(WHITE, to_sq(m)+SOUTH)
+		 : false;
 }
 
 inline Key Position::key() const {
