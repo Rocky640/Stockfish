@@ -386,6 +386,22 @@ namespace {
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
         }
+		
+		if (Pt == BISHOP || Pt == ROOK)
+		{
+			//Qb2, Bc3: consider squares attacked by the bishop along diagonal b2-c3 as attacked by 2 
+			//Qb2, Ra1: consider squares attacked by the rook along axis b2-a1 as attacked by 2 
+			bb = b & pos.pieces(Us, QUEEN);
+			while (bb)
+				attackedBy2[Us] |= b & LineBB[s][pop_lsb(&bb)] & ~pos.pieces(Us, QUEEN);
+		}
+		
+		if (Pt == BISHOP) //|| Pt == QUEEN)
+		{
+			//Bd2, e3 consider f4 as defended by 2
+			bb = b & pos.pieces(Us, PAWN); // & PseudoAttacks[BISHOP][s];
+			attackedBy2[Us] |= pawn_attacks_bb<Us>(bb) & PseudoAttacks[BISHOP][s];
+		}
     }
     if (T)
         Trace::add(Pt, Us, score);
