@@ -418,8 +418,9 @@ namespace {
     safe  = ~pos.pieces(Them);
     safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
 
-    b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
-    b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
+	b  = (pos.pieces(Us) ^ pos.pieces(Us, QUEEN)) | pos.pieces(Them, PAWN);
+    b1 = attacks_bb<ROOK  >(ksq, b);
+    b2 = attacks_bb<BISHOP>(ksq, b);
 
     // Enemy rooks checks
     Bitboard RookCheck =  b1
