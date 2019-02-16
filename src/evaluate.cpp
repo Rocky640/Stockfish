@@ -568,9 +568,10 @@ namespace {
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
 		
-		for (int i = defendersCount[Them] - 1; i >= 0; --i)
-			if (more_than_one(defense[Them][i] & weak))
-				score += Overload;
+		if (defendersCount[Them] < 5)
+		   for (int i = defendersCount[Them] - 1; i >= 0; --i)
+			  if (more_than_one(defense[Them][i] & weak))
+				  score += Overload;
     }
 
     // Bonus for restricting their piece moves
