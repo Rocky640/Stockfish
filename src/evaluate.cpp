@@ -562,7 +562,7 @@ namespace {
 
     // Bonus for restricting their piece moves
     restricted =   attackedBy[Us][ALL_PIECES]
-                & ~(pos.pieces(Us) | stronglyProtected)
+                & ~stronglyProtected & mobilityArea[Them]
                 &  attackedBy[Them][ALL_PIECES];
     score += RestrictedPiece * popcount(restricted);
 
