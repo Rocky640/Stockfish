@@ -152,6 +152,7 @@ namespace {
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
+  constexpr Score Overload           = S(  7,  7);
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
@@ -225,6 +226,9 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAttacksCount[WHITE].
     int kingAttacksCount[COLOR_NB];
+	
+	int defendersCount[COLOR_NB];
+	Bitboard defense[COLOR_NB][16];
   };
 
 
@@ -252,6 +256,9 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
+	
+	defendersCount[Us] = 0;
+	//defense[Us][defendersCount[Us]++] = attackedBy[Us][KING];
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -300,6 +307,8 @@ namespace {
         attackedBy2[Us] |= attackedBy[Us][ALL_PIECES] & b;
         attackedBy[Us][Pt] |= b;
         attackedBy[Us][ALL_PIECES] |= b;
+		
+		defense[Us][defendersCount[Us]++] = b;
 
         if (b & kingRing[Them])
         {
@@ -558,6 +567,10 @@ namespace {
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
+		
+		for (int i = defendersCount[Them] - 1; i >= 0; --i)
+			if (more_than_one(defense[Them][i] & weak))
+				score += Overload;
     }
 
     // Bonus for restricting their piece moves
