@@ -621,7 +621,7 @@ namespace {
 			int cur = popcount(pos.pieces(Them, PAWN) & bb);
 			if (cur > best) best = cur;
 		}
-		score += RookOnPawn * best;
+		score += RookOnPawn * (best / 2);
 	}
 
     if (T)
