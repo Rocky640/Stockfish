@@ -154,7 +154,7 @@ namespace {
   constexpr Score MinorBehindPawn    = S( 18,  3);
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
-  constexpr Score RookOnPawn         = S( 10, 32);
+  constexpr Score RookOnPawn         = S(  5, 16);
   constexpr Score SliderOnQueen      = S( 59, 18);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
@@ -364,7 +364,7 @@ namespace {
         {
             // Bonus for aligning rook with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
-                score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
+                score += RookOnPawn * (2 * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]));
 
             // Bonus for rook on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
@@ -510,8 +510,10 @@ namespace {
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  Camp     = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB
+	                                            : Rank8BB | Rank7BB | Rank6BB | Rank5BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe, restricted;
+    Bitboard b, bb, weak, defended, nonPawnEnemies, stronglyProtected, safe, restricted;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -603,11 +605,31 @@ namespace {
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
 
+	// Bonus for rook opportunities to improve
+	b = pos.pieces(Us, ROOK) & Camp;
+	while (b)
+	{
+		Square s = pop_lsb(&b);
+		safe =    forward_file_bb(Us, s) & attackedBy[Us][ROOK]
+		      & ~(attackedBy[Them][ALL_PIECES] | Camp | pos.pieces(Us));
+		
+		int best = 0;
+		while (safe)
+		{
+			bb = PseudoAttacks[ROOK][pop_lsb(&safe)];
+			
+			int cur = popcount(pos.pieces(Them, PAWN) & bb);
+			if (cur > best) best = cur;
+		}
+		score += RookOnPawn * best;
+	}
+
     if (T)
         Trace::add(THREAT, Us, score);
 
     return score;
   }
+
 
   // Evaluation::passed() evaluates the passed pawns and candidate passed
   // pawns of the given color.
@@ -836,7 +858,7 @@ namespace {
     // Pieces should be evaluated first (populate attack tables)
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
+			+ pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
