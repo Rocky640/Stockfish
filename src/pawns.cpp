@@ -229,7 +229,7 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
   // If for example white e3 h3 against black e4 h4, increase white penalty
   if (more_than_one(   shift<Down>(theirPawns) & ourPawns
                     & (file_of(ksq) < FILE_E ? QueenSideADBlock : KingSideEHBlock)))
-      safety -= 66;
+      safety -= 33;
 
   return safety;
 }
