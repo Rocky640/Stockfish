@@ -201,6 +201,8 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
   constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
   constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
   constexpr Bitboard  BlockRanks = (Us == WHITE ? Rank1BB | Rank2BB : Rank8BB | Rank7BB);
+  constexpr Bitboard  QueenSideADBlock = (Us == WHITE ? Rank3BB : Rank6BB) & (FileABB | FileDBB);
+  constexpr Bitboard  KingSideEHBlock  = (Us == WHITE ? Rank3BB : Rank6BB) & (FileEBB | FileHBB);
 
   Bitboard b = pos.pieces(PAWN) & ~forward_ranks_bb(Them, ksq);
   Bitboard ourPawns = b & pos.pieces(Us);
@@ -223,6 +225,11 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
       safety -= (ourRank && (ourRank == theirRank - 1)) ? 66 * (theirRank == RANK_3)
                                                         : UnblockedStorm[d][theirRank];
   }
+
+  // If for example white e3 h3 against black e4 h4, increase white penalty
+  if (more_than_one(   shift<Down>(theirPawns) & ourPawns
+                    & (file_of(ksq) < FILE_E ? QueenSideADBlock : KingSideEHBlock)))
+      safety -= 66;
 
   return safety;
 }
