@@ -205,7 +205,7 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
   Bitboard b = pos.pieces(PAWN) & ~forward_ranks_bb(Them, ksq);
   Bitboard ourPawns = b & pos.pieces(Us);
   Bitboard theirPawns = b & pos.pieces(Them);
-  int blockedCenter = popcount(shift<Down>(theirPawns) & ourPawns & (FileDBB | FileEBB)) - 1;
+  int blockedCenter = popcount(shift<Down>(theirPawns) & ourPawns & CenterFiles) - 1;
 
   Value safety = (shift<Down>(theirPawns) & (FileABB | FileHBB) & BlockRanks & ksq) ?
                  Value(374 * 8) : Value(5 * 8);
