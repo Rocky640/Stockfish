@@ -205,9 +205,10 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
   Bitboard b = pos.pieces(PAWN) & ~forward_ranks_bb(Them, ksq);
   Bitboard ourPawns = b & pos.pieces(Us);
   Bitboard theirPawns = b & pos.pieces(Them);
+  bool blockedCenter = more_than_one(shift<Down>(theirPawns) & ourPawns & (FileDBB | FileEBB));
 
   Value safety = (shift<Down>(theirPawns) & (FileABB | FileHBB) & BlockRanks & ksq) ?
-                 Value(374) : Value(5);
+                 Value(374 * 8) : Value(5 * 8);
 
   File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
   for (File f = File(center - 1); f <= File(center + 1); ++f)
@@ -219,12 +220,14 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
       Rank theirRank = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
 
       int d = std::min(f, ~f);
-      safety += ShelterStrength[d][ourRank];
-      safety -= (ourRank && (ourRank == theirRank - 1)) ? 66 * (theirRank == RANK_3)
-                                                        : UnblockedStorm[d][theirRank];
+      safety +=  ShelterStrength[d][ourRank]
+               * (blockedCenter ? 7 : 8);
+      safety -= ((ourRank && (ourRank == theirRank - 1)) ? 66 * (theirRank == RANK_3)
+                                                        : UnblockedStorm[d][theirRank])
+               * (blockedCenter ? 9 : 8);
   }
 
-  return safety;
+  return safety / 8;
 }
 
 
