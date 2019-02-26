@@ -154,7 +154,7 @@ namespace Pawns {
 
 void init() {
 
-  static constexpr int Seed[RANK_NB] = { 0, 13, 24, 18, 65, 100, 175, 330 };
+  static constexpr int Seed[RANK_NB] = { 0, 13, 24+4, 18+10, 65+15, 100+20, 175+25, 330+30 };
 
   for (int opposed = 0; opposed <= 1; ++opposed)
       for (int phalanx = 0; phalanx <= 1; ++phalanx)
