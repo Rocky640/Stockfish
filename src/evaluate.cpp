@@ -185,7 +185,7 @@ namespace {
     template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
     ScaleFactor scale_factor(Value eg) const;
-    Score initiative(Value eg) const;
+    Score initiative(Value eg, Value passed_eg) const;
 
     const Position& pos;
     Material::Entry* me;
@@ -745,7 +745,14 @@ namespace {
   // known attacking/defending status of the players.
 
   template<Tracing T>
-  Score Evaluation<T>::initiative(Value eg) const {
+  Score Evaluation<T>::initiative(Value eg, Value passed_eg) const {
+    // Skip initiatiave calculation if weakside has better prospects in a king and pawn endgame
+    if (((eg > 0) - (eg < 0)) != ((passed_eg > 0) - (passed_eg < 0)))
+        return SCORE_ZERO;
+
+    Color strongSide = eg > 0 ? WHITE : BLACK;
+    if (abs(passed_eg) < 30 &&pos.count<PAWN>(strongSide) + 1 < pos.count<PAWN>(~strongSide))
+        return SCORE_ZERO;
 
     int outflanking =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK))
                      - distance<Rank>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
@@ -843,10 +850,11 @@ namespace {
 
     score +=  king<   WHITE>() - king<   BLACK>()
             + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
             + space<  WHITE>() - space<  BLACK>();
 
-    score += initiative(eg_value(score));
+    Score passed_score = passed< WHITE>() - passed< BLACK>();
+    score += passed_score;
+    score += initiative(eg_value(score), eg_value(passed_score));
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
