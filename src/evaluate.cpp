@@ -231,14 +231,25 @@ namespace {
 
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    Bitboard doubleattack = pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
 
     // Squares occupied by those pawns, by our king or queen or controlled by
     // enemy pawns are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
 
+    b = pos.blockers_for_king(Us) & pos.pieces(Us, PAWN);
+    if (b)
+    {
+        // exclude pinned attacks from some pawn bitboards
+        b = pawn_attacks_bb<Us>(b);
+        attackedBy[Us][PAWN] = pe->pawn_attacks(Us) & (doubleattack | ~b);
+        doubleattack &= ~b;
+    }
+    else 
+        attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
+
     // Initialize attackedBy[] for king and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
-    attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = attackedBy[Us][KING] & attackedBy[Us][PAWN];
 
@@ -257,7 +268,7 @@ namespace {
     kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
 
     // Remove from kingRing[] the squares defended by two pawns
-    kingRing[Us] &= ~pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
+    kingRing[Us] &= ~doubleattack;
   }
 
 
