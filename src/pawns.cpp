@@ -198,8 +198,9 @@ Entry* probe(const Position& pos) {
 template<Color Us>
 Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
 
-  constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
-  constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
+  constexpr Color     Them = (Us == WHITE ? BLACK  : WHITE);
+  constexpr Direction Down = (Us == WHITE ? SOUTH  : NORTH);
+  constexpr Rank TRank     = (Us == WHITE ? RANK_1 : RANK_8);
   constexpr Bitboard  BlockRanks = (Us == WHITE ? Rank1BB | Rank2BB : Rank8BB | Rank7BB);
 
   Bitboard b = pos.pieces(PAWN) & ~forward_ranks_bb(Them, ksq);
@@ -223,6 +224,8 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
       safety -= (ourRank && (ourRank == theirRank - 1)) ? 66 * (theirRank == RANK_3)
                                                         : UnblockedStorm[d][theirRank];
   }
+  if (popcount(ourPawns & passed_pawn_span(Us, make_square(center, TRank))) > 3)
+      safety += Value(40);
 
   return safety;
 }
