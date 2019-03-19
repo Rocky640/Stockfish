@@ -241,9 +241,10 @@ namespace {
     if (b)
     {
         // exclude pinned attacks from some pawn bitboards
+        // but keep double attack, or keep pawn attack along a pinned diagonal
         b = pawn_attacks_bb<Us>(b);
-        attackedBy[Us][PAWN] = pe->pawn_attacks(Us) & (doubleattack | ~b);
-        doubleattack &= ~b;
+        attackedBy[Us][PAWN] = pe->pawn_attacks(Us) & (doubleattack | ~b | PseudoAttacks[BISHOP][ksq]);
+        doubleattack &= ~b | PseudoAttacks[BISHOP][ksq];
     }
     else 
         attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
