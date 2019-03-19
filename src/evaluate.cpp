@@ -106,9 +106,12 @@ namespace {
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
 
-  // RookOnFile[semiopen/open] contains bonuses for each rook when there is
-  // no (friendly) pawn on the rook file.
-  constexpr Score RookOnFile[] = { S(18, 7), S(44, 20) };
+  // RookOnFile[semiopen][edge file] contains bonuses for each rook when there is
+  // no (friendly) pawn on the rook file, more for rook on edge files
+  constexpr Score RookOnFile[][2] = {
+      {  S(18-2, 7-1),  S(18+10, 7+5)  },  //semiopen
+      {  S(44-2, 20-1), S(44+10, 20+5) }   //open
+   };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
@@ -357,7 +360,8 @@ namespace {
 
             // Bonus for rook on an open or semi-open file
             if (pe->semiopen_file(Us, file_of(s)))
-                score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))];
+                score += RookOnFile[bool(pe->semiopen_file(Them, file_of(s)))]
+                                   [bool((FileABB | FileHBB) & s)];
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
