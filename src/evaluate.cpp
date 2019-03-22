@@ -225,14 +225,18 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+    constexpr Bitboard LowRanks = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB
+                                               : Rank8BB | Rank7BB | Rank6BB);
 
     const Square ksq = pos.square<KING>(Us);
 
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
-    // Squares occupied by those pawns, by our king or queen or controlled by
+    // Add knights on low ranks
+    b |= pos.pieces(Us, KNIGHT) & LowRanks;
+
+    // Squares occupied by those pawns or knights, by our king or queen or controlled by
     // enemy pawns are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
 
