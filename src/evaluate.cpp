@@ -298,7 +298,7 @@ namespace {
         }
 
         if (Pt == KNIGHT)
-            b &= ~pos.pieces(Us, ROOK);
+            b &= ~pos.pieces(Us, ROOK, BISHOP);
 
         int mob = popcount(b & mobilityArea[Us]);
 
