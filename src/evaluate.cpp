@@ -82,7 +82,7 @@ namespace {
 
   // Penalties for enemy's safe checks
   constexpr int QueenSafeCheck  = 780;
-  constexpr int RookSafeCheck   = 1080;
+  constexpr int RookSafeCheck[] = {1080 - 40 , 1080 + 120};
   constexpr int BishopSafeCheck = 635;
   constexpr int KnightSafeCheck = 790;
 
@@ -414,8 +414,10 @@ namespace {
     // Enemy rooks checks
     rookChecks = b1 & safe & attackedBy[Them][ROOK];
 
-    if (rookChecks)
-        kingDanger += RookSafeCheck;
+    if (rookChecks & rank_bb(ksq))
+        kingDanger += RookSafeCheck[more_than_one(weak & kingRing[Us] & rank_bb(ksq))];
+    else if (rookChecks & file_bb(ksq))
+        kingDanger += RookSafeCheck[more_than_one(weak & kingRing[Us] & file_bb(ksq))];
     else
         unsafeChecks |= b1 & attackedBy[Them][ROOK];
 
