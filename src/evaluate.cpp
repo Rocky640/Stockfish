@@ -705,18 +705,19 @@ namespace {
     constexpr Bitboard SpaceMask =
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+    constexpr Bitboard FlankMask = 
+      Us == WHITE ? (FileBBB | FileGBB) & (Rank3BB | Rank4BB | Rank5BB)
+                  : (FileBBB | FileGBB) & (Rank6BB | Rank5BB | Rank4BB);
 
     // Find the available squares for our pieces inside the area defined by SpaceMask
-    Bitboard safe =   SpaceMask
-                   & ~pos.pieces(Us, PAWN)
-                   & ~attackedBy[Them][PAWN];
+    Bitboard safe =  SpaceMask & ~pos.pieces(Us, PAWN) & ~attackedBy[Them][PAWN];
 
     // Find all squares which are at most three squares behind some friendly pawn
     Bitboard behind = pos.pieces(Us, PAWN);
     behind |= shift<Down>(behind);
     behind |= shift<Down>(shift<Down>(behind));
 
-    int bonus = popcount(safe) + popcount(behind & safe);
+    int bonus = popcount(safe) + popcount(behind & safe) - popcount(FlankMask & pos.pieces(Them, PAWN));
     int weight =  pos.count<ALL_PIECES>(Us)
                 - 2 * popcount(pe->semiopenFiles[WHITE] & pe->semiopenFiles[BLACK]);
 
