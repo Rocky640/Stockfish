@@ -392,7 +392,7 @@ namespace {
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     Bitboard weak, b1, b2, safe, unsafeChecks = 0;
-    Bitboard rookChecks, queenChecks, bishopChecks, knightChecks;
+    Bitboard rookChecks, queenChecks, bishopChecks, knightChecks, pinThreats;
     int kingDanger = 0;
     const Square ksq = pos.square<KING>(Us);
 
@@ -450,6 +450,12 @@ namespace {
     else
         unsafeChecks |= knightChecks;
 
+    //Remove the first friendly piece in the king line as long as not already pinned.
+    pinThreats =  attacks_bb<ROOK   >(ksq, pos.pieces() ^ (pos.pieces(Us) & b1 & ~pos.blockers_for_king(Us)))
+                 & attackedBy[Them][ROOK];
+    pinThreats |=  attacks_bb<BISHOP>(ksq, pos.pieces() ^ (pos.pieces(Us) & b2 & ~pos.blockers_for_king(Us)))
+                 & attackedBy[Them][BISHOP];
+
     // Unsafe or occupied checking squares will also be considered, as long as
     // the square is in the attacker's mobility area.
     unsafeChecks &= mobilityArea[Them];
@@ -464,6 +470,7 @@ namespace {
     kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                  +  69 * kingAttacksCount[Them]
                  + 185 * popcount(kingRing[Us] & weak)
+                 +  70 * popcount(pinThreats & safe)
                  - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
                  + 150 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
                  - 873 * !pos.count<QUEEN>(Them)
