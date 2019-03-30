@@ -514,7 +514,8 @@ namespace {
     defended = nonPawnEnemies & stronglyProtected;
 
     // Enemies not strongly protected and under our attack
-    weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
+    weak =  pos.pieces(Them) & attackedBy[Us][ALL_PIECES]
+          & (~stronglyProtected | attackedBy[Us][PAWN]);
 
     // Safe or protected squares
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
