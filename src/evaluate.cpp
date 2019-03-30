@@ -559,9 +559,13 @@ namespace {
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
 
+    // Find some squares which, if occupied by a pawn, might be better not to push,
+    // because this would create an enemy outpost square.
+    weak = pawn_attacks_bb<Them>(pe->holes_if_push(Us) & attackedBy2[Them]);
+
     // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
-    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
+    b  = shift<Up>(pos.pieces(Us, PAWN) & ~weak) & ~pos.pieces();
+    b |= shift<Up>(b & TRank3BB & ~weak) & ~pos.pieces();
 
     // Keep only the squares which are relatively safe
     b &= ~attackedBy[Them][PAWN] & safe;
