@@ -114,7 +114,7 @@ namespace {
   // pawn-defended are not considered.
   // ThreatByMinor[0] is an extra if attacking the enemy bishop pair
   constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(14, 0), S(0, 31), S(39, 42), S(57-7, 44), S(68, 112), S(62, 120)
+    S(24, 0), S(0, 31), S(39, 42), S(57-12, 44), S(68, 112), S(62, 120)
   };
 
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
