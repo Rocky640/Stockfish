@@ -112,8 +112,9 @@ namespace {
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
+  // ThreatByMinor[0] is an extra if attacking the enemy bishop pair
   constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120)
+    S(14, 0), S(0, 31), S(39, 42), S(57-7, 44), S(68, 112), S(62, 120)
   };
 
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
@@ -517,16 +518,22 @@ namespace {
 
     // Safe or protected squares
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
+   
 
     // Bonus according to the kind of attacking pieces
     if (defended | weak)
     {
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        
+        // Bonus for attack on enemy bishop pair
+        if (pos.count<BISHOP>(Them) == 2 && (b & pos.pieces(Them, BISHOP)))
+            score += ThreatByMinor[0];
+
         while (b)
         {
             Square s = pop_lsb(&b);
-            score += ThreatByMinor[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
+            PieceType pt = type_of(pos.piece_on(s));
+            if (pt != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
