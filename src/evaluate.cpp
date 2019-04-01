@@ -134,6 +134,7 @@ namespace {
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CorneredBishop     = S( 50, 50);
+  constexpr Score Defending          = S(  3,  3);
   constexpr Score FlankAttacks       = S(  8,  0);
   constexpr Score Hanging            = S( 69, 36);
   constexpr Score KingProtector      = S(  7,  8);
@@ -299,6 +300,10 @@ namespace {
         int mob = popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
+
+        // Crude detector of potential overwork or pieces walking on each other
+        int def = popcount(b & pos.pieces(Us) & ~attackedBy[Us][PAWN]);
+        score -= Defending * (def * def);
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
