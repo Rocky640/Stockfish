@@ -302,8 +302,11 @@ namespace {
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         // Crude detector of potential overwork or pieces walking on each other
-        int def = popcount(b & pos.pieces(Us) & ~attackedBy[Us][PAWN]);
-        score -= Defending * (def * def);
+        if (Pt != QUEEN)
+        {
+            int def = popcount(b & pos.pieces(Us) & ~(pos.pieces(Us, PAWN) | attackedBy[Us][PAWN]));
+            score -= Defending * def * def;
+        }
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
