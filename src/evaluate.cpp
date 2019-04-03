@@ -540,6 +540,7 @@ namespace {
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
 
+        b = weak & attackedBy[Us][QUEEN] &~attackedBy2[Us] & attackedBy[Them][QUEEN];
         score += ThreatByQueen * popcount(b);
 
         if (weak & attackedBy[Us][KING])
