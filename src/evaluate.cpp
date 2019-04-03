@@ -146,6 +146,7 @@ namespace {
   constexpr Score RookOnPawn         = S( 10, 32);
   constexpr Score SliderOnQueen      = S( 59, 18);
   constexpr Score ThreatByKing       = S( 24, 89);
+  constexpr Score ThreatByQueen      = S(  0, 20);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatByRank       = S( 13,  0);
   constexpr Score ThreatBySafePawn   = S(173, 94);
@@ -538,6 +539,8 @@ namespace {
             if (type_of(pos.piece_on(s)) != PAWN)
                 score += ThreatByRank * (int)relative_rank(Them, s);
         }
+
+        score += ThreatByQueen * popcount(b);
 
         if (weak & attackedBy[Us][KING])
             score += ThreatByKing;
