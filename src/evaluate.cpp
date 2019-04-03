@@ -305,7 +305,7 @@ namespace {
         if (Pt != QUEEN)
         {
             int def = popcount(b & pos.pieces(Us) & ~(pos.pieces(Us, PAWN) | attackedBy[Us][PAWN]));
-            score -= Defending * def * def;
+            score -= Defending * def;
         }
 
         if (Pt == BISHOP || Pt == KNIGHT)
