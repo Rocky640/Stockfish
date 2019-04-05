@@ -720,7 +720,7 @@ namespace {
 
     int bonus = popcount(safe) + popcount(behind & safe);
     int weight =  std::max(0,     pos.count<ALL_PIECES>(Us)
-                            - 3 * popcount(pe->semiopenFiles[Them]));
+                            - 3 * popcount(pe->semiopenFiles[Us]));
 
     Score score = make_score(bonus * weight * weight / 16, 0);
 
