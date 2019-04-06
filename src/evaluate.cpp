@@ -550,6 +550,16 @@ namespace {
         score += Hanging * popcount(weak & b);
     }
 
+    // Bonus for knight which can safely add new attack to some enemy weak pawns
+    if (pos.pieces(Us, KNIGHT))
+    {
+        b = 0;
+        weak = pos.pieces(Them, PAWN) & ~stronglyProtected;
+        while (weak)
+            b |= pos.attacks_from<KNIGHT>(pop_lsb(&weak));
+        score += make_score(0, 5) * popcount(b & attackedBy[Us][KNIGHT] & ~(attackedBy[Them][ALL_PIECES] | pos.pieces(Us)));
+    }
+
     // Bonus for restricting their piece moves
     b =   attackedBy[Them][ALL_PIECES]
        & ~stronglyProtected
