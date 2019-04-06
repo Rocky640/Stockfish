@@ -550,6 +550,16 @@ namespace {
         score += Hanging * popcount(weak & b);
     }
 
+    // Bonus for rook which can safely add new attack to some enemy weak pawns
+    if (pos.pieces(Us, ROOK))
+    {
+        b = 0;
+        weak = pos.pieces(Them, PAWN) & ~(stronglyProtected | attackedBy[Us][ROOK]);
+        while (weak)
+            b |= pos.attacks_from<ROOK>(pop_lsb(&weak));
+        score += make_score(0, 15) * popcount(b & attackedBy[Us][ROOK] & ~attackedBy[Them][ALL_PIECES]);
+    }
+
     // Bonus for restricting their piece moves
     b =   attackedBy[Them][ALL_PIECES]
        & ~stronglyProtected
