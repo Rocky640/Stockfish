@@ -557,7 +557,7 @@ namespace {
         weak = pos.pieces(Them, PAWN) & ~(stronglyProtected | attackedBy[Us][ROOK]);
         while (weak)
             b |= pos.attacks_from<ROOK>(pop_lsb(&weak));
-        score += make_score(0, 15) * popcount(b & attackedBy[Us][ROOK] & ~attackedBy[Them][ALL_PIECES]);
+        score += make_score(0, 15) * popcount(b & attackedBy[Us][ROOK] & ~(attackedBy[Them][ALL_PIECES] | pos.pieces(Us)));
     }
 
     // Bonus for restricting their piece moves
