@@ -168,7 +168,7 @@ Entry* probe(const Position& pos) {
   e->scores[WHITE] = evaluate<WHITE>(pos, e);
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
   int pawndiff = e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK];
-  e->passedCount   =   popcount(e->passedPawns[WHITE] | e->passedPawns[BLACK]);
+  e->passedCount   =   popcount(e->passedPawns[WHITE] | e->passedPawns[BLACK])
                      + more_than_one(pawndiff & 0xF)
                      + more_than_one(pawndiff & 0x3C)
                      + more_than_one(pawndiff & 0xF0);
