@@ -39,7 +39,8 @@ namespace {
   // Connected[0] is used to store the supported bonus.
   Score Connected[RANK_NB] = { S(17, 17), S(13/2, 13*-1/8), S(17/2, 17*0/8), S(24/2, 24*1/8), S(59/2, 59*2/8), S(96/2, 96*3/8), S(171/2, 171/8) };
 
-  TUNE(Connected, SetRange(-20, 100));
+  TUNE(SetRange(-20, 100), Connected);
+
   // Strength of pawn shelter for our king by [distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
   constexpr Value ShelterStrength[int(FILE_NB) / 2][RANK_NB] = {
