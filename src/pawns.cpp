@@ -35,9 +35,11 @@ namespace {
   constexpr Score Doubled  = S(11, 56);
   constexpr Score Isolated = S( 5, 15);
 
-  // Connected pawn bonus
-  constexpr int Connected[RANK_NB] = { 0, 13, 24, 18, 65, 100, 175, 330 };
+  // Connected pawn bonus by rank. Bonus is doubled if pawn is not opposed. Then tripled if phalanx else doubled
+  // Connected[0] is used to store the supported bonus.
+  Score Connected[RANK_NB] = { S(17, 17), S(13/2, 13*-1/8), S(17/2, 17*0/8), S(24/2, 24*1/8), S(59/2, 59*2/8), S(96/2, 96*3/8), S(171/2, 171/8) };
 
+  TUNE(Connected, SetRange(-20, 100));
   // Strength of pawn shelter for our king by [distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
   constexpr Value ShelterStrength[int(FILE_NB) / 2][RANK_NB] = {
@@ -89,6 +91,7 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         File f = file_of(s);
+        Rank r = relative_rank(Us, s);
 
         e->semiopenFiles[Us]   &= ~(1 << f);
         e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
@@ -117,8 +120,7 @@ namespace {
             && popcount(phalanx) >= popcount(leverPush))
             e->passedPawns[Us] |= s;
 
-        else if (   stoppers == square_bb(s + Up)
-                 && relative_rank(Us, s) >= RANK_5)
+        else if (   stoppers == square_bb(s + Up) && r >= RANK_5)
         {
             b = shift<Up>(support) & ~theirPawns;
             while (b)
@@ -128,12 +130,9 @@ namespace {
 
         // Score this pawn
         if (support | phalanx)
-        {
-            int r = relative_rank(Us, s);
-            int v = phalanx ? Connected[r] + Connected[r + 1] : 2 * Connected[r];
-            v = 17 * popcount(support) + (v >> (opposed + 1));
-            score += make_score(v, v * (r - 2) / 4);
-        }
+            score +=   Connected[r] * ((phalanx ? 3 : 2) * (2 - opposed))
+                     + Connected[0] * popcount(support);
+
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
