@@ -37,9 +37,9 @@ namespace {
 
   // Connected pawn bonus by rank. Bonus is doubled if pawn is not opposed. Then tripled if phalanx else doubled
   // Connected[0] is used to store the supported bonus.
-  Score Connected[RANK_NB] = { S(17, 17), S(13/2, 13*-1/8), S(17/2, 17*0/8), S(24/2, 24*1/8), S(59/2, 59*2/8), S(96/2, 96*3/8), S(171/2, 171/8) };
+  Score Connected[RANK_NB] = { S(17, 17), S(13/2, 13*-1/8), S(17/2, 17*0/8), S(24/2, 24*1/8), S(59/2, 59*2/8), S(96/2, 96*3/8), S(171/2, 171*4/8) };
 
-  TUNE(SetRange(-20, 100), Connected);
+  TUNE(SetRange(-20, 200), Connected);
 
   // Strength of pawn shelter for our king by [distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
