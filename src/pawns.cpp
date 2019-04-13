@@ -29,17 +29,29 @@ namespace {
 
   #define V Value
   #define S(mg, eg) make_score(mg, eg)
+  #define S2(mg, eg) make_score(2*mg +16, 2*eg+16)
+  #define S3(mg, eg) make_score(3*mg, 3*eg)
 
   // Pawn penalties
   constexpr Score Backward = S( 9, 24);
   constexpr Score Doubled  = S(11, 56);
   constexpr Score Isolated = S( 5, 15);
 
-  // Connected pawn bonus by rank. Bonus is doubled if pawn is not opposed. Then tripled if phalanx else doubled
-  // Connected[0] is used to store the supported bonus.
-  Score Connected[RANK_NB] = { S(17, 17), S(13/2, 13*-1/8), S(17/2, 17*0/8), S(24/2, 24*1/8), S(59/2, 59*2/8), S(96/2, 96*3/8), S(171/2, 171*4/8) };
+  // Connected pawn bonus by [supported-1/ supported-2/ supp-1+phalanx /supp-2+phalanx /phalanx /phalanx-2/phalanx-2+supp][rank].
+  // Bonus is doubled if pawn is not opposed.
 
-  TUNE(SetRange(-20, 200), Connected);
+  Score Connected[5][RANK_NB]   = 
+  {
+	 { S(0, 0), S(0, 0), S2(5, 0), S2( 7, 0), S2(14, 7), S2(46, 29), S2(80, 86) }, //supported
+	 { S(0, 0), S3(3, 0), S3(5, 0), S3( 7, 0), S3(14, 7), S3(46, 29), S3(80, 86) }, //phalanx
+	 { S(0, 0), S(0, 0), S(16, 16), S(16, 16), S(16, 16), S(16, 16), S(16, 16) }, //Adj for second supported
+	 { S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) }, //Adj. for 2nd phalanx
+	 { S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) } //Adj when phalanx AND supported
+  };
+
+  TUNE(SetRange(  0, 300), Connected[0], Connected[1]);
+  TUNE(SetRange(  0,  50), Connected[3]);
+  TUNE(SetRange(-100,100), Connected[4], Connected[5]);
 
   // Strength of pawn shelter for our king by [distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
@@ -131,8 +143,10 @@ namespace {
 
         // Score this pawn
         if (support | phalanx)
-            score +=   Connected[r] * ((phalanx ? 3 : 2) * (2 - opposed))
-                     + Connected[0] * popcount(support);
+            score +=   Connected[bool(phalanx)][r] * (opposed ? 1 : 2)
+                     + Connected[3][r] * more_than_one(support)
+                     + Connected[4][r] * more_than_one(phalanx)
+                     + Connected[5][r] * (support && phalanx);
 
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
