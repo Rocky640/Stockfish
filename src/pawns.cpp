@@ -38,7 +38,7 @@ namespace {
   // Connected pawn bonus by [rank]. Bonus is doubled if pawn is not opposed. Then tripled if phalanx else doubled
   // RANK_1 = 0 is used to store the supported bonus.
   constexpr Score Connected[RANK_NB] = {
-    S(16, 16), S(3, 0), S(5, 0), S(7, 0), S(14, 7), S(46, 29), S(80, 86)
+    S(16, 16), S(2, 0), S(4, 0), S(6, 0), S(14, 7), S(46, 29), S(80, 86)
   };
 
   // Strength of pawn shelter for our king by [distance from edge][rank].
