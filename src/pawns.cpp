@@ -126,6 +126,8 @@ namespace {
                     e->passedPawns[Us] |= s;
         }
 
+        e->weakUnopposed[Us] += !(opposed || support);
+
         // Score this pawn
         if (support | phalanx)
         {
@@ -135,10 +137,10 @@ namespace {
             score += make_score(v, v * (r - 2) / 4);
         }
         else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
+            score -= Isolated;
 
         else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed;
+            score -= Backward;
 
         if (doubled && !support)
             score -= Doubled;
