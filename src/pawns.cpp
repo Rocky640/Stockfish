@@ -50,8 +50,8 @@ namespace {
   };
 
   TUNE(SetRange(  0, 300), Connected[0], Connected[1]);
-  TUNE(SetRange(  0,  50), Connected[3]);
-  TUNE(SetRange(-100,100), Connected[4], Connected[5]);
+  TUNE(SetRange(  0,  50), Connected[2]);
+  TUNE(SetRange(-100,100), Connected[3], Connected[4]);
 
   // Strength of pawn shelter for our king by [distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
@@ -144,9 +144,9 @@ namespace {
         // Score this pawn
         if (support | phalanx)
             score +=   Connected[bool(phalanx)][r] * (opposed ? 1 : 2)
-                     + Connected[3][r] * more_than_one(support)
-                     + Connected[4][r] * more_than_one(phalanx)
-                     + Connected[5][r] * (support && phalanx);
+                     + Connected[2][r] * more_than_one(support)
+                     + Connected[3][r] * more_than_one(phalanx)
+                     + Connected[4][r] * (support && phalanx);
 
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
