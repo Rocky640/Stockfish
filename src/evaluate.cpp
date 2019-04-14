@@ -626,20 +626,21 @@ namespace {
 
         int r = relative_rank(Us, s);
 
-        Score bonus = PassedRank[r];
+        Score bonus = PassedRank[r] + PassedFile[file_of(s)] * (r > RANK_4);
 
         if (r > RANK_3)
         {
-            int w = (r-2) * (r-2) + 2;
+            int k = 0;
+            
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            bonus += make_score(0, (  king_proximity(Them, blockSq) * 5
-                                    - king_proximity(Us,   blockSq) * 2) * w);
+            int king_eg =  king_proximity(Them, blockSq) * 5
+                         - king_proximity(Us,   blockSq) * 2;
 
             // If blockSq is not the queening square then consider also a second push
             if (r != RANK_7)
-                bonus -= make_score(0, king_proximity(Us, blockSq + Up) * w);
+                king_eg -= king_proximity(Us, blockSq + Up);
 
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
@@ -659,7 +660,7 @@ namespace {
 
                 // If there aren't any enemy attacks, assign a big bonus. Otherwise
                 // assign a smaller bonus if the block square isn't attacked.
-                int k = !unsafeSquares ? 20 : !(unsafeSquares & blockSq) ? 9 : 0;
+                k = !unsafeSquares ? 20 : !(unsafeSquares & blockSq) ? 9 : 0;
 
                 // If the path to the queen is fully defended, assign a big bonus.
                 // Otherwise assign a smaller bonus if the block square is defended.
@@ -668,10 +669,11 @@ namespace {
 
                 else if (defendedSquares & blockSq)
                     k += 4;
-
-                bonus += make_score(k * w, k * w);
             }
-        } // rank > RANK_3
+
+            bonus += make_score(k, k + king_eg) * ((r-2) * (r-2) + 2);
+
+        } // r > RANK_3
 
         // Scale down bonus for candidate passers which need more than one
         // pawn push to become passed, or have a pawn in front of them.
@@ -679,7 +681,6 @@ namespace {
             || (pos.pieces(PAWN) & forward_file_bb(Us, s)))
             bonus = bonus / 2;
 
-        score += bonus + PassedFile[file_of(s)];
     }
 
     if (T)
