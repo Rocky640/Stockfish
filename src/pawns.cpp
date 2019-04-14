@@ -29,14 +29,30 @@ namespace {
 
   #define V Value
   #define S(mg, eg) make_score(mg, eg)
+  #define S2(mg, eg) make_score(2*mg, 2*eg)
+  #define S3(mg, eg) make_score(3*mg, 3*eg)
+  #define S4(mg, eg) make_score(4*mg+8, 4*eg+8)
+  #define S6(mg, eg) make_score(6*mg+8, 6*eg+8)
 
   // Pawn penalties
   constexpr Score Backward = S( 9, 24);
   constexpr Score Doubled  = S(11, 56);
   constexpr Score Isolated = S( 5, 15);
 
-  // Connected pawn bonus
-  constexpr int Connected[RANK_NB] = { 0, 13, 17, 24, 59, 96, 171 };
+  // Connected pawn bonus by [opposed][rank].
+  // Rank_1 = 0 is used to store adjustment for some phalanx support, or for the 2nd support.
+
+  Score Phalanx[2][RANK_NB] = {
+      { S(8, 8), S6(3, -1), S6(5, -1), S6( 7,-1), S6(14, 7), S6(46, 29), S6(80, 86) },
+      { S(8, 8), S3(3, -1), S3(5, -1), S3( 7,-1), S3(14, 7), S3(46, 29), S3(80, 86) }
+  };
+  
+  Score Support[2][RANK_NB] = {
+      { S(8, 8), S(0, 0), S4(5, -1), S4( 7,-1), S4(14, 7), S4(46, 29), S4(80, 86) },
+      { S(8, 8), S(0, 0), S2(5, -1), S2( 7,-1), S2(14, 7), S2(46, 29), S2(80, 86) }
+  };
+  
+  TUNE(SetRange(-20, 600), Phalanx, Support);
 
   // Strength of pawn shelter for our king by [distance from edge][rank].
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
@@ -58,6 +74,10 @@ namespace {
   };
 
   #undef S
+  #undef S2
+  #undef S3
+  #undef S4
+  #undef S6
   #undef V
 
   template<Color Us>
@@ -128,11 +148,9 @@ namespace {
 
         // Score this pawn
         if (support | phalanx)
-        {
-            int v = (phalanx ? 3 : 2) * Connected[r];
-            v = 17 * popcount(support) + (v >> (opposed + 1));
-            score += make_score(v, v * (r - 2) / 4);
-        }
+            score += phalanx ? Phalanx[opposed][r] + Phalanx[opposed][0] * bool(support)
+                             : Support[opposed][r] + Support[opposed][0] * more_than_one(support);
+
         else if (!neighbours)
             score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
