@@ -215,7 +215,7 @@ Score Entry::do_king_safety(const Position& pos) {
   int minKingPawnDistance = 0;
 
   Bitboard pawns = pos.pieces(Us, PAWN);
-  if (pawns)
+  if (pawns && minKingPawnDistance < 5)
       while (!(DistanceRingBB[ksq][++minKingPawnDistance] & pawns)) {}
 
   Value bonus = evaluate_shelter<Us>(pos, ksq);
