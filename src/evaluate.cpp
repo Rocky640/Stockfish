@@ -557,6 +557,8 @@ namespace {
        &  attackedBy[Us][ALL_PIECES];
     score += RestrictedPiece * popcount(b);
 
+    // End game bonus for having safe moves
+    b =   (attackedBy[Us][BISHOP] | attackedBy[Us][ROOK] | attackedBy[Us][KING])
        & ~(pos.pieces() | attackedBy[Them][ALL_PIECES]);
     score += SafeMoves * popcount(b);
 
