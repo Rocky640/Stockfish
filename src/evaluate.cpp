@@ -133,6 +133,7 @@ namespace {
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  7);
+  constexpr Score RookCoordination   = S( 10, 20);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score FlankAttacks       = S(  8,  0);
   constexpr Score Hanging            = S( 69, 36);
@@ -356,6 +357,11 @@ namespace {
             // Bonus for aligning rook with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
+            
+            // Coordination or development penalty if minor between rook and minor
+            bb = pos.pieces(Us, KNIGHT, BISHOP);
+            if (attacks_bb<ROOK>(s, pos.pieces() ^ (b & bb)) & bb)
+               score -= RookCoordination;
 
             // Bonus for rook on an open or semi-open file
             if (pos.semiopen_file(Us, file_of(s)))
