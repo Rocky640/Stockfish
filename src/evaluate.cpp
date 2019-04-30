@@ -191,6 +191,12 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
+    // lowMob[color] are squares attacked or occupied by a low mobility piece, and is ued only to compute the following.
+	// lowMob2[color] are any squares attacked by one low mobility piece defending another low mobility piece.
+    // A piece has low mobility when its mobilitycount in the mobilityarea is less than 4.
+    Bitboard lowMob[COLOR_NB];
+    Bitboard lowMob2[COLOR_NB];
+
     // kingRing[color] are the squares adjacent to the king, plus (only for a
     // king on its first rank) the squares two ranks in front. For instance,
     // if black's king is on g8, kingRing[BLACK] is f8, h8, f7, g7, h7, f6, g6
@@ -243,6 +249,7 @@ namespace {
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us]            = (attackedBy[Us][KING] & attackedBy[Us][PAWN])
                                  | dblAttackByPawn;
+    lowMob[Us] = lowMob2[Us] = 0;
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -300,6 +307,12 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+
+        if (mob < 4)
+		{
+			lowMob2[Us] = lowMob[Us] & (b | s);
+			lowMob[Us] |= b | s;
+		}
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -556,7 +569,7 @@ namespace {
        & ~stronglyProtected
        &  attackedBy[Us][ALL_PIECES];
 
-    score += RestrictedPiece * popcount(b);
+    score += RestrictedPiece * (popcount(b) + popcount(lowMob2[Them] & mobilityArea[Them]));
 
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
