@@ -191,8 +191,8 @@ namespace {
     // pawn or squares attacked by 2 pawns are not explicitly added.
     Bitboard attackedBy2[COLOR_NB];
 
-    // lowMob[color] are squares attacked or occupied by a low mobility piece, and is ued only to compute the following.
-	// lowMob2[color] are any squares attacked by one low mobility piece defending another low mobility piece.
+    // lowMob[color] are squares attacked or occupied by a low mobility piece, and is used only to compute the following.
+    // lowMob2[color] are any squares attacked by one low mobility piece defending another low mobility piece.
     // A piece has low mobility when its mobilitycount in the mobilityarea is less than 4.
     Bitboard lowMob[COLOR_NB];
     Bitboard lowMob2[COLOR_NB];
@@ -308,11 +308,11 @@ namespace {
 
         int mob = popcount(b & mobilityArea[Us]);
 
-        if (mob < 4)
-		{
-			lowMob2[Us] = lowMob[Us] & (b | SquareBB[s]);
-			lowMob[Us] |= b | SquareBB[s];
-		}
+        if (mob < 3)
+        {
+            lowMob2[Us] = lowMob[Us] & (b | SquareBB[s]);
+            lowMob[Us] |= b | SquareBB[s];
+        }
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
