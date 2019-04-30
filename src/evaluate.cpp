@@ -310,8 +310,8 @@ namespace {
 
         if (mob < 4)
 		{
-			lowMob2[Us] = lowMob[Us] & (b | s);
-			lowMob[Us] |= b | s;
+			lowMob2[Us] = lowMob[Us] & (b | SquareBB[s]);
+			lowMob[Us] |= b | SquareBB[s];
 		}
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
