@@ -378,7 +378,7 @@ namespace {
 
             // Penalty for adventurous queen when lacking minor development
             int firstrank = popcount(pos.pieces(Us, KNIGHT, BISHOP) & (Us == WHITE ? Rank1BB : Rank8BB));
-            score -= make_score(firstrank * relative_rank(Us, s) * 4, 0);
+            score -= make_score(firstrank * relative_rank(Us, s) * 8, 0);
         }
     }
     if (T)
