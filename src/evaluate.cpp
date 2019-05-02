@@ -763,7 +763,7 @@ namespace {
     if (T)
         Trace::add(INITIATIVE, make_score(0, v));
 
-    return make_score(-firstrank * 40, v);
+    return make_score(-firstrank * 20, v);
   }
 
 
