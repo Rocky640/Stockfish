@@ -745,6 +745,9 @@ namespace {
     bool pawnsOnBothFlanks =   (pos.pieces(PAWN) & QueenSide)
                             && (pos.pieces(PAWN) & KingSide);
 
+    int firstrank =   popcount(pos.pieces(WHITE, KNIGHT, BISHOP) & Rank1BB)
+                    - popcount(pos.pieces(BLACK, KNIGHT, BISHOP) & Rank8BB);
+
     // Compute the initiative bonus for the attacking side
     int complexity =   9 * pe->passed_count()
                     + 11 * pos.count<PAWN>()
@@ -761,7 +764,7 @@ namespace {
     if (T)
         Trace::add(INITIATIVE, make_score(0, v));
 
-    return make_score(0, v);
+    return make_score(-firstrank * 40, v);
   }
 
 
