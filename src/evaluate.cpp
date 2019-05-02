@@ -375,6 +375,10 @@ namespace {
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
+
+            // Penalty for adventurous queen when lacking minor development
+            int firstrank = popcount(pos.pieces(Us, KNIGHT, BISHOP) & (Us == WHITE ? Rank1BB : Rank8BB));
+            score -= make_score(firstrank * relative_rank(Us, s) * 4, 0);
         }
     }
     if (T)
@@ -744,9 +748,6 @@ namespace {
     bool pawnsOnBothFlanks =   (pos.pieces(PAWN) & QueenSide)
                             && (pos.pieces(PAWN) & KingSide);
 
-    int firstrank =   popcount(pos.pieces(WHITE, KNIGHT, BISHOP) & Rank1BB)
-                    - popcount(pos.pieces(BLACK, KNIGHT, BISHOP) & Rank8BB);
-
     // Compute the initiative bonus for the attacking side
     int complexity =   9 * pe->passed_count()
                     + 11 * pos.count<PAWN>()
@@ -763,7 +764,7 @@ namespace {
     if (T)
         Trace::add(INITIATIVE, make_score(0, v));
 
-    return make_score(-firstrank * 20, v);
+    return make_score(0, v);
   }
 
 
