@@ -69,6 +69,7 @@ namespace {
 
     Bitboard b, neighbours, stoppers, doubled, support, phalanx;
     Bitboard lever, leverPush;
+    File West = FILE_H, East = FILE_A;
     Square s;
     bool opposed, backward;
     Score score = SCORE_ZERO;
@@ -80,6 +81,8 @@ namespace {
     e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
+
+    if (!ourPawns) return SCORE_ZERO;
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -139,7 +142,18 @@ namespace {
 
         if (doubled && !support)
             score -= Doubled;
+
+        if (!support)
+        {
+            West = f < West ? f : West;
+            East = f > East ? f : East;
+        }
     }
+
+    assert(East >= West);
+
+    // Penalty for distant unsupported pawns
+    score -= make_score(0, 5 * (East - West));
 
     return score;
   }
