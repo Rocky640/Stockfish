@@ -82,6 +82,33 @@ namespace {
 } // namespace
 
 
+namespace Endgames {
+
+  std::pair<Map<Value>, Map<ScaleFactor>> maps;
+
+  void init() {
+
+      add<KPK>("KPK");
+      add<KNNK>("KNNK");
+      add<KBNK>("KBNK");
+      add<KRKP>("KRKP");
+      add<KRKB>("KRKB");
+      add<KRKN>("KRKN");
+      add<KQKP>("KQKP");
+      add<KQKR>("KQKR");
+      add<KNNKP>("KNNKP");
+
+      add<KNPK>("KNPK");
+      add<KNPKB>("KNPKB");
+      add<KRPKR>("KRPKR");
+      add<KRPKB>("KRPKB");
+      add<KBPKB>("KBPKB");
+      add<KBPKN>("KBPKN");
+      add<KBPPKB>("KBPPKB");
+      add<KRPPKRP>("KRPPKRP");
+  }
+}
+
 /// Mate with KX vs K. This function is used to evaluate positions with
 /// king and plenty of material vs a lone king. It simply gives the
 /// attacking side a bonus for driving the defending king towards the edge
@@ -635,8 +662,6 @@ ScaleFactor Endgame<KBPPKB>::operator()(const Position& pos) const {
   Square ksq = pos.square<KING>(weakSide);
   Square psq1 = pos.squares<PAWN>(strongSide)[0];
   Square psq2 = pos.squares<PAWN>(strongSide)[1];
-  Rank r1 = rank_of(psq1);
-  Rank r2 = rank_of(psq2);
   Square blockSq1, blockSq2;
 
   if (relative_rank(strongSide, psq1) > relative_rank(strongSide, psq2))
@@ -670,7 +695,7 @@ ScaleFactor Endgame<KBPPKB>::operator()(const Position& pos) const {
         && opposite_colors(ksq, wbsq)
         && (   bbsq == blockSq2
             || (pos.attacks_from<BISHOP>(blockSq2) & pos.pieces(weakSide, BISHOP))
-            || distance(r1, r2) >= 2))
+            || distance<Rank>(psq1, psq2) >= 2))
         return SCALE_FACTOR_DRAW;
 
     else if (   ksq == blockSq2

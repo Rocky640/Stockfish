@@ -65,15 +65,19 @@ constexpr Bitboard CenterFiles = FileCBB | FileDBB | FileEBB | FileFBB;
 constexpr Bitboard KingSide    = FileEBB | FileFBB | FileGBB | FileHBB;
 constexpr Bitboard Center      = (FileDBB | FileEBB) & (Rank4BB | Rank5BB);
 
+constexpr Bitboard KingFlank[FILE_NB] = {
+  QueenSide ^ FileDBB, QueenSide, QueenSide,
+  CenterFiles, CenterFiles,
+  KingSide, KingSide, KingSide ^ FileEBB
+};
+
 extern uint8_t PopCnt16[1 << 16];
 extern uint8_t SquareDistance[SQUARE_NB][SQUARE_NB];
 
+extern Bitboard SquareBB[SQUARE_NB];
 extern Bitboard LineBB[SQUARE_NB][SQUARE_NB];
-extern Bitboard DistanceRingBB[SQUARE_NB][8];
 extern Bitboard PseudoAttacks[PIECE_TYPE_NB][SQUARE_NB];
 extern Bitboard PawnAttacks[COLOR_NB][SQUARE_NB];
-extern Bitboard KingFlank[FILE_NB];
-extern Bitboard SquareBB[SQUARE_NB];
 
 
 /// Magic holds all magic bitboards relevant data for a single square
@@ -149,6 +153,7 @@ inline Bitboard file_bb(Square s) {
 template<Direction D>
 constexpr Bitboard shift(Bitboard b) {
   return  D == NORTH      ?  b             << 8 : D == SOUTH      ?  b             >> 8
+        : D == NORTH+NORTH?  b             <<16 : D == SOUTH+SOUTH?  b             >>16
         : D == EAST       ? (b & ~FileHBB) << 1 : D == WEST       ? (b & ~FileABB) >> 1
         : D == NORTH_EAST ? (b & ~FileHBB) << 9 : D == NORTH_WEST ? (b & ~FileABB) << 7
         : D == SOUTH_EAST ? (b & ~FileHBB) >> 7 : D == SOUTH_WEST ? (b & ~FileABB) >> 9
@@ -237,14 +242,12 @@ inline bool aligned(Square s1, Square s2, Square s3) {
 
 
 /// distance() functions return the distance between x and y, defined as the
-/// number of steps for a king in x to reach y. Works with squares, ranks, files.
+/// number of steps for a king in x to reach y.
 
-template<typename T> inline int distance(T x, T y) { return std::abs(x - y); }
+template<typename T1 = Square> inline int distance(Square x, Square y);
+template<> inline int distance<File>(Square x, Square y) { return std::abs(file_of(x) - file_of(y)); }
+template<> inline int distance<Rank>(Square x, Square y) { return std::abs(rank_of(x) - rank_of(y)); }
 template<> inline int distance<Square>(Square x, Square y) { return SquareDistance[x][y]; }
-
-template<typename T1, typename T2> inline int distance(T2 x, T2 y);
-template<> inline int distance<File>(Square x, Square y) { return distance(file_of(x), file_of(y)); }
-template<> inline int distance<Rank>(Square x, Square y) { return distance(rank_of(x), rank_of(y)); }
 
 template<class T> constexpr const T& clamp(const T& v, const T& lo, const T&  hi) {
   return v < lo ? lo : v > hi ? hi : v;
@@ -373,8 +376,8 @@ inline Square pop_lsb(Bitboard* b) {
 }
 
 
-/// frontmost_sq() and backmost_sq() return the square corresponding to the
-/// most/least advanced bit relative to the given color.
+/// frontmost_sq() and backmost_sq() return the most/least advanced square in
+/// the given bitboard relative to the given color.
 
 inline Square frontmost_sq(Color c, Bitboard b) { return c == WHITE ? msb(b) : lsb(b); }
 inline Square  backmost_sq(Color c, Bitboard b) { return c == WHITE ? lsb(b) : msb(b); }
