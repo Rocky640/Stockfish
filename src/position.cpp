@@ -172,6 +172,8 @@ void Position::init() {
   std::memset(cuckooMove, 0, sizeof(cuckooMove));
   int count = 0;
   for (Piece pc : Pieces)
+  {
+      if (type_of(pc) == PAWN) continue;
       for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
           for (Square s2 = Square(s1 + 1); s2 <= SQ_H8; ++s2)
               if (PseudoAttacks[type_of(pc)][s1] & s2)
@@ -189,6 +191,7 @@ void Position::init() {
                   }
                   count++;
              }
+  }
   assert(count == 3668);
 }
 
