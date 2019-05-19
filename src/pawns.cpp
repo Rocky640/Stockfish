@@ -142,7 +142,7 @@ namespace {
         if (doubled && !support)
             score -= Doubled;
 
-        if (!support)
+        if (!(support | phalanx))
         {
             // Find different paths to reach this pawn
             e->exposed[Us][0] |= PseudoAttacks[KNIGHT][s];
