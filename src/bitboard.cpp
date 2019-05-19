@@ -100,7 +100,6 @@ void Bitboards::init() {
 
   Direction RookDirections[] = { NORTH, EAST, SOUTH, WEST };
   Direction BishopDirections[] = { NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST };
-  Direction A1H8Directions[] = { NORTH_EAST, SOUTH_WEST };
 
   init_magics(RookTable, RookMagics, RookDirections);
   init_magics(BishopTable, BishopMagics, BishopDirections);
@@ -109,9 +108,6 @@ void Bitboards::init() {
   {
       PseudoAttacks[QUEEN][s1]  = PseudoAttacks[BISHOP][s1] = attacks_bb<BISHOP>(s1, 0);
       PseudoAttacks[QUEEN][s1] |= PseudoAttacks[  ROOK][s1] = attacks_bb<  ROOK>(s1, 0);
-
-      PseudoAttacks[0][s1] = sliding_attack(A1H8Directions, 2, s1, 0);
-      PseudoAttacks[1][s1] = PseudoAttacks[BISHOP][s1] ^ PseudoAttacks[0][s1];
 
       for (PieceType pt : { BISHOP, ROOK })
           for (Square s2 = SQ_A1; s2 <= SQ_H8; ++s2)

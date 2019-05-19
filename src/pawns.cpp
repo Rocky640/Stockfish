@@ -77,11 +77,9 @@ namespace {
     Bitboard ourPawns   = pos.pieces(  Us, PAWN);
     Bitboard theirPawns = pos.pieces(Them, PAWN);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakUnopposed[Us] = e->exposed[Us] = 0;
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
-    e->exposed[Us][0] = e->exposed[Us][1] = e->exposed[Us][2] =
-    e->exposed[Us][3] = e->exposed[Us][4] = 0;
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -143,18 +141,9 @@ namespace {
             score -= Doubled;
 
         if (!support)
-        {
-            // Find different paths to reach this pawn
-            e->exposed[Us][0] |= PseudoAttacks[KNIGHT][s];
+            // Find knight attacking points for this pawn
+            e->exposed[Us] |= PseudoAttacks[KNIGHT][s];
 
-            b = attacks_bb<BISHOP>(s, pos.pieces(PAWN));
-            e->exposed[Us][1] |= b & PseudoAttacks[0][s];
-            e->exposed[Us][2] |= b & PseudoAttacks[1][s];
-
-            b = attacks_bb<ROOK>(s, pos.pieces(PAWN));
-            e->exposed[Us][3] |= b & rank_bb(s);
-            e->exposed[Us][4] |= b & file_bb(s);
-        }
     }
 
     return score;
