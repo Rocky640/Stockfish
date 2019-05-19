@@ -152,7 +152,8 @@ namespace {
   constexpr Score ThreatBySafePawn   = S(173, 94);
   constexpr Score TrappedRook        = S( 47,  4);
   constexpr Score WeakQueen          = S( 49, 15);
-  constexpr Score WeakUnopposedPawn  = S( 12, 23);
+  constexpr Score WeakPotential      = S(  2,  9);
+  constexpr Score WeakUnopposedPawn  = S( 12, 13);
 
 #undef S
 
@@ -242,6 +243,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
+    attackedBy[Us][7] = 0;
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -333,7 +335,11 @@ namespace {
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
                     score += LongDiagonalBishop;
+
+                attackedBy[Us][7] |= pe->bishop_on_weak(Them, b, s);
             }
+            else
+                attackedBy[Us][7] |= pe->knight_on_weak(Them, b);
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
@@ -367,6 +373,8 @@ namespace {
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= TrappedRook * (1 + !pos.castling_rights(Us));
             }
+
+            attackedBy[Us][7] |= pe->rook_on_weak(Them, b, s);
         }
 
         if (Pt == QUEEN)
@@ -560,6 +568,10 @@ namespace {
     // Bonus for enemy unopposed weak pawns
     if (pos.pieces(Us, ROOK, QUEEN))
         score += WeakUnopposedPawn * pe->weak_unopposed(Them);
+
+    // Potential new attacks on weak pawns
+    b = attackedBy[Us][7] & ~(stronglyProtected | pos.pieces());
+    score += WeakPotential * popcount(b);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();

@@ -41,6 +41,8 @@ namespace {
   Bitboard BishopTable[0x1480]; // To store bishop attacks
 
   void init_magics(Bitboard table[], Magic magics[], Direction directions[]);
+  Bitboard sliding_attack(Direction directions[], int arsize, Square sq, Bitboard occupied);
+
 }
 
 
@@ -98,6 +100,7 @@ void Bitboards::init() {
 
   Direction RookDirections[] = { NORTH, EAST, SOUTH, WEST };
   Direction BishopDirections[] = { NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST };
+  Direction A1H8Directions[] = { NORTH_EAST, SOUTH_WEST };
 
   init_magics(RookTable, RookMagics, RookDirections);
   init_magics(BishopTable, BishopMagics, BishopDirections);
@@ -106,6 +109,9 @@ void Bitboards::init() {
   {
       PseudoAttacks[QUEEN][s1]  = PseudoAttacks[BISHOP][s1] = attacks_bb<BISHOP>(s1, 0);
       PseudoAttacks[QUEEN][s1] |= PseudoAttacks[  ROOK][s1] = attacks_bb<  ROOK>(s1, 0);
+
+      PseudoAttacks[0][s1] = sliding_attack(A1H8Directions, 2, s1, 0);
+      PseudoAttacks[1][s1] = PseudoAttacks[BISHOP][s1] ^ PseudoAttacks[0][s1];
 
       for (PieceType pt : { BISHOP, ROOK })
           for (Square s2 = SQ_A1; s2 <= SQ_H8; ++s2)
@@ -117,11 +123,11 @@ void Bitboards::init() {
 
 namespace {
 
-  Bitboard sliding_attack(Direction directions[], Square sq, Bitboard occupied) {
+  Bitboard sliding_attack(Direction directions[], int arsize, Square sq, Bitboard occupied) {
 
     Bitboard attack = 0;
 
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < arsize; ++i)
         for (Square s = sq + directions[i];
              is_ok(s) && distance(s, s - directions[i]) == 1;
              s += directions[i])
@@ -161,7 +167,7 @@ namespace {
         // the number of 1s of the mask. Hence we deduce the size of the shift to
         // apply to the 64 or 32 bits word to get the index.
         Magic& m = magics[s];
-        m.mask  = sliding_attack(directions, s, 0) & ~edges;
+        m.mask  = sliding_attack(directions, 4, s, 0) & ~edges;
         m.shift = (Is64Bit ? 64 : 32) - popcount(m.mask);
 
         // Set the offset for the attacks table of the square. We have individual
@@ -173,7 +179,7 @@ namespace {
         b = size = 0;
         do {
             occupancy[size] = b;
-            reference[size] = sliding_attack(directions, s, b);
+            reference[size] = sliding_attack(directions, 4, s, b);
 
             if (HasPext)
                 m.attacks[pext(b, m.mask)] = reference[size];

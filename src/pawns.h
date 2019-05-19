@@ -40,6 +40,15 @@ struct Entry {
   int weak_unopposed(Color c) const { return weakUnopposed[c]; }
   int passed_count() const { return popcount(passedPawns[WHITE] | passedPawns[BLACK]); }
 
+  Bitboard knight_on_weak(Color c, Bitboard b) const { return exposed[c][0] & b; }
+
+  Bitboard bishop_on_weak(Color c, Bitboard b, Square s) const {
+    return (exposed[c][1] & PseudoAttacks[1][s] & b) | (exposed[c][2] & PseudoAttacks[0][s] & b);
+  }
+  Bitboard rook_on_weak  (Color c, Bitboard b, Square s) const {
+    return (exposed[c][3] & file_bb(s)     & b) | (exposed[c][4] & rank_bb(s)     & b);
+  }
+
   template<Color Us>
   Score king_safety(const Position& pos) {
     return  kingSquares[Us] == pos.square<KING>(Us) && castlingRights[Us] == pos.castling_rights(Us)
@@ -57,6 +66,7 @@ struct Entry {
   Bitboard passedPawns[COLOR_NB];
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
+  Bitboard exposed[COLOR_NB][5];
   Square kingSquares[COLOR_NB];
   Score kingSafety[COLOR_NB];
   int weakUnopposed[COLOR_NB];
