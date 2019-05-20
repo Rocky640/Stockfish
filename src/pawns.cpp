@@ -81,7 +81,7 @@ namespace {
     e->kingSquares[Us]   = SQ_NONE;
     e->pawnAttacks[Us]   = pawn_attacks_bb<Us>(ourPawns);
     e->exposed[Us][0] = e->exposed[Us][1] = e->exposed[Us][2] =
-    e->exposed[Us][3] = e->exposed[Us][4] = 0;
+    e->exposed[Us][3] = 0;
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -144,16 +144,14 @@ namespace {
 
         if (!support)
         {
-            // Find different paths to reach this pawn
-            e->exposed[Us][0] |= PseudoAttacks[KNIGHT][s];
-
+            // Find potential slider paths to attack this pawn
             b = attacks_bb<BISHOP>(s, pos.pieces(PAWN));
-            e->exposed[Us][1] |= b & PseudoAttacks[0][s];
-            e->exposed[Us][2] |= b & PseudoAttacks[1][s];
+            e->exposed[Us][0] |= b & PseudoAttacks[0][s];
+            e->exposed[Us][1] |= b & PseudoAttacks[1][s];
 
             b = attacks_bb<ROOK>(s, pos.pieces(PAWN));
-            e->exposed[Us][3] |= b & rank_bb(s);
-            e->exposed[Us][4] |= b & file_bb(s);
+            e->exposed[Us][2] |= b & rank_bb(s);
+            e->exposed[Us][3] |= b & file_bb(s);
         }
     }
 

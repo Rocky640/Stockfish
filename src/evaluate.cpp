@@ -338,8 +338,6 @@ namespace {
 
                 attackedBy[Us][7] |= pe->bishop_on_weak(Them, b, s);
             }
-            else
-                attackedBy[Us][7] |= pe->knight_on_weak(Them, b);
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
             // pawn diagonally in front of it is a very serious problem, especially
