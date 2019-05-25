@@ -136,7 +136,7 @@ namespace {
             e->weakUnopposed[Us] += !opposed;
 
         else if (backward)
-            score -= Backward[bool(neighbours & ~PawnAttacks[Us][s])],
+            score -= Backward[more_than_one(neighbours) && (neighbours & ~PawnAttacks[Us][s])],
             e->weakUnopposed[Us] += !opposed;
 
         if (doubled && !support)
