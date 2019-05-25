@@ -309,8 +309,8 @@ namespace {
             if (bb & s)
                 score += Outpost * (Pt == KNIGHT ? 4 : 2)
                                  * ((attackedBy[Us][PAWN] & s) ? 2 : 1);
-
-            else if (bb &= b & ~pos.pieces(Us))
+            // Squares occupied by own pawn are not reachable, unless it protects an outpost
+            else if (bb &= b & (~pos.pieces(Us, PAWN) | pawn_attacks_bb<Them>(bb & pos.pieces(Us) & ~pos.pieces(Us, PAWN, KING))))
                 score += Outpost * (Pt == KNIGHT ? 2 : 1)
                                  * ((attackedBy[Us][PAWN] & bb) ? 2 : 1);
 
