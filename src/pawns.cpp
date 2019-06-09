@@ -25,7 +25,6 @@
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
-#include <iostream>
 
 namespace {
 
@@ -34,6 +33,7 @@ namespace {
 
   // Pawn penalties
   constexpr Score Backward = S( 9, 24);
+  constexpr Score Clamp    = S(24,  9);
   constexpr Score Doubled  = S(11, 56);
   constexpr Score Isolated = S( 5, 15);
 
@@ -150,7 +150,7 @@ namespace {
         {
             // If pawns b7 or c7 advance, the other will be backward,
             // so reward the attacker accordingly.
-            score += Backward;
+            score += Clamp;
         }
     }
 
