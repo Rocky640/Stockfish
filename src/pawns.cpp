@@ -25,6 +25,7 @@
 #include "pawns.h"
 #include "position.h"
 #include "thread.h"
+#include <iostream>
 
 namespace {
 
@@ -66,6 +67,8 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Bitboard Mask1 = (Us == WHITE ? 1ULL<<SQ_A6 | 1ULL<<SQ_B7 | 1ULL<<SQ_C7 | 1ULL<<SQ_D6
+                                            : 1ULL<<SQ_A3 | 1ULL<<SQ_B2 | 1ULL<<SQ_C2 | 1ULL<<SQ_D3);
 
     Bitboard b, neighbours, stoppers, doubled, support, phalanx;
     Bitboard lever, leverPush;
@@ -103,7 +106,7 @@ namespace {
 
         // A pawn is backward when it is behind all pawns of the same color
         // on the adjacent files and cannot be safely advanced.
-        backward =  !(ourPawns & pawn_attack_span(Them, s + Up))
+        backward =  !(ourPawns & pawn_attack_span(Them, s))
                   && (stoppers & (leverPush | (s + Up)));
 
         // Passed pawns will be properly scored in evaluation because we need
@@ -139,6 +142,16 @@ namespace {
 
         if (doubled && !support)
             score -= Doubled;
+
+        // Detect pattern White a5 d5 against Black a6 b7 c7 d
+        // or any horizontal translation of the pattern.
+        if (   (r == RANK_5) && (f < FILE_F) && (ourPawns & SquareBB[s + 3])
+            && (theirPawns & (Mask1 << f)) == (Mask1 << f))
+        {
+            // If pawns b7 or c7 advance, the other will be backward,
+            // so reward the attacker accordingly.
+            score += Backward;
+        }
     }
 
     return score;
