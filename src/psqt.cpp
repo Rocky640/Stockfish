@@ -39,14 +39,14 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
   { },
   { },
   { // Knight
-   { S(-169,-105), S(-96,-74), S(-80,-46), S(-79,-18) },
-   { S( -79, -70), S(-39,-56), S(-24,-15), S( -9,  6) },
-   { S( -64, -38), S(-20,-33), S(  4, -5), S( 19, 27) },
-   { S( -28, -36), S(  5,  0), S( 41, 13), S( 47, 34) },
-   { S( -29, -41), S( 13,-20), S( 42,  4), S( 52, 35) },
-   { S( -11, -51), S( 28,-38), S( 63,-17), S( 55, 19) },
-   { S( -67, -64), S(-21,-45), S(  6,-37), S( 37, 16) },
-   { S(-200, -98), S(-80,-89), S(-53,-53), S(-32,-16) }
+   { S(-168,-105), S(-102,-62), S(-66,-52), S(-64,-18) },
+   { S( -79, -68), S( -32,-54), S(-23,-14), S(-16,  0) },
+   { S( -57, -40), S( -14,-39), S(  5, -8), S( 22, 29) },
+   { S( -33, -39), S(   8,  9), S( 36, 14), S( 44, 35) },
+   { S( -27, -55), S(  10,-19), S( 50,  6), S( 58, 39) },
+   { S(  -6, -49), S(  36,-38), S( 65, -1), S( 51, 20) },
+   { S( -78, -71), S( -29,-44), S( 18,-34), S( 37, 27) },
+   { S(-196,-106), S( -80,-91), S(-68,-62), S(-38,-31) }
   },
   { // Bishop
    { S(-44,-63), S( -4,-30), S(-11,-35), S(-28, -8) },
@@ -105,6 +105,8 @@ constexpr Score PBonus[RANK_NB][FILE_NB] =
 
 Score psq[PIECE_NB][SQUARE_NB];
 
+
+
 // init() initializes piece-square tables: the white halves of the tables are
 // copied from Bonus[] adding the piece value, then the black halves of the
 // tables are initialized by flipping and changing the sign of the white scores.
@@ -126,5 +128,7 @@ void init() {
       }
   }
 }
+
+//TUNE(SetRange(-200, 120), Bonus[KNIGHT], init);
 
 } // namespace PSQT
