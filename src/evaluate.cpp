@@ -141,7 +141,25 @@ namespace {
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
-  constexpr Score Outpost            = S( 36, 12);
+
+  //for knight/bishop, and for relative RANK_3 up to RANK_6
+  //bonus for ability to reach and outpost square.
+  //Bonus is doubled if actually on an outpost square.
+
+  Score Outpost[2][4] = {
+     { S( 0, 0), S( 36,12), S( 36,12), S( 36,12)},
+     { S( 0, 0), S( 18, 6), S( 18, 6), S( 18, 6)}
+  };
+
+  //For occupying RANK_1 to RANK_7, outpost or not, will adjust PSQT accordingly once tuning is finished
+  Score MRank[2][8] = {
+      {S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0)},
+      {S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0)}
+  };
+  TUNE(SetRange(0, 100), Outpost[0]);
+  TUNE(SetRange(0, 50), Outpost[1]);
+  TUNE(SetRange(-50, 50), MRank);
+
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
@@ -265,11 +283,12 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                                   : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard OutpostRanks = Rank3BB | Rank4BB | Rank5BB | Rank6BB;
+    constexpr Bitboard LowOutpostRank = (Us == WHITE ? Rank3BB : Rank6BB);
+    
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, bb, bbb;
     Score score = SCORE_ZERO;
 
     attackedBy[Us][Pt] = 0;
@@ -302,12 +321,22 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
+            Rank r = relative_rank(Us, s);
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
-            if (bb & s)
-                score += Outpost * (Pt == KNIGHT ? 2 : 1);
+            if (bb & ~LowOutpostRank & s)
+                score += Outpost[Pt - 2][r-RANK_3] * 2;
+            else if ((bbb = bb & b & ~(LowOutpostRank | pos.pieces(Us))))
+				//reachable advanced outpost
+				score += Outpost[Pt - 2][relative_rank(Us, frontmost_sq(Us, bbb))-RANK_3];
+            else if (bb & s)
+				//low rank outpost
+                score += Outpost[Pt - 2][0] * 2;
+	   	    else if (bb & b & ~pos.pieces(Us))
+				//reachable low outpost
+				score += Outpost[Pt - 2][0];
 
-            else if (bb & b & ~pos.pieces(Us))
-                score += Outpost / (Pt == KNIGHT ? 1 : 2);
+            //temporary for tuning, will be moved to psqt
+            score += MRank[Pt - 2][r];
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
