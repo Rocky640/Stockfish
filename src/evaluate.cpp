@@ -147,8 +147,8 @@ namespace {
   //Bonus is doubled if actually on an outpost square.
 
   Score Outpost[2][4] = {
-     { S( 0, 0), S( 36,12), S( 36,12), S( 36,12)},
-     { S( 0, 0), S( 18, 6), S( 18, 6), S( 18, 6)}
+     { S( 10, 10), S( 36,12), S( 36,12), S( 36,12)},
+     { S( 18,  6), S( 18, 6), S( 18, 6), S( 18, 6)}
   };
 
   //For occupying RANK_1 to RANK_7, outpost or not, will adjust PSQT accordingly once tuning is finished
