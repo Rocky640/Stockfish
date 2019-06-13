@@ -106,6 +106,14 @@ namespace {
       S(106,184), S(109,191), S(113,206), S(116,212) }
   };
 
+  //Outpost[Knight/Bishop][relative_rank - RANK_3] is a bonus 
+  //for a minor which can reach a pawn protected outpost square in one move.
+  //Bonus is doubled if piece is actually on an outpost square.
+  constexpr Score Outpost[2][4] = {
+     { S( 6, 6), S( 38, 6), S(42, 8), S(37, 13) },
+     { S(18, 6), S( 22, 2), S(20, 9), S(18,  8)}
+  };
+
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
   constexpr Score RookOnFile[] = { S(18, 7), S(44, 20) };
@@ -141,7 +149,6 @@ namespace {
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
-  constexpr Score Outpost            = S( 36, 12);
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
@@ -265,11 +272,12 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                                   : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard OutpostRanks = Rank3BB | Rank4BB | Rank5BB | Rank6BB;
+    constexpr Bitboard LowOutpostRank = (Us == WHITE ? Rank3BB : Rank6BB);
+    
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, bb, bbb;
     Score score = SCORE_ZERO;
 
     attackedBy[Us][Pt] = 0;
@@ -303,11 +311,17 @@ namespace {
         {
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
-            if (bb & s)
-                score += Outpost * (Pt == KNIGHT ? 2 : 1);
-
+            if (bb & ~LowOutpostRank & s)
+                score += Outpost[Pt - 2][relative_rank(Us, s)-RANK_3] * 2;
+            else if ((bbb = bb & b & ~(LowOutpostRank | pos.pieces(Us))))
+                //reachable advanced outpost
+                score += Outpost[Pt - 2][relative_rank(Us, frontmost_sq(Us, bbb))-RANK_3];
+            else if (bb & s)
+                //low rank outpost
+                score += Outpost[Pt - 2][0] * 2;
             else if (bb & b & ~pos.pieces(Us))
-                score += Outpost / (Pt == KNIGHT ? 1 : 2);
+                //reachable low rank outpost
+                score += Outpost[Pt - 2][0];
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
