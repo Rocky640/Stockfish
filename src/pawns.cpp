@@ -89,8 +89,6 @@ namespace {
 
         Rank r = relative_rank(Us, s);
 
-        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
-
         // Flag the pawn
         opposed    = theirPawns & forward_file_bb(Us, s);
         stoppers   = theirPawns & passed_pawn_span(Us, s);
@@ -105,6 +103,9 @@ namespace {
         // on the adjacent files and cannot be safely advanced.
         backward =  !(ourPawns & pawn_attack_span(Them, s + Up))
                   && (stoppers & (leverPush | (s + Up)));
+
+        e->pawnAttacksSpan[Us] |= backward ? PawnAttacks[Us][s]
+                                           : pawn_attack_span(Us, s);
 
         // Passed pawns will be properly scored in evaluation because we need
         // full attack info to evaluate them. Include also not passed pawns
@@ -138,6 +139,7 @@ namespace {
 
         if (doubled && !support)
             score -= Doubled;
+
     }
 
     return score;
