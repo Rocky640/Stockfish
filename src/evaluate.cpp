@@ -258,7 +258,7 @@ namespace {
     // Opponent outpost is an advanced pawn protected square safe from attacks by
 	// our pawns or by those those pawn push
     b = pawn_attacks_bb<Us>(b | pos.pieces(Us, PAWN));
-    protectedOutpostArea[Them] = OutpostRanksThem & attackedBy[Them][PAWN] & ~b;
+    protectedOutpostArea[Them] = OutpostRanksThem & pe->pawn_attacks(Them) & ~b;
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -567,12 +567,11 @@ namespace {
     // Safe or protected squares
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
 
-    // Bonus for safe pawn threats
+    // Bonus for safe pawn threats and for one move safe pawn push
     b = pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & safe) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(b);
 
-    // Bonus for safe pawn threats on the next move
-    b = pawn_attacks_bb<Us>(safePawnPush[Us] & safe) & nonPawnEnemies;
+    b = pawn_attacks_bb<Us>(safePawnPush[Us]     & safe) & nonPawnEnemies;
     score += ThreatByPawnPush * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
