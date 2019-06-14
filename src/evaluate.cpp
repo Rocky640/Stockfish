@@ -183,12 +183,15 @@ namespace {
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type. Special "piece types" which
-    // is also calculated is ALL_PIECES.
+    // are also calculated are ALL_PIECES and PAWN_PUSH.
     Bitboard attackedBy[COLOR_NB][PIECE_TYPE_NB];
 
     // attackedBy2[color] are the squares attacked by at least 2 units of a given
     // color, including x-rays. But diagonal x-rays through pawns are not computed.
     Bitboard attackedBy2[COLOR_NB];
+
+    // outpostArea[color] are some squares where a minor piece is relatively active and safe
+    Bitboard outpostArea[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king plus some other
     // very near squares, depending on king position.
@@ -221,7 +224,9 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB: Rank7BB | Rank6BB);
+    constexpr Bitboard LowRanks =     (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
+    constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
+                                                   : Rank5BB | Rank4BB | Rank3BB);
 
     const Square ksq = pos.square<KING>(Us);
 
@@ -239,6 +244,14 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
+
+    // Find squares where our pawns can freely push one or two squares away without being captured by a pawn
+    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~(pos.pieces() | pe->pawn_attacks(Them));
+    b |= shift<Up>(b) & ~(pos.pieces() | pe->pawn_attacks(Them));
+    attackedBy[Us][PAWN_PUSH] = b;
+
+    // An outpost square is on rank 4, 5, 6, and cannot be safely attacked by a pawn
+    outpostArea[Us] = OutpostRanks & ~(b | pe->pawn_attacks(Them)) & attackedBy[Us][PAWN];
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -265,11 +278,9 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
-                                                   : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b;
     Score score = SCORE_ZERO;
 
     attackedBy[Us][Pt] = 0;
@@ -302,11 +313,10 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
-            bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
-            if (bb & s)
+            if (outpostArea[Us] & s)
                 score += Outpost * (Pt == KNIGHT ? 2 : 1);
 
-            else if (bb & b & ~pos.pieces(Us))
+            else if (outpostArea[Us] & b & ~pos.pieces(Us))
                 score += Outpost / (Pt == KNIGHT ? 1 : 2);
 
             // Knight and Bishop bonus for being right behind a pawn
@@ -494,7 +504,6 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
-    constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -512,9 +521,6 @@ namespace {
 
     // Enemies not strongly protected and under our attack
     weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
-
-    // Safe or protected squares
-    safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
 
     // Bonus according to the kind of attacking pieces
     if (defended | weak)
@@ -552,22 +558,16 @@ namespace {
 
     score += RestrictedPiece * popcount(b);
 
-    // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
-    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
+    // Safe or protected squares
+    safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
 
-    // Keep only the squares which are relatively safe
-    b &= ~attackedBy[Them][PAWN] & safe;
+    // Bonus for safe pawn threats
+    b = pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & safe) & nonPawnEnemies;
+    score += ThreatBySafePawn * popcount(b);
 
     // Bonus for safe pawn threats on the next move
-    b = pawn_attacks_bb<Us>(b) & pos.pieces(Them);
+    b = pawn_attacks_bb<Us>(attackedBy[Us][PAWN_PUSH] & safe) & pos.pieces(Them);
     score += ThreatByPawnPush * popcount(b);
-
-    // Our safe or protected pawns
-    b = pos.pieces(Us, PAWN) & safe;
-
-    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatBySafePawn * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
