@@ -190,8 +190,9 @@ namespace {
     // color, including x-rays. But diagonal x-rays through pawns are not computed.
     Bitboard attackedBy2[COLOR_NB];
 
-    // outpostArea[color] are some squares where a minor piece is relatively active and safe
-    Bitboard outpostArea[COLOR_NB];
+    // protectedOutpostArea[color] are advanced squares where a minor piece would be supported by
+    // a pawn and safe from pawn attacks
+    Bitboard protectedOutpostArea[COLOR_NB];
 
     // kingRing[color] are the squares adjacent to the king plus some other
     // very near squares, depending on king position.
@@ -245,13 +246,13 @@ namespace {
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
 
-    // Find squares where our pawns can freely push one or two squares away without being captured by a pawn
+    // Find squares where our pawns can freely push on next move without being captured by a pawn
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~(pos.pieces() | pe->pawn_attacks(Them));
-    b |= shift<Up>(b) & ~(pos.pieces() | pe->pawn_attacks(Them));
+    b |= shift<Up>(b & LowRanks)         & ~(pos.pieces() | pe->pawn_attacks(Them));
     attackedBy[Us][PAWN_PUSH] = b;
 
-    // An outpost square is on rank 4, 5, 6, and cannot be safely attacked by a pawn
-    outpostArea[Us] = OutpostRanks & ~(b | pe->pawn_attacks(Them)) & attackedBy[Us][PAWN];
+    // An outpost is on rank 4, 5, 6, and cannot be safely attacked by a one-pawn move
+    protectedOutpostArea[Us] = OutpostRanks & ~(b | pe->pawn_attacks(Them)) & attackedBy[Us][PAWN];
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -313,10 +314,10 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
-            if (outpostArea[Us] & s)
+            if (protectedOutpostArea[Us] & s)
                 score += Outpost * (Pt == KNIGHT ? 2 : 1);
 
-            else if (outpostArea[Us] & b & ~pos.pieces(Us))
+            else if (protectedOutpostArea[Us] & b & ~pos.pieces(Us))
                 score += Outpost / (Pt == KNIGHT ? 1 : 2);
 
             // Knight and Bishop bonus for being right behind a pawn
@@ -503,7 +504,6 @@ namespace {
   Score Evaluation<T>::threats() const {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
-    constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
