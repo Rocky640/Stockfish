@@ -265,6 +265,8 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
+    constexpr Bitboard FirstRank    = (Us == WHITE ? Rank1BB : Rank8BB);
+    
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
@@ -296,6 +298,12 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+        if (Pt == KNIGHT)
+        {
+            b &= FirstRank & mobilityArea[Us];
+            while (b)
+               mob -= !more_than_one(mobilityArea[Us] & PseudoAttacks[KNIGHT][pop_lsb(&b)]);
+        }
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
