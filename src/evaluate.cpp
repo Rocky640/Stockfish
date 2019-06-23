@@ -146,9 +146,10 @@ namespace {
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
   constexpr Score SliderOnQueen      = S( 59, 18);
+  constexpr Score ThreatByPawnFile   = S( 13,  0);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
-  constexpr Score ThreatByRank       = S( 13,  0);
+  constexpr Score ThreatByPieceRank  = S( 13,  0);
   constexpr Score ThreatBySafePawn   = S(173, 94);
   constexpr Score TrappedRook        = S( 47,  4);
   constexpr Score WeakQueen          = S( 49, 15);
@@ -524,8 +525,10 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += ThreatByMinor[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            if (type_of(pos.piece_on(s)) == PAWN)
+                score += ThreatByPawnFile  * (int)std::min(file_of(s), ~file_of(s));
+            else
+                score += ThreatByPieceRank * (int)relative_rank(Them, s);
         }
 
         b = weak & attackedBy[Us][ROOK];
@@ -533,8 +536,10 @@ namespace {
         {
             Square s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
-            if (type_of(pos.piece_on(s)) != PAWN)
-                score += ThreatByRank * (int)relative_rank(Them, s);
+            if (type_of(pos.piece_on(s)) == PAWN)
+                score += ThreatByPawnFile  * (int)std::min(file_of(s), ~file_of(s));
+            else
+                score += ThreatByPieceRank * (int)relative_rank(Them, s);
         }
 
         if (weak & attackedBy[Us][KING])
