@@ -146,7 +146,7 @@ namespace {
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
   constexpr Score SliderOnQueen      = S( 59, 18);
-  constexpr Score ThreatByPawnFile   = S( 13,  0);
+  constexpr Score ThreatOnPawnCenter = S( 25,  0);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatByPieceRank  = S( 13,  0);
@@ -526,7 +526,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += ThreatByMinor[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) == PAWN)
-                score += ThreatByPawnFile  * (int)std::min(file_of(s), ~file_of(s));
+                score += ThreatOnPawnCenter  * (bool) (CenterFiles & s);
             else
                 score += ThreatByPieceRank * (int)relative_rank(Them, s);
         }
@@ -537,7 +537,7 @@ namespace {
             Square s = pop_lsb(&b);
             score += ThreatByRook[type_of(pos.piece_on(s))];
             if (type_of(pos.piece_on(s)) == PAWN)
-                score += ThreatByPawnFile  * (int)std::min(file_of(s), ~file_of(s));
+                score += ThreatOnPawnCenter * (bool) (CenterFiles & s);
             else
                 score += ThreatByPieceRank * (int)relative_rank(Them, s);
         }
