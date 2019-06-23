@@ -224,24 +224,20 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-	constexpr Bitboard TRank3BB = (Us == WHITE ? Rank6BB : Rank3BB);
     constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     const Square ksq = pos.square<KING>(Us);
 
     Bitboard dblAttackByPawn = pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
     Bitboard b;
-    // Find squares where their pawns can push on the next move
-    b  = shift<Down>(pos.pieces(Them, PAWN)) & ~pos.pieces();
-    b |= shift<Down>(b & TRank3BB) & ~pos.pieces();
-    pawnPush[Them] = b;
 
-    //Attacks from these squares
-    b = pawn_attacks_bb<Them>(b);
+    // Squares where our pawns can push on the next move
+    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
+    b |= shift<Up>(b & LowRanks) & ~pos.pieces();
+    pawnPush[Us] = b;
 
-    // Find our pawns that are blocked and which cannot be challenged by apanw push.
-    // or on the first two ranks
-    b = pos.pieces(Us, PAWN) & ((shift<Down>(pos.pieces()) & ~b) | LowRanks);
+    // Find our pawns that are blocked or on the first two ranks
+    b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king or queen or controlled by
     // enemy pawns are excluded from the mobility area.
@@ -323,7 +319,7 @@ namespace {
                 score += Outpost / (Pt == KNIGHT ? 1 : 2);
 
             else
-                score += PawnBreakDefense * popcount(OutpostRanks & pawnPush[Them] & b & attackedBy[Us][PAWN]);
+                score += PawnBreakDefense * bool(OutpostRanks & pawnPush[Them] & b & attackedBy[Us][PAWN]);
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
