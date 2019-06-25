@@ -566,8 +566,9 @@ namespace {
     // Our safe or protected pawns
     b = pos.pieces(Us, PAWN) & safe;
 
-    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatBySafePawn * popcount(b);
+    b = pawn_attacks_bb<Us>(b);
+    score += ThreatBySafePawn * popcount(b & nonPawnEnemies);
+    score += make_score(0, 20) * popcount(b & ~stronglyProtected);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
