@@ -166,7 +166,7 @@ namespace {
     Value value();
 
   private:
-    template<Color Us> void initialize();
+    template<Color Us> Score initialize();
     template<Color Us, PieceType Pt> Score pieces();
     template<Color Us> Score king() const;
     template<Color Us> Score threats() const;
@@ -216,7 +216,7 @@ namespace {
   // Evaluation::initialize() computes king and pawn attacks, and the king ring
   // bitboard for a given color. This is done at the beginning of the evaluation.
   template<Tracing T> template<Color Us>
-  void Evaluation<T>::initialize() {
+  Score Evaluation<T>::initialize() {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
@@ -256,6 +256,9 @@ namespace {
 
     // Remove from kingRing[] the squares defended by two pawns
     kingRing[Us] &= ~dblAttackByPawn;
+
+    // Strong recaptures
+    return make_score(0, 20) * bool(dblAttackByPawn & pos.pieces(Them) & ~pe->pawn_attacks(Them));
   }
 
 
@@ -807,8 +810,7 @@ namespace {
 
     // Main evaluation begins here
 
-    initialize<WHITE>();
-    initialize<BLACK>();
+    score += initialize<WHITE>() - initialize<BLACK>();
 
     // Pieces should be evaluated first (populate attack tables)
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
