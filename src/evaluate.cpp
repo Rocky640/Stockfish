@@ -265,7 +265,7 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard FirstRank    = (Us == WHITE ? Rank1BB : Rank8BB);
+    constexpr Bitboard FirstRank    = (Us == WHITE ? Rank1BB | Rank2BB : Rank8BB | Rank7BB);
     
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
