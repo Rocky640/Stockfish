@@ -297,6 +297,12 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+        if (Pt != QUEEN)
+            // If we have a low mobility, and attacking some enemy piece,
+            // assume that normally we would exchange, but since we don't,
+            // there might be a problem
+            if ((mob < 3) && (b & mobilityArea[Us] & (pos.pieces(Them) ^ pos.pieces(Them, PAWN))))
+                mob -= 1;
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
