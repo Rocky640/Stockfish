@@ -195,6 +195,8 @@ namespace {
     // very near squares, depending on king position.
     Bitboard kingRing[COLOR_NB];
 
+    Bitboard occupancy[COLOR_NB];
+
     // kingAttackersCount[color] is the number of pieces of the given color
     // which attack a square in the kingRing of the enemy king.
     int kingAttackersCount[COLOR_NB];
@@ -234,6 +236,12 @@ namespace {
     // Squares occupied by those pawns, by our king or queen or controlled by
     // enemy pawns are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
+
+    // When computing bishop or rook mobility, always exclude queens.
+    // Exclude also enemy pieces attacked by our pawn-supported pawns.
+    occupancy[Us] = pos.pieces() ^ pos.pieces(QUEEN)
+                   & ~(   (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
+                         & pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & pe->pawn_attacks(Us)));
 
     // Initialize attackedBy[] for king and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
@@ -278,8 +286,8 @@ namespace {
     for (Square s = *pl; s != SQ_NONE; s = *++pl)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
-          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, occupancy[Us])
+          : Pt ==   ROOK ? attacks_bb<  ROOK>(s, occupancy[Us] & ~pos.pieces(ROOK))
                          : pos.attacks_from<Pt>(s);
 
         if (pos.blockers_for_king(Us) & s)
