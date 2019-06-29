@@ -239,7 +239,7 @@ namespace {
 
     // When computing bishop or rook mobility, always exclude queens.
     // Exclude also enemy pieces attacked by our pawn-supported pawns.
-    occupancy[Us] = pos.pieces() ^ pos.pieces(QUEEN)
+    occupancy[Us] =   (pos.pieces() ^ pos.pieces(QUEEN))
                    & ~(   (pos.pieces(Them) ^ pos.pieces(Them, PAWN))
                          & pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & pe->pawn_attacks(Us)));
 
