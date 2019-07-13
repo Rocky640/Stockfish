@@ -144,8 +144,9 @@ namespace {
   constexpr Score MinorBehindPawn    = S( 18,  3);
   constexpr Score Outpost            = S( 18,  6);
   constexpr Score PawnlessFlank      = S( 17, 95);
-  constexpr Score RestrictedPiece    = S(  7,  7);
+  constexpr Score RestrictedPiece    = S(  6,  6);
   constexpr Score RookOnPawn         = S( 10, 32);
+  constexpr Score SafeHome           = S(  3,  3);
   constexpr Score SliderOnQueen      = S( 59, 18);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
@@ -309,6 +310,8 @@ namespace {
 
             else if (bb & b & ~pos.pieces(Us))
                 score += Outpost * (Pt == KNIGHT ? 2 : 1);
+
+            
 
             // Knight and Bishop bonus for being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
@@ -496,6 +499,8 @@ namespace {
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  HomeBB   = (Us == WHITE ? Rank1BB | Rank2BB | Rank3BB | Rank4BB
+                                                : Rank8BB | Rank7BB | Rank6BB | Rank5BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -551,7 +556,7 @@ namespace {
        & ~stronglyProtected
        &  attackedBy[Us][ALL_PIECES];
 
-    score += RestrictedPiece * popcount(b);
+    score += RestrictedPiece * popcount(b) + SafeHome * popcount(b & HomeBB);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
