@@ -835,6 +835,8 @@ namespace {
                 + threats<WHITE>() - threats<BLACK>()
                 + space<  WHITE>() - space<  BLACK>();
     }
+    else
+       score += pe->king_safety<WHITE>(pos) - pe->king_safety<BLACK>(pos);
 
     score += passed< WHITE>() - passed< BLACK>();
     score += initiative(eg_value(score));
