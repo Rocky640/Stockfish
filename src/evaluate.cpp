@@ -226,7 +226,20 @@ namespace {
 
     const Square ksq = pos.square<KING>(Us);
 
+    // Initialize attackedBy[] for king and pawns
+    attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
+    attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
+    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
+
+    // Early exit if only king and pawns.
+    if (!pos.non_pawn_material())
+    {
+        //attackedBy[Us][KNIGHT] = attackedBy[Us][BISHOP] = attackedBy[Us][ROOK] = attackedBy[Us][QUEEN] = 0;
+        return;
+    }
+
     Bitboard dblAttackByPawn = pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
+    attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
 
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
@@ -234,12 +247,6 @@ namespace {
     // Squares occupied by those pawns, by our king or queen or controlled by
     // enemy pawns are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
-
-    // Initialize attackedBy[] for king and pawns
-    attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
-    attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
-    attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
-    attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
 
     // Init our king safety tables
     kingRing[Us] = attackedBy[Us][KING];
@@ -474,10 +481,6 @@ namespace {
     if (kingDanger > 100)
         score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
 
-    // Penalty when our king is on a pawnless flank
-    if (!(pos.pieces(PAWN) & KingFlank[file_of(ksq)]))
-        score -= PawnlessFlank;
-
     // Penalty if king flank is under attack, potentially moving toward the king
     score -= FlankAttacks * kingFlankAttacks;
 
@@ -606,7 +609,12 @@ namespace {
     };
 
     Bitboard b, bb, squaresToQueen, defendedSquares, unsafeSquares;
+
     Score score = SCORE_ZERO;
+
+    // Penalty when our king is on a pawnless flank
+    if (!(pos.pieces(PAWN) & KingFlank[file_of(pos.square<KING>(Us))]))
+        score -= PawnlessFlank;
 
     b = pe->passed_pawns(Us);
 
@@ -813,19 +821,22 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    // Pieces should be evaluated first (populate attack tables)
-    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+    if (!pos.non_pawn_material())
+    {
+        // Pieces should be evaluated first (populate attack tables)
+        score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
+                + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
+                + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
+                + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-    score += mobility[WHITE] - mobility[BLACK];
+        score += mobility[WHITE] - mobility[BLACK];
 
-    score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
-            + space<  WHITE>() - space<  BLACK>();
+        score +=  king<   WHITE>() - king<   BLACK>()
+                + threats<WHITE>() - threats<BLACK>()
+                + space<  WHITE>() - space<  BLACK>();
+    }
 
+    score += passed< WHITE>() - passed< BLACK>();
     score += initiative(eg_value(score));
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
