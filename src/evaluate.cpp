@@ -821,7 +821,7 @@ namespace {
     initialize<WHITE>();
     initialize<BLACK>();
 
-    if (!pos.non_pawn_material())
+    if (pos.non_pawn_material())
     {
         // Pieces should be evaluated first (populate attack tables)
         score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
