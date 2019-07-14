@@ -82,9 +82,19 @@ namespace {
 
   // Penalties for enemy's safe checks
   constexpr int QueenSafeCheck  = 780;
-  constexpr int RookSafeCheck   = 1080;
-  constexpr int BishopSafeCheck = 635;
-  constexpr int KnightSafeCheck = 790;
+  int RookSafeCheck[2]   = {1080, 1080};
+  int BishopSafeCheck[2] = {635, 635};
+  int KnightSafeCheck[2] = {790, 790};
+  int a1[2] = {16 , 16};
+  int a2[2] = {69 , 69};
+  int a3[2] = {185, 185};
+  int a4[2] = {100, 100};
+  int a5[2] = {35, 35};
+  int a6[2] = {150, 150};
+  int a7[2] = {12, 12};
+  int a8[2] = {16, 16};
+  int a9[2] = { 5,  5};
+  int a10[2] = {880, 7};
 
 #define S(mg, eg) make_score(mg, eg)
 
@@ -136,7 +146,7 @@ namespace {
   constexpr Score AttacksOnSpaceArea = S(  4,  0);
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CorneredBishop     = S( 50, 50);
-  constexpr Score FlankAttacks       = S(  8,  0);
+  Score FlankAttacks[2] = { S(8,  0) , S(8, 0) };
   constexpr Score Hanging            = S( 69, 36);
   constexpr Score KingProtector      = S(  7,  8);
   constexpr Score KnightOnQueen      = S( 16, 12);
@@ -147,7 +157,7 @@ namespace {
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
   constexpr Score SliderOnQueen      = S( 59, 18);
-  constexpr Score ThreatByKing       = S( 24, 89);
+  Score ThreatByKing[2]    = { S( 24, 89) , S(24,89)};
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatByRank       = S( 13,  0);
   constexpr Score ThreatBySafePawn   = S(173, 94);
@@ -155,6 +165,9 @@ namespace {
   constexpr Score WeakQueen          = S( 49, 15);
 
 #undef S
+
+TUNE(RookSafeCheck,BishopSafeCheck,KnightSafeCheck,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10, ThreatByKing, FlankAttacks);
+
 
   // Evaluation class computes and stores attacks tables and other working data
   template<Tracing T>
@@ -395,6 +408,7 @@ namespace {
 
     // Init the score with king shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos);
+    int q = bool(pos.count<QUEEN>(Them));
 
     // Attacked squares defended at most once by our queen or king
     weak =  attackedBy[Them][ALL_PIECES]
@@ -412,7 +426,7 @@ namespace {
     rookChecks = b1 & safe & attackedBy[Them][ROOK];
 
     if (rookChecks)
-        kingDanger += RookSafeCheck;
+        kingDanger += RookSafeCheck[q];
     else
         unsafeChecks |= b1 & attackedBy[Them][ROOK];
 
@@ -435,7 +449,7 @@ namespace {
                   & ~queenChecks;
 
     if (bishopChecks)
-        kingDanger += BishopSafeCheck;
+        kingDanger += BishopSafeCheck[q];
     else
         unsafeChecks |= b2 & attackedBy[Them][BISHOP];
 
@@ -443,7 +457,7 @@ namespace {
     knightChecks = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
 
     if (knightChecks & safe)
-        kingDanger += KnightSafeCheck;
+        kingDanger += KnightSafeCheck[q];
     else
         unsafeChecks |= knightChecks;
 
@@ -458,17 +472,16 @@ namespace {
 
     int kingFlankAttacks = popcount(b1) + popcount(b2);
 
-    kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
-                 +  69 * kingAttacksCount[Them]
-                 + 185 * popcount(kingRing[Us] & weak)
-                 - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
-                 -  35 * bool(attackedBy[Us][BISHOP] & attackedBy[Us][KING])
-                 + 150 * popcount(pos.blockers_for_king(Us) | unsafeChecks)
-                 - 873 * !pos.count<QUEEN>(Them)
-                 -   6 * mg_value(score) / 8
-                 +       mg_value(mobility[Them] - mobility[Us])
-                 +   5 * kingFlankAttacks * kingFlankAttacks / 16
-                 -   7;
+    kingDanger +=  a1[q] * kingAttackersCount[Them] * kingAttackersWeight[Them] / 16
+                 + a2[q] * kingAttacksCount[Them]
+                 + a3[q] * popcount(kingRing[Us] & weak)
+                 - a4[q] * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
+                 - a5[q] * bool(attackedBy[Us][BISHOP] & attackedBy[Us][KING])
+                 + a6[q] * popcount(pos.blockers_for_king(Us) | unsafeChecks)
+                 - a7[q] * mg_value(score) / 16
+                 + a8[q] * mg_value(mobility[Them] - mobility[Us]) / 16
+                 + a9[q] * kingFlankAttacks * kingFlankAttacks / 16
+                 - a10[q];
 
     // Transform the kingDanger units into a Score, and subtract it from the evaluation
     if (kingDanger > 100)
@@ -479,7 +492,7 @@ namespace {
         score -= PawnlessFlank;
 
     // Penalty if king flank is under attack, potentially moving toward the king
-    score -= FlankAttacks * kingFlankAttacks;
+    score -= FlankAttacks[q] * kingFlankAttacks;
 
     if (T)
         Trace::add(KING, Us, score);
@@ -539,7 +552,7 @@ namespace {
         }
 
         if (weak & attackedBy[Us][KING])
-            score += ThreatByKing;
+            score += ThreatByKing[bool(pos.count<QUEEN>(Them))];
 
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
