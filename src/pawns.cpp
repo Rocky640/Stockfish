@@ -36,7 +36,7 @@ namespace {
   constexpr Score Doubled       = S(11, 56);
   constexpr Score Isolated      = S( 5, 15);
   constexpr Score WeakUnopposed = S(13, 27);
-  constexpr Score Attacked2Unsupported = S(0, 56);
+  constexpr Score LostPawn      = S( 0, 56);
 
   // Connected pawn bonus
   constexpr int Connected[RANK_NB] = { 0, 7, 8, 12, 29, 48, 86 };
@@ -144,11 +144,9 @@ namespace {
             score -= Doubled;
     }
 
-    // Unsupported friendly pawns attacked twice by the enemy
-    score -= Attacked2Unsupported * popcount(  ourPawns
-                                             & pawn_double_attacks_bb<Them>(theirPawns)
-                                             & ~pawn_attacks_bb<Us>(ourPawns)
-                                             & ~e->passedPawns[Us]);
+    // Penalty for unsupported pawns attacked twice by the enemy
+    if (ourPawns & ~e->pawnAttacks[Us] & pawn_double_attacks_bb<Them>(theirPawns))
+        score -= LostPawn;
 
     return score;
   }
