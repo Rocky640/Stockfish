@@ -131,7 +131,6 @@ public:
   // Piece specific
   bool pawn_passed(Color c, Square s) const;
   bool opposite_bishops() const;
-  int  pawns_on_same_color_squares(Color c, Square s) const;
 
   // Doing and undoing moves
   void do_move(Move m, StateInfo& newSt);
@@ -330,9 +329,6 @@ inline bool Position::advanced_pawn_push(Move m) const {
         && relative_rank(sideToMove, to_sq(m)) > RANK_5;
 }
 
-inline int Position::pawns_on_same_color_squares(Color c, Square s) const {
-  return popcount(pieces(c, PAWN) & ((DarkSquares & s) ? DarkSquares : ~DarkSquares));
-}
 
 inline Key Position::key() const {
   return st->key;
