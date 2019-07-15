@@ -134,7 +134,7 @@ namespace {
 
   // Assorted bonuses and penalties
   constexpr Score AttacksOnSpaceArea = S(  4,  0);
-  constexpr Score BishopPawns        = S(  3,  7);
+  constexpr Score BishopPawns        = S(  2,  4);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score FlankAttacks       = S(  8,  0);
   constexpr Score Hanging            = S( 69, 36);
@@ -222,13 +222,14 @@ namespace {
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
-    constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
+    constexpr Bitboard LowRanks = CenterFiles
+                                & (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     const Square ksq = pos.square<KING>(Us);
 
     Bitboard dblAttackByPawn = pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
 
-    // Find our pawns that are blocked or on the first two ranks
+    // Find our pawns that are blocked or on the central low ranks, since they are harder to push
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
     // Squares occupied by those pawns, by our king or queen or controlled by
@@ -320,11 +321,10 @@ namespace {
             if (Pt == BISHOP)
             {
                 // Penalty according to number of pawns on the same color square as the
-                // bishop, bigger when the center files are blocked with pawns.
-                Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
+                // bishop, weighted by mass of center pawns
 
                 score -= BishopPawns * pos.pawns_on_same_color_squares(Us, s)
-                                     * (1 + popcount(blocked & CenterFiles));
+                                     * (1 + popcount(pos.pieces(PAWN) & CenterFiles));
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
