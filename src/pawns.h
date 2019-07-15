@@ -41,7 +41,7 @@ struct Entry {
   
   int pawns_on_same_color_squares(const Position& pos, Color c, Square s) const {
     Bitboard b = pos.pieces(c, PAWN) | (pos.pieces(~c, PAWN) & pawnAttacks[~c] & ~pawnAttacksSpan[c]);
-    return popcount(b & (DarkSquares & s) ? DarkSquares : ~DarkSquares);
+    return popcount(b & ((DarkSquares & s) ? DarkSquares : ~DarkSquares));
   }
 
   template<Color Us>
