@@ -551,7 +551,7 @@ namespace {
     score += RestrictedPiece * popcount(b);
 
     // Bonus for direct safe pawn threats
-    safe = attackedBy[Us][PAWN] | ~(stronglyProtected | attackedBy[Them][ALL_PIECES]);
+    safe = (attackedBy[Us][ALL_PIECES] & ~stronglyProtected) | ~attackedBy[Them][ALL_PIECES];
 
     b = pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & safe) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(b);
