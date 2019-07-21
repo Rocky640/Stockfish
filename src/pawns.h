@@ -46,11 +46,14 @@ struct Entry {
     // Note that contrary to master, if cr[us] = ALL or  pos.castling-rights(Us) = 0, no need to recompute.
     // Here we handle only the later case.
 
-    if (kingSquares[Us] != pos.square<KING>(Us) || (castlingRights[Us] != pos.castling_rights(Us) && pos.castling_rights(Us) != 0))
+    if (   kingSquares[Us] != pos.square<KING>(Us)
+        || (castlingRights[Us] != pos.castling_rights(Us) && pos.castling_rights(Us) != 0))
         do_king_safety<Us>(pos);
 
-    // Now take into account the urrent position and the attacked squares to penalize impeded castling
     Score shelter = kingSafety[Us][0];
+
+    // If we can castle and we have a better score, use it, considering also 
+    // how far we are from castling
 
     if (pos.can_castle(Us | KING_SIDE))
     {
