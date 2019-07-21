@@ -40,16 +40,44 @@ struct Entry {
   int passed_count() const { return popcount(passedPawns[WHITE] | passedPawns[BLACK]); }
 
   template<Color Us>
-  Score king_safety(const Position& pos) {
-    return  kingSquares[Us] == pos.square<KING>(Us) && castlingRights[Us] == pos.castling_rights(Us)
-          ? kingSafety[Us] : (kingSafety[Us] = do_king_safety<Us>(pos));
+  Score king_safety(const Position& pos, const Bitboard attacked) {
+
+    // Recompute the possible storm/shelter if king position changed, or castling rights have changed.
+    // Note that contrary to master, if cr[us] = ALL or  pos.castling-rights(Us) = 0, no need to recompute.
+    // Here we handle only the later case.
+
+    if (kingSquares[Us] != pos.square<KING>(Us) || (castlingRights[Us] != pos.castling_rights(Us) && pos.castling_rights(Us) != 0))
+        do_king_safety<Us>(pos);
+
+    // Now take into account the urrent position and the attacked squares to penalize impeded castling
+    Score shelter = kingSafety[Us][0];
+
+    if (pos.can_castle(Us | KING_SIDE))
+    {
+      int impederCnt = popcount(pos.castling_impeders(attacked, Us | KING_SIDE));
+      Score shelter2 = kingSafety[Us][1] - make_score(impederCnt * 7, 0);
+
+      if (mg_value(shelter2) > mg_value(shelter))
+          shelter = shelter2;
+    }
+
+    if (pos.can_castle(Us | QUEEN_SIDE))
+    {
+      int impederCnt = popcount(pos.castling_impeders(attacked, Us | QUEEN_SIDE));
+      Score shelter2 = kingSafety[Us][2] - make_score(impederCnt * 7, 0);
+
+      if (mg_value(shelter2) > mg_value(shelter))
+          shelter = shelter2;
+    }
+
+    return shelter + kingSafety[Us][3];
   }
 
   template<Color Us>
-  Score do_king_safety(const Position& pos);
+  void do_king_safety(const Position& pos);
 
   template<Color Us>
-  void evaluate_shelter(const Position& pos, Square ksq, Score& shelter);
+  Score evaluate_shelter(const Position& pos, Square ksq);
 
   Key key;
   Score scores[COLOR_NB];
@@ -57,7 +85,7 @@ struct Entry {
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
   Square kingSquares[COLOR_NB];
-  Score kingSafety[COLOR_NB];
+  Score kingSafety[COLOR_NB][4];
   int castlingRights[COLOR_NB];
 };
 
