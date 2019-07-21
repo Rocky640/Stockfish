@@ -184,10 +184,15 @@ Entry* probe(const Position& pos) {
 template<Color Us>
 void Entry::evaluate_shelter(const Position& pos, Square ksq, Score& shelter) {
 
-  constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
+  constexpr Color Them   = (Us == WHITE ? BLACK : WHITE);
+  constexpr Direction Up = (Us == WHITE ? NORTH : SOUTH);
+  constexpr Bitboard WhitePointingKS = (1ULL << SQ_D4 | 1ULL << SQ_E5); //french structure
+  constexpr Bitboard WhitePointingQS = (1ULL << SQ_E4 | 1ULL << SQ_D5);
+  constexpr Bitboard BlackPointingKS = (1ULL << SQ_D5 | 1ULL << SQ_E4);
+  constexpr Bitboard BlackPointingQS = (1ULL << SQ_E5 | 1ULL << SQ_D4);
 
   Bitboard b = pos.pieces(PAWN) & ~forward_ranks_bb(Them, ksq);
-  Bitboard ourPawns = b & pos.pieces(Us);
+  Bitboard ourPawns   = b & pos.pieces(Us);
   Bitboard theirPawns = b & pos.pieces(Them);
 
   Score bonus = make_score(5, 5);
@@ -210,6 +215,19 @@ void Entry::evaluate_shelter(const Position& pos, Square ksq, Score& shelter) {
           bonus -= make_score(UnblockedStorm[d][theirRank], 0);
   }
 
+
+  // Evaluate blocking center enemies directed against our king
+  Bitboard blocking = shift<Up>(ourPawns) & theirPawns;
+
+  bool closedCenterDanger = (Us == WHITE)
+          ? more_than_one(blocking & (center <= FILE_D ? BlackPointingQS : BlackPointingKS))
+          : more_than_one(blocking & (center <= FILE_D ? WhitePointingQS : WhitePointingKS));
+
+  if (closedCenterDanger)
+      bonus -= make_score(30, 30);
+
+  // Since we evaluate our king in its current position (or some potential castling position,
+  // record the best shekter vaue so far.
   if (mg_value(bonus) > mg_value(shelter))
       shelter = bonus;
 }
