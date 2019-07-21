@@ -224,7 +224,7 @@ void Entry::evaluate_shelter(const Position& pos, Square ksq, Score& shelter) {
           : more_than_one(blocking & (center <= FILE_D ? WhitePointingQS : WhitePointingKS));
 
   if (closedCenterDanger)
-      bonus -= make_score(30, 30);
+      bonus -= make_score(30, 0);
 
   // Since we evaluate our king in its current position (or some potential castling position,
   // record the best shekter vaue so far.
