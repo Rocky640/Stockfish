@@ -129,6 +129,7 @@ namespace {
   // Assorted bonuses and penalties
   constexpr Score AttacksOnSpaceArea = S(  4,  0);
   constexpr Score BishopPawns        = S(  3,  7);
+            Score CandidateAdjust    = S(  0,  0);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score FlankAttacks       = S(  8,  0);
   constexpr Score Hanging            = S( 69, 36);
@@ -137,7 +138,8 @@ namespace {
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
   constexpr Score Outpost            = S( 18,  6);
-  constexpr Score PassedFile         = S( 11,  8);
+            Score PassedFile         = S( 11,  8);
+            Score PassedRankAdjust   = S(  0,  0);
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score RookOnPawn         = S( 10, 32);
@@ -148,6 +150,8 @@ namespace {
   constexpr Score ThreatBySafePawn   = S(173, 94);
   constexpr Score TrappedRook        = S( 47,  4);
   constexpr Score WeakQueen          = S( 49, 15);
+
+  TUNE(SetRange(-50,50), PassedRankAdjust,CandidateAdjust,PassedFile);
 
 #undef S
 
@@ -614,7 +618,7 @@ namespace {
         int r = relative_rank(Us, s);
         File f = file_of(s);
 
-        Score bonus = PassedRank[r];
+        Score bonus = PassedRank[r] - PassedRankAdjust;
 
         if (r > RANK_3)
         {
@@ -638,7 +642,7 @@ namespace {
                 bb = forward_file_bb(Them, s) & pos.pieces(ROOK, QUEEN);
 
                 if (!(pos.pieces(Them) & bb))
-                    unsafeSquares &= attackedBy[Them][ALL_PIECES] | pos.pieces(Them);
+                    unsafeSquares &= attackedBy[Them][ALL_PIECES];
 
                 // If there are no enemy attacks on passed pawn span, assign a big bonus.
                 // Otherwise assign a smaller bonus if the path to queen is not attacked
@@ -660,7 +664,7 @@ namespace {
         // pawn push to become passed, or have a pawn in front of them.
         if (   !pos.pawn_passed(Us, s + Up)
             || (pos.pieces(PAWN) & (s + Up)))
-            bonus = bonus / 2;
+            bonus = bonus / 2 - CandidateAdjust;
 
         score += bonus - PassedFile * std::min(f, ~f);
     }
