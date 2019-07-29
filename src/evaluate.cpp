@@ -621,7 +621,7 @@ namespace {
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            int kp =   (relative_rank(Us, pos.square<KING>(Them)) < r) * 2
+            int kp =   (relative_rank(Us, pos.square<KING>(Them)) < r) * 5
                      + king_proximity(Them, blockSq) * 5
                      - king_proximity(Us,   blockSq) * 2;
 
