@@ -108,7 +108,7 @@ namespace {
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
-  constexpr Score RookOnFile[] = { S(18, 7), S(44, 30) };
+  constexpr Score RookOnFile[] = { S(18, 7), S(44, 20) };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
@@ -252,6 +252,9 @@ namespace {
 
     // Remove from kingRing[] the squares defended by two pawns
     kingRing[Us] &= ~dblAttackByPawn;
+
+    // Horizontal attacks by rook
+    attackedBy[Us][7] = 0;
   }
 
 
@@ -343,6 +346,9 @@ namespace {
 
         if (Pt == ROOK)
         {
+            // Update the horizontal rook movements bitboard
+            attackedBy[Us][7] |= rank_bb(s) & b;
+
             // Bonus for aligning rook with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
@@ -548,8 +554,8 @@ namespace {
 
     score += RestrictedPiece * popcount(b);
 
-    // Bonus for restricting rook access to files with no pawns
-    if (attackedBy[Them][ROOK] & pe->open_files() & attackedBy[Us][ALL_PIECES])
+    // Bonus for restricting horizontal rook moves to files with no pawns
+    if (attackedBy[Them][7] & pe->open_files() & attackedBy[Us][ALL_PIECES])
         score += OpenFileControl;
 
     // Find squares where our pawns can push on the next move
