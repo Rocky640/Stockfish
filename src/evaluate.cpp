@@ -549,7 +549,7 @@ namespace {
     score += RestrictedPiece * popcount(b);
 
     // Bonus for restricting rook access to files with no pawns
-    if (attackedBy[Them][ROOK] & pe->open_files() & attackedBy[Us][ALL_PIECES])
+    if (attackedBy[Them][ROOK] & pe->open_files() & attackedBy[Us][ALL_PIECES] & ~pos.pieces(Us))
         score += OpenFileControl;
 
     // Find squares where our pawns can push on the next move
