@@ -108,7 +108,7 @@ namespace {
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
-  constexpr Score RookOnFile[] = { S(18, 7), S(44, 20) };
+  constexpr Score RookOnFile[] = { S(18, 7), S(44, 30) };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
@@ -135,6 +135,7 @@ namespace {
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
+  constexpr Score OpenFileControl    = S(  0, 10);
   constexpr Score Outpost            = S( 18,  6);
   constexpr Score PassedFile         = S( 11,  8);
   constexpr Score PawnlessFlank      = S( 17, 95);
@@ -546,6 +547,10 @@ namespace {
        &  attackedBy[Us][ALL_PIECES];
 
     score += RestrictedPiece * popcount(b);
+
+    // Bonus for restricting rook access to files with no pawns
+    if (attackedBy[Them][ROOK] & pe->open_files() & attackedBy[Us][ALL_PIECES])
+        score += OpenFileControl;
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
