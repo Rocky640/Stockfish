@@ -594,6 +594,7 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
 
     auto king_proximity = [&](Color c, Square s) {
       return std::min(distance(pos.square<KING>(c), s), 5);
@@ -657,9 +658,10 @@ namespace {
 
         // Scale down bonus for candidate passers which need more than one
         // pawn push to become passed, or have a pawn in front of them.
+        // Scale down even more if a phalanx pawn is already a passed pawn.
         if (   !pos.pawn_passed(Us, s + Up)
             || (pos.pieces(PAWN) & (s + Up)))
-            bonus = bonus / 2;
+            bonus = bonus / (shift<Down>(PawnAttacks[Us][s]) & pe->passed_pawns(Us) ? 3 : 2);
 
         score += bonus - PassedFile * std::min(f, ~f);
     }
