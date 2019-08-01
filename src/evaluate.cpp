@@ -656,12 +656,12 @@ namespace {
             }
         } // r > RANK_3
 
-        // Scale down bonus for candidate passers which need more than one
-        // pawn push to become passed, or have a pawn in front of them.
-        // Scale down even more if a phalanx pawn is already a passed pawn.
-        if (   !pos.pawn_passed(Us, s + Up)
+        // Scale down bonus for candidate passers which needs more than one
+        // pawn push to become passed, and would use support from another passed pawn to do so,
+        // or with a pawn in front.
+        if (   !pos.pawn_passed(Us, s + Up) && (shift<Down>(PawnAttacks[Us][s]) & pe->passed_pawns(Us))
             || (pos.pieces(PAWN) & (s + Up)))
-            bonus = bonus / (shift<Down>(PawnAttacks[Us][s]) & pe->passed_pawns(Us) ? 3 : 2);
+            bonus = bonus / 2;
 
         score += bonus - PassedFile * std::min(f, ~f);
     }
