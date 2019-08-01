@@ -658,11 +658,11 @@ namespace {
 
         // Scale down bonus for candidate passers with a pawn in front of them,
         // or which need more than one pawn push to become passed.
-        // Scale down more if the candidate relies on another passed pawn to become passed.
+        // Reduce only by 1/4 if does not rely on another passed pawn to become passed.
         if (pos.pieces(PAWN) & (s + Up))
             bonus = bonus / 2;
         else if (!pos.pawn_passed(Us, s + Up))
-            bonus -= bonus / (shift<Down>(PawnAttacks[Us][s]) & pe->passed_pawns(Us) ? 2 : 3);
+            bonus -= bonus / (shift<Down>(PawnAttacks[Us][s]) & pe->passed_pawns(Us) ? 2 : 4);
 
         score += bonus - PassedFile * std::min(f, ~f);
     }
