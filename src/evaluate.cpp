@@ -113,12 +113,14 @@ namespace {
   // ThreatByMinor/ByRook[PieceType-2] contains bonuses according to
   // which piece type attacks which one. For rook, excludes the strongly protected pieces.
   // Attacks on weak pawn are scored with ThreatOnPawn.
+  // Eval is never called when king is in check, but since we calculate x-ray attacks
+  // through Queen, it is posisble that a king is "threatened". Score 0 for now.
   constexpr Score ThreatByMinor[] = {
-    S(39, 42), S(57, 44), S(68, 112), S(62, 120)
+    S(39, 42), S(57, 44), S(68, 112), S(62, 120), S(0, 0)
   };
 
   constexpr Score ThreatByRook[] = {
-    S(38, 71), S(38, 61), S(0, 38), S(51, 38)
+    S(38, 71), S(38, 61), S(0, 38), S(51, 38), S(0, 0)
   };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
