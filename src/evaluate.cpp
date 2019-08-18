@@ -532,9 +532,9 @@ namespace {
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
 
-        // Attacks on weak pawns by pieces
+        // Attacks on weak pawns
         b = weak & ~nonPawnEnemies;
-        score += ThreatOnPawn * (  popcount(b & ~attackedBy[Us][PAWN])
+        score += ThreatOnPawn * (  popcount(b)
                                  + popcount(b & attackedBy2[Us]));
     }
 
