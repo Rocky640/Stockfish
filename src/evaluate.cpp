@@ -534,7 +534,7 @@ namespace {
 
         // Attacks on weak pawns
         b = weak & ~nonPawnEnemies;
-        score += ThreatOnPawn * (  popcount(b)
+        score += ThreatOnPawn * (  popcount(b & ~attackedBy[Us][PAWN])
                                  + popcount(b & attackedBy2[Us]));
     }
 
