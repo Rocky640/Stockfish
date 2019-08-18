@@ -108,17 +108,17 @@ namespace {
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
-  constexpr Score RookOnFile[] = { S(18, 7), S(44, 20) };
+  constexpr Score RookOnFile[] = { S(18, 0), S(44, 20) };
 
-  // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
-  // which piece type attacks which one. Attacks on lesser pieces which are
-  // pawn-defended are not considered.
-  constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120)
+  // ThreatByMinor/ByRook[PieceType-2] contains bonuses according to
+  // which piece type attacks which one. For rook, excludes the strongly protected pieces.
+  // Attacks on weak pawn are scored with ThreatOnPawn.
+  constexpr Score ThreatByMinor[] = {
+    S(39, 42), S(57, 44), S(68, 112), S(62, 120)
   };
 
-  constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(51, 38)
+  constexpr Score ThreatByRook[] = {
+    S(38, 71), S(38, 61), S(0, 38), S(51, 38)
   };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
@@ -145,6 +145,7 @@ namespace {
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatByRank       = S( 13,  0);
   constexpr Score ThreatBySafePawn   = S(173, 94);
+  constexpr Score ThreatOnPawn       = S(  0, 30);
   constexpr Score TrappedRook        = S( 47,  4);
   constexpr Score WeakQueen          = S( 49, 15);
 
@@ -508,17 +509,17 @@ namespace {
     while (b)
     {
         Square s = pop_lsb(&b);
-        score +=  ThreatByMinor[type_of(pos.piece_on(s))]
+        score +=  ThreatByMinor[type_of(pos.piece_on(s)) - 2]
                 + ThreatByRank * (int)relative_rank(Them, s);
     }
 
-    if (weak) 
+    if (weak)
     {
         b = weak & nonPawnEnemies & attackedBy[Us][ROOK];
         while (b)
         {
            Square s = pop_lsb(&b);
-           score +=  ThreatByRook[type_of(pos.piece_on(s))]
+           score +=  ThreatByRook[type_of(pos.piece_on(s)) - 2]
                    + ThreatByRank * (int)relative_rank(Them, s);
         }
 
@@ -527,14 +528,12 @@ namespace {
 
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
-            score += Hanging * popcount(weak & b);
+        score += Hanging * popcount(weak & b);
 
-        // Attacks on weak pawns
-        b = weak & ~nonPawnEnemies & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
-        score += ThreatByMinor[PAWN] * popcount(b);
-
-        b = weak & ~nonPawnEnemies & attackedBy[Us][ROOK];
-        score += ThreatByRook[PAWN] * popcount(b);
+        // Attacks on weak pawns by pieces
+        b = weak & ~nonPawnEnemies;
+        score += ThreatOnPawn * (  popcount(b & ~attackedBy[Us][PAWN])
+                                 + popcount(b & attackedBy2[Us]));
     }
 
     // Bonus for restricting their piece moves
