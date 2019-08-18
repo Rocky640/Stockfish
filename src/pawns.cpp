@@ -35,7 +35,6 @@ namespace {
   constexpr Score Backward      = S( 9, 24);
   constexpr Score Doubled       = S(11, 56);
   constexpr Score Isolated      = S( 5, 15);
-  constexpr Score WeakLever     = S( 0, 26);
   constexpr Score WeakUnopposed = S(13, 27);
 
   // Connected pawn bonus
@@ -144,11 +143,6 @@ namespace {
         if (doubled && !support)
             score -= Doubled;
     }
-
-    // Penalize our unsupported pawns attacked twice by enemy pawns
-    score -= WeakLever * popcount(  ourPawns
-                                  & doubleAttackThem
-                                  & ~e->pawnAttacks[Us]);
 
     return score;
   }
