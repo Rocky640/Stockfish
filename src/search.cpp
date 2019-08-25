@@ -605,6 +605,7 @@ namespace {
     moveCount = captureCount = quietCount = singularLMR = ss->moveCount = 0;
     bestValue = -VALUE_INFINITE;
     maxValue = VALUE_INFINITE;
+    improving = true;
 
     // Check for the available remaining time
     if (thisThread == Threads.main())
@@ -778,6 +779,8 @@ namespace {
         tte->save(posKey, VALUE_NONE, ttPv, BOUND_NONE, DEPTH_NONE, MOVE_NONE, eval);
     }
 
+	if (thisThread->fullSearch) goto moves_loop;
+
     // Step 7. Razoring (~2 Elo)
     if (   !rootNode // The required rootNode PV handling is not available in qsearch
         &&  depth < 2 * ONE_PLY
@@ -943,6 +946,9 @@ moves_loop: // When in check, search starts from here
       captureOrPromotion = pos.capture_or_promotion(move);
       movedPiece = pos.moved_piece(move);
       givesCheck = pos.gives_check(move);
+	  newDepth = depth - ONE_PLY + extension;
+
+	  if (thisThread->fullSearch) goto skip2;
 
       // Step 13. Extensions (~70 Elo)
 
@@ -1052,6 +1058,8 @@ moves_loop: // When in check, search starts from here
                   continue;
       }
 
+	  skip2:
+
       // Speculative prefetch as early as possible
       prefetch(TT.first_entry(pos.key_after(move)));
 
@@ -1069,9 +1077,10 @@ moves_loop: // When in check, search starts from here
       // Step 15. Make the move
       pos.do_move(move, st, givesCheck);
 
+	  bool dostep16 = !thisThread->fullSearch;
       // Step 16. Reduced depth search (LMR). If the move fails high it will be
       // re-searched at full depth.
-      if (    depth >= 3 * ONE_PLY
+      if (dostep16 && depth >= 3 * ONE_PLY
           &&  moveCount > 1 + 3 * rootNode
           && (  !captureOrPromotion
               || moveCountPruning
@@ -1143,7 +1152,7 @@ moves_loop: // When in check, search starts from here
           doFullDepthSearch = (value > alpha && d != newDepth), doLMR = true;
       }
       else
-          doFullDepthSearch = !PvNode || moveCount > 1, doLMR = false;
+          doFullDepthSearch = !dostep16 || !PvNode || moveCount > 1, doLMR = false;
 
       // Step 17. Full depth search when LMR is skipped or fails high
       if (doFullDepthSearch)

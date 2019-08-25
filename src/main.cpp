@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
   Endgames::init();
   Search::init();
   Threads.set(Options["Threads"]);
+  Threads.setFull(Options["FullThreads"]);
   Search::clear(); // After threads are up
 
   UCI::loop(argc, argv);

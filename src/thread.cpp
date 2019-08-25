@@ -35,7 +35,7 @@ ThreadPool Threads; // Global object
 /// in idle_loop(). Note that 'searching' and 'exit' should be already set.
 
 Thread::Thread(size_t n) : idx(n), stdThread(&Thread::idle_loop, this) {
-
+  fullSearch = false;
   wait_for_search_finished();
 }
 
@@ -140,6 +140,17 @@ void ThreadPool::set(size_t requested) {
       // Reallocate the hash with the new threadpool size
       TT.resize(Options["Hash"]);
   }
+}
+
+/// ThreadPool::setFull() ensures that requested threads are set to fullSearch
+/// Note that fullSearch is false for each thread when they are created or rereated.
+void ThreadPool::setFull(size_t requested) {
+
+	int thisidx = 0;
+	int startfull = size() - requested;
+	for (Thread* th : *this)
+		th->fullSearch = thisidx++ >= startfull;
+
 }
 
 /// ThreadPool::clear() sets threadPool data to initial values.

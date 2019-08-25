@@ -41,6 +41,7 @@ void on_clear_hash(const Option&) { Search::clear(); }
 void on_hash_size(const Option& o) { TT.resize(o); }
 void on_logger(const Option& o) { start_logger(o); }
 void on_threads(const Option& o) { Threads.set(o); }
+void on_full_threads(const Option& o) { Threads.setFull(o); } 
 void on_tb_path(const Option& o) { Tablebases::init(o); }
 
 
@@ -63,6 +64,7 @@ void init(OptionsMap& o) {
   o["Contempt"]              << Option(24, -100, 100);
   o["Analysis Contempt"]     << Option("Both var Off var White var Black var Both", "Both");
   o["Threads"]               << Option(1, 1, 512, on_threads);
+  o["FullThreads"]           << Option(0, 0, 512, on_full_threads); //if this is used, must be after #Threads is set.
   o["Hash"]                  << Option(16, 1, MaxHashMB, on_hash_size);
   o["Clear Hash"]            << Option(on_clear_hash);
   o["Ponder"]                << Option(false);
