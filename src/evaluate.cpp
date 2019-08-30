@@ -521,7 +521,7 @@ namespace {
         }
 
         b = weak & attackedBy[Us][ROOK];
-        if (b & bp) score += ThreatByRook[0];
+        score += ThreatByRook[0] * popcount(attackedBy[Us][ROOK] & bp);
         while (b)
         {
             Square s = pop_lsb(&b);
