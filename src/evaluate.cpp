@@ -114,7 +114,7 @@ namespace {
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
   constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(20, 0), S(0, 31), S(39, 42), S(47, 44), S(68, 112), S(62, 120)
+    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120)
   };
 
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
@@ -511,7 +511,7 @@ namespace {
     if (defended | weak)
     {
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
-        if (b & bp) score += ThreatByMinor[0];
+        // if (b & bp) score += ThreatByMinor[0];
         while (b)
         {
             Square s = pop_lsb(&b);
