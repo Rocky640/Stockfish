@@ -114,11 +114,11 @@ namespace {
   // which piece type attacks which one. Attacks on lesser pieces which are
   // pawn-defended are not considered.
   constexpr Score ThreatByMinor[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120)
+    S(20, 0), S(0, 31), S(39, 42), S(47, 44), S(68, 112), S(62, 120)
   };
 
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
-    S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(51, 38)
+    S(20, 0), S(0, 24), S(38, 71), S(28, 61), S(0, 38), S(51, 38)
   };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
@@ -505,10 +505,13 @@ namespace {
     // Enemies not strongly protected and under our attack
     weak = pos.pieces(Them) & ~stronglyProtected & attackedBy[Us][ALL_PIECES];
 
+    Bitboard bp = pos.count<BISHOP>(Them) == 2 ? pos.pieces(Them, BISHOP) : 0;
+
     // Bonus according to the kind of attacking pieces
     if (defended | weak)
     {
         b = (defended | weak) & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP]);
+        if (b & bp) score += ThreatByMinor[0];
         while (b)
         {
             Square s = pop_lsb(&b);
@@ -518,6 +521,7 @@ namespace {
         }
 
         b = weak & attackedBy[Us][ROOK];
+        if (b & bp) score += ThreatByRook[0];
         while (b)
         {
             Square s = pop_lsb(&b);
