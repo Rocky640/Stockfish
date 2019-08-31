@@ -562,7 +562,7 @@ namespace {
 
     // Bonus for potential mobility reduction after a pawn push
     b = pawn_attacks_bb<Us>(b) & (attackedBy2[Them] & mobilityArea[Them]);
-    score += make_score(30, 10) * popcount(b);
+    score += make_score(15, 10) * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
