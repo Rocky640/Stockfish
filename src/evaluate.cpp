@@ -310,7 +310,7 @@ namespace {
             else if (Pt == KNIGHT)
             {
                 if (!(PseudoAttacks[KING][s] & pos.pieces(Us, PAWN)))
-                    score -= make_score(30, 30);
+                    score -= make_score(10, 10);
             }
 
             // Penalty if the piece is far from the king
