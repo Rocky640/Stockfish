@@ -70,6 +70,7 @@ namespace {
 
     constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
+    constexpr Bitboard LowRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
 
     Bitboard neighbours, stoppers, doubled, support, phalanx;
     Bitboard lever, leverPush;
@@ -150,6 +151,7 @@ namespace {
     score -= WeakLever * popcount(  ourPawns
                                   & doubleAttackThem
                                   & ~e->pawnAttacks[Us]);
+    e->assymetry |= e->passedPawns[Us] | (ourPawns & ~LowRanks);
 
     return score;
   }
@@ -172,6 +174,7 @@ Entry* probe(const Position& pos) {
       return e;
 
   e->key = key;
+  e->assymetry = 0;
   e->scores[WHITE] = evaluate<WHITE>(pos, e);
   e->scores[BLACK] = evaluate<BLACK>(pos, e);
 
