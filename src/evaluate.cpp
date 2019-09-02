@@ -129,7 +129,7 @@ namespace {
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CorneredBishop     = S( 50, 50);
-  constexpr Score FlankAttacks       = S(  4,  0);
+  constexpr Score FlankAttacks       = S(  3,  0); 
   constexpr Score Hanging            = S( 69, 36);
   constexpr Score KingProtector      = S(  7,  8);
   constexpr Score KnightOnQueen      = S( 16, 12);
@@ -447,8 +447,8 @@ namespace {
     b2 = b1 & attackedBy2[Them];
 
     int kingFlankAttacks =   popcount(b1) + popcount(b2)
-                           + 2 * popcount(b1 & ~attackedBy[Us][ALL_PIECES]) 
-                           + 2 * popcount(b2 & ~attackedBy2[Us]);
+                           + 2 * popcount(b1 & mobilityArea[Them]) 
+                           + 2 * popcount(b2 & mobilityArea[Them]);
 
     kingDanger +=        kingAttackersCount[Them] * kingAttackersWeight[Them]
                  +  69 * kingAttacksCount[Them]
@@ -460,7 +460,7 @@ namespace {
                  - 873 * !pos.count<QUEEN>(Them)
                  -   6 * mg_value(score) / 8
                  +       mg_value(mobility[Them] - mobility[Us])
-                 +   5 * kingFlankAttacks * kingFlankAttacks / 64
+                 +       kingFlankAttacks * kingFlankAttacks / 20
                  -   7;
 
     // Transform the kingDanger units into a Score, and subtract it from the evaluation
