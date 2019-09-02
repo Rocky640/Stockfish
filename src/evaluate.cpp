@@ -692,7 +692,7 @@ namespace {
                    & ~attackedBy[Them][PAWN];
 
     // Find all squares which are at most three squares behind some friendly pawn
-    Bitboard behind = pos.pieces(Us, PAWN) & attackedBy[Us][PAWN];
+    Bitboard behind = pos.pieces(Us, PAWN) & (attackedBy[Us][PAWN] | ~pe->pawn_attacks_span(Them));
     behind |= shift<Down>(behind);
     behind |= shift<Down+Down>(behind);
 
