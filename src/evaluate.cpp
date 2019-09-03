@@ -722,12 +722,17 @@ namespace {
 
     bool openCenterD = !(pos.pieces(PAWN) & FileDBB);
     bool openCenterE = !(pos.pieces(PAWN) & FileEBB);
+    Bitboard blocked = shift<NORTH>(pos.pieces(WHITE, PAWN)) & pos.pieces(BLACK, PAWN);
+    bool opposedD    = blocked & SQ_D5;
+    bool opposedE    = blocked & SQ_E5;
+
 
     // Compute the initiative bonus for the attacking side
     int complexity =   9 * pe->passed_count()
                     + 11 * pos.count<PAWN>()
                     +  9 * outflanking
-                    - 10 * (openCenterD + openCenterE)
+                    - 10 * (openCenterD & opposedE)
+                    - 10 * (openCenterE & opposedD)
                     + 18 * pawnsOnBothFlanks
                     + 49 * !pos.non_pawn_material()
                     -103 ;
