@@ -80,11 +80,12 @@ namespace {
   // KingAttackWeights[PieceType] contains king attack weights by piece type
   constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 77, 55, 44, 10 };
 
-  // Penalties for enemy's safe checks
-  constexpr int QueenSafeCheck  = 780;
-  constexpr int RookSafeCheck   = 1080;
-  constexpr int BishopSafeCheck = 635;
-  constexpr int KnightSafeCheck = 790;
+  // Penalties for enemy's checks
+  constexpr int BaseBonusCheck  = 148; 
+  constexpr int QueenSafeCheck  = 780-148;
+  constexpr int RookSafeCheck   = 1080-148;
+  constexpr int BishopSafeCheck = 635-148;
+  constexpr int KnightSafeCheck = 790-148;
 
 #define S(mg, eg) make_score(mg, eg)
 
@@ -382,7 +383,7 @@ namespace {
     constexpr Bitboard Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
-    Bitboard weak, b1, b2, safe, unsafeChecks = 0;
+    Bitboard weak, b1, b2, safe;
     Bitboard rookChecks, queenChecks, bishopChecks, knightChecks;
     int kingDanger = 0;
     const Square ksq = pos.square<KING>(Us);
@@ -395,51 +396,34 @@ namespace {
           & ~attackedBy2[Us]
           & (~attackedBy[Us][ALL_PIECES] | attackedBy[Us][KING] | attackedBy[Us][QUEEN]);
 
-    // Analyse the safe enemy's checks which are possible on next move
-    safe  = ~pos.pieces(Them);
-    safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
-
+    // Analyse checks. If a check can be given on a square by multiple pieces,
+    // only the most valuable check is scored.
     b1 = attacks_bb<ROOK  >(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
     b2 = attacks_bb<BISHOP>(ksq, pos.pieces() ^ pos.pieces(Us, QUEEN));
 
-    // Enemy rooks checks
-    rookChecks = b1 & safe & attackedBy[Them][ROOK];
+    rookChecks   = b1 & attackedBy[Them][ROOK];
+    queenChecks  = (b1 | b2) & attackedBy[Them][QUEEN] & ~rookChecks;
+    bishopChecks = b2 & attackedBy[Them][BISHOP] & ~queenChecks;
+    knightChecks = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
 
-    if (rookChecks)
+    // Any potential checks by rooks or minors, even from occupied squares, gets a base bonus
+    kingDanger += BaseBonusCheck * popcount(rookChecks | bishopChecks | knightChecks);
+
+    // Analyse the safe enemy's checks which are possible on next move.
+    safe  = ~pos.pieces(Them);
+    safe &= ~attackedBy[Us][ALL_PIECES] | (weak & attackedBy2[Them]);
+
+    if (rookChecks & safe)
         kingDanger += RookSafeCheck;
-    else
-        unsafeChecks |= b1 & attackedBy[Them][ROOK];
 
-    // Enemy queen safe checks: we count them only if they are from squares from
-    // which we can't give a rook check, because rook checks are more valuable.
-    queenChecks =  (b1 | b2)
-                 & attackedBy[Them][QUEEN]
-                 & safe
-                 & ~attackedBy[Us][QUEEN]
-                 & ~rookChecks;
-
-    if (queenChecks)
+    if (queenChecks & safe & ~attackedBy[Us][QUEEN])
         kingDanger += QueenSafeCheck;
 
-    // Enemy bishops checks: we count them only if they are from squares from
-    // which we can't give a queen check, because queen checks are more valuable.
-    bishopChecks =  b2
-                  & attackedBy[Them][BISHOP]
-                  & safe
-                  & ~queenChecks;
-
-    if (bishopChecks)
+    if (bishopChecks & safe)
         kingDanger += BishopSafeCheck;
-    else
-        unsafeChecks |= b2 & attackedBy[Them][BISHOP];
-
-    // Enemy knights checks
-    knightChecks = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
 
     if (knightChecks & safe)
         kingDanger += KnightSafeCheck;
-    else
-        unsafeChecks |= knightChecks;
 
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank.
@@ -453,7 +437,6 @@ namespace {
                  + 185 * popcount(kingRing[Us] & weak)
                  - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
                  -  35 * bool(attackedBy[Us][BISHOP] & attackedBy[Us][KING])
-                 + 148 * popcount(unsafeChecks)
                  +  98 * popcount(pos.blockers_for_king(Us))
                  - 873 * !pos.count<QUEEN>(Them)
                  -   6 * mg_value(score) / 8
