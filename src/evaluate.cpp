@@ -82,7 +82,7 @@ namespace {
 
   // Penalties for enemy's checks
   constexpr int BaseBonusCheck  = 148; 
-  constexpr int QueenSafeCheck  = 780-148;
+  constexpr int QueenSafeCheck  = 780;
   constexpr int RookSafeCheck   = 1080-148;
   constexpr int BishopSafeCheck = 635-148;
   constexpr int KnightSafeCheck = 790-148;
