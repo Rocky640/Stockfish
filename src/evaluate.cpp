@@ -247,9 +247,10 @@ namespace {
         kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
     else
-        // Add to kingRing[] squares at distance 2 on a diagonal
+        // Add to kingRing[] squares at distance 2 on a diagonal not guarded by pawn
         // For example White Kc1, we add a3 and e3
-        kingRing[Us] |= PseudoAttacks[KING2][ksq] & PseudoAttacks[BISHOP][ksq] & forward_ranks_bb(Us, ksq);
+        kingRing[Us] |=  PseudoAttacks[KING2][ksq] & PseudoAttacks[BISHOP][ksq]
+                       & forward_ranks_bb(Us, ksq) & ~attackedBy[Us][PAWN];
 
     kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
     kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
