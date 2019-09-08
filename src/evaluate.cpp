@@ -246,6 +246,11 @@ namespace {
     else if (file_of(ksq) == FILE_A)
         kingRing[Us] |= shift<EAST>(kingRing[Us]);
 
+    else
+        // Add to kingRing[] squares at distance 2 on a diagonal
+        // For example White Kc1, we add a3 and e3
+        kingRing[Us] |= PseudoAttacks[KING2][ksq] & PseudoAttacks[BISHOP][ksq] & forward_ranks_bb(Us, ksq);
+
     kingAttackersCount[Them] = popcount(kingRing[Us] & pe->pawn_attacks(Them));
     kingAttacksCount[Them] = kingAttackersWeight[Them] = 0;
 
