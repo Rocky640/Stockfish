@@ -382,9 +382,9 @@ namespace {
     constexpr Bitboard Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
-    Bitboard weak, b1, b2, safe, unsafeChecks = 0;
+    Bitboard weak, b1, b2, safe;
     Bitboard rookChecks, queenChecks, bishopChecks, knightChecks;
-    int kingDanger = 0;
+    int kingDanger = 0, unsafeChecks = 0;
     const Square ksq = pos.square<KING>(Us);
 
     // Init the score with king shelter and enemy pawns storm
@@ -408,7 +408,7 @@ namespace {
     if (rookChecks)
         kingDanger += RookSafeCheck;
     else
-        unsafeChecks |= b1 & attackedBy[Them][ROOK];
+        unsafeChecks += bool(b1 & attackedBy[Them][ROOK]);
 
     // Enemy queen safe checks: we count them only if they are from squares from
     // which we can't give a rook check, because rook checks are more valuable.
@@ -431,7 +431,7 @@ namespace {
     if (bishopChecks)
         kingDanger += BishopSafeCheck;
     else
-        unsafeChecks |= b2 & attackedBy[Them][BISHOP];
+        unsafeChecks += bool(b2 & attackedBy[Them][BISHOP]);
 
     // Enemy knights checks
     knightChecks = pos.attacks_from<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
@@ -439,7 +439,7 @@ namespace {
     if (knightChecks & safe)
         kingDanger += KnightSafeCheck;
     else
-        unsafeChecks |= knightChecks;
+        unsafeChecks += bool(knightChecks);
 
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank.
@@ -453,7 +453,7 @@ namespace {
                  + 185 * popcount(kingRing[Us] & weak)
                  - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
                  -  35 * bool(attackedBy[Us][BISHOP] & attackedBy[Us][KING])
-                 + 148 * popcount(unsafeChecks)
+                 + 148 * unsafeChecks
                  +  98 * popcount(pos.blockers_for_king(Us))
                  - 873 * !pos.count<QUEEN>(Them)
                  -   6 * mg_value(score) / 8
