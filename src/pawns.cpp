@@ -83,7 +83,7 @@ namespace {
 
     Bitboard doubleAttackThem = pawn_double_attacks_bb<Them>(theirPawns);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = e->weakAttacks[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->pawnAttacks[Us] = pawn_attacks_bb<Us>(ourPawns);
 
@@ -134,6 +134,10 @@ namespace {
                    + 17 * popcount(support);
 
             score += make_score(v, v * (r - 2) / 4);
+
+            // Detect squares where a neighbour capture would isolate this pawn
+            if (neighbours && !more_than_one(neighbours))
+                e->weakAttacks[Us] |= PawnAttacks[Us][lsb(neighbours)];
         }
 
         else if (!neighbours)
