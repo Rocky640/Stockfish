@@ -540,7 +540,7 @@ namespace {
         score += Hanging * popcount(weak & b);
 
         b =  nonPawnEnemies & pe->weak_attacks(Them) & ~attackedBy2[Them]
-           & attackedBy[Us][ALL_PIECES];
+           & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP] | attackedBy[Us][ROOK]);
         score += WeakPawnDefense * popcount(b);
 
     }
