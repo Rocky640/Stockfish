@@ -538,12 +538,10 @@ namespace {
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
-
-        b =  nonPawnEnemies & pe->weak_attacks(Them) & ~attackedBy2[Them]
-           & (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP] | attackedBy[Us][ROOK]);
-        score += WeakPawnDefense * popcount(b);
-
     }
+
+    b = pos.pieces(Us, PAWN) & pe->weak_attacks(Them) & ~attackedBy2[Them];
+    score += WeakPawnDefense * popcount(b);
 
     // Bonus for restricting their piece moves
     b =   attackedBy[Them][ALL_PIECES]
