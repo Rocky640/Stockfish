@@ -147,6 +147,7 @@ namespace {
   constexpr Score ThreatByRank       = S( 13,  0);
   constexpr Score ThreatBySafePawn   = S(173, 94);
   constexpr Score TrappedRook        = S( 47,  4);
+  constexpr Score WeakPawnDefense    = S(  5, 15);
   constexpr Score WeakQueen          = S( 49, 15);
 
 #undef S
@@ -501,7 +502,7 @@ namespace {
 
     // Squares strongly protected by the enemy, either because they defend the
     // square with a pawn, or because they defend the square twice and we don't.
-    stronglyProtected =  attackedBy[Them][PAWN] & ~pe->weak_attacks(Them)
+    stronglyProtected =  attackedBy[Them][PAWN]
                        | (attackedBy2[Them] & ~attackedBy2[Us]);
 
     // Non-pawn enemies, strongly protected
@@ -537,6 +538,11 @@ namespace {
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
+
+        b =  nonPawnEnemies & pe->weak_attacks(Them) & ~attackedBy2[Them]
+           & attackedBy[Us][ALL_PIECES];
+        score += WeakPawnDefense * popcount(b);
+
     }
 
     // Bonus for restricting their piece moves
