@@ -136,7 +136,7 @@ namespace {
             score += make_score(v, v * (r - 2) / 4);
 
             // Detect squares where a neighbour capture would isolate this pawn
-            if (neighbours && !more_than_one(neighbours))
+            if (!more_than_one(neighbours))
                 e->weakAttacks[Us] |= PawnAttacks[Us][lsb(neighbours)];
         }
 
