@@ -109,7 +109,7 @@ namespace {
         // A pawn is backward when it is behind all pawns of the same color on
         // the adjacent files and cannot safely advance. Phalanx and isolated
         // pawns will be excluded when the pawn is scored.
-        backward =  !(neighbours & forward_ranks_bb(Them, s))
+        backward =   !(neighbours & forward_ranks_bb(Them, s))
                   && (stoppers & (leverPush | (s + Up)));
 
         // A pawn is passed if one of the three following conditions is true:
@@ -140,7 +140,7 @@ namespace {
             score -= Isolated + WeakUnopposed * !opposed;
 
         else if (backward)
-            score -= Backward * (r < RANK_5) + WeakUnopposed * !opposed;
+            score -= Backward * (r < RANK_5 || !opposed) + WeakUnopposed * !opposed;
 
         if (!support)
             score -=   Doubled * doubled
