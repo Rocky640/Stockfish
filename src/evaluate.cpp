@@ -619,10 +619,12 @@ namespace {
         if (r > RANK_3)
         {
             int w = 5 * r - 13;
+            squaresToQueen = forward_file_bb(Us, s);
+            int hinder = popcount(pos.pieces(Them) & squaresToQueen);
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            bonus += make_score(0, (  king_proximity(Them, blockSq) * 5
+            bonus += make_score(0, (  king_proximity(Them, blockSq) * 5 - hinder
                                     - king_proximity(Us,   blockSq) * 2) * w);
 
             // If blockSq is not the queening square then consider also a second push
@@ -632,7 +634,6 @@ namespace {
             // If the pawn is free to advance, then increase the bonus
             if (pos.empty(blockSq))
             {
-                squaresToQueen = forward_file_bb(Us, s);
                 unsafeSquares = passed_pawn_span(Us, s);
 
                 bb = forward_file_bb(Them, s) & pos.pieces(ROOK, QUEEN);
