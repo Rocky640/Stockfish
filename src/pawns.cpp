@@ -140,7 +140,7 @@ namespace {
             score -= Isolated + WeakUnopposed * !opposed;
 
         else if (backward)
-            score -= Backward + WeakUnopposed * !opposed;
+            score -= Backward * (r < RANK_5) + WeakUnopposed * !opposed;
 
         if (!support)
             score -=   Doubled * doubled
