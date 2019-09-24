@@ -176,6 +176,7 @@ namespace {
     Pawns::Entry* pe;
     Bitboard mobilityArea[COLOR_NB];
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
+    int kingDistance[COLOR_NB] = { 0, 0 };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type. Special "piece types" which
@@ -310,7 +311,7 @@ namespace {
                 score += MinorBehindPawn;
 
             // Penalty if the piece is far from the king
-            score -= KingProtector * distance(s, pos.square<KING>(Us));
+            kingDistance[Us] += distance(s, pos.square<KING>(Us));
 
             if (Pt == BISHOP)
             {
@@ -468,7 +469,10 @@ namespace {
 
     // Transform the kingDanger units into a Score, and subtract it from the evaluation
     if (kingDanger > 100)
+    {
         score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
+        score -= KingProtector * kingDistance[Us];
+    }
 
     // Penalty when our king is on a pawnless flank
     if (!(pos.pieces(PAWN) & KingFlank[file_of(ksq)]))
