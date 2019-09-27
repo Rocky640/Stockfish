@@ -72,9 +72,9 @@ namespace {
     constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
 
     Bitboard neighbours, stoppers, support, phalanx;
-    Bitboard lever, leverPush;
+    Bitboard lever, leverPush, opposed;
     Square s;
-    bool opposed, backward, passed, doubled;
+    bool backward, passed, doubled;
     Score score = SCORE_ZERO;
     const Square* pl = pos.squares<PAWN>(Us);
 
@@ -83,9 +83,9 @@ namespace {
 
     Bitboard doubleAttackThem = pawn_double_attacks_bb<Them>(theirPawns);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us]= 0;
     e->kingSquares[Us] = SQ_NONE;
-    e->pawnAttacks[Us] = pawn_attacks_bb<Us>(ourPawns);
+    e->pawnAttacks[Us] = e->pawnAttacksSpan[Us] = pawn_attacks_bb<Us>(ourPawns);
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -93,8 +93,6 @@ namespace {
         assert(pos.piece_on(s) == make_piece(Us, PAWN));
 
         Rank r = relative_rank(Us, s);
-
-        e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
 
         // Flag the pawn
         opposed    = theirPawns & forward_file_bb(Us, s);
@@ -109,8 +107,19 @@ namespace {
         // A pawn is backward when it is behind all pawns of the same color on
         // the adjacent files and cannot safely advance. Phalanx and isolated
         // pawns will be excluded when the pawn is scored.
-        backward =  !(neighbours & forward_ranks_bb(Them, s))
+        backward =  !(neighbours & forward_ranks_bb(Them, s + Up))
                   && (stoppers & (leverPush | (s + Up)));
+
+        // Span of backward pawns and span behind opposed pawns are not taken
+        // in pawn_attack_span BB.
+        if (!backward)
+        {
+            if (opposed)
+                e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s)
+                    & ~forward_ranks_bb(Us, frontmost_sq(Them, opposed));
+            else
+                e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
+        }
 
         // A pawn is passed if one of the three following conditions is true:
         // (a) there is no stoppers except some levers
@@ -130,7 +139,7 @@ namespace {
         // Score this pawn
         if (support | phalanx)
         {
-            int v =  Connected[r] * (2 + bool(phalanx) - opposed)
+            int v =  Connected[r] * (2 + bool(phalanx) - bool(opposed))
                    + 21 * popcount(support);
 
             score += make_score(v, v * (r - 2) / 4);
