@@ -677,14 +677,14 @@ namespace {
   template<Tracing T> template<Color Us>
   Score Evaluation<T>::space() const {
 
-    if (pos.non_pawn_material() < SpaceThreshold)
-        return SCORE_ZERO;
-
     constexpr Color Them     = (Us == WHITE ? BLACK : WHITE);
     constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
     constexpr Bitboard SpaceMask =
       Us == WHITE ? CenterFiles & (Rank2BB | Rank3BB | Rank4BB)
                   : CenterFiles & (Rank7BB | Rank6BB | Rank5BB);
+
+    if (pos.non_pawn_material() + (QueenValueMg * !pos.count<QUEEN>()) / 2 < SpaceThreshold)
+        return SCORE_ZERO;
 
     // Find the available squares for our pieces inside the area defined by SpaceMask
     Bitboard safe =   SpaceMask
