@@ -586,7 +586,7 @@ namespace {
 
     Bitboard b, bb, squaresToQueen, unsafeSquares;
     Score score = SCORE_ZERO;
-    Bitboard blocked = shift<Up>(pos.pieces(Us, PAWN) & pos.pieces(Them, PAWN));
+    Bitboard blocked = shift<Up>(pos.pieces(Us, PAWN)) & pos.pieces(Them, PAWN);
 
     b = pe->passed_pawns(Us);
 
