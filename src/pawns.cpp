@@ -83,9 +83,9 @@ namespace {
 
     Bitboard doubleAttackThem = pawn_double_attacks_bb<Them>(theirPawns);
 
-    e->passedPawns[Us] = e->pawnAttacksSpan[Us] = 0;
+    e->passedPawns[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
-    e->pawnAttacks[Us] = pawn_attacks_bb<Us>(ourPawns);
+    e->pawnAttacksSpan[Us] = e->pawnAttacks[Us] = pawn_attacks_bb<Us>(ourPawns);
 
     // Loop through all pawns of the current color and score each pawn
     while ((s = *pl++) != SQ_NONE)
@@ -105,21 +105,13 @@ namespace {
         support    = neighbours & rank_bb(s - Up);
 
         // A pawn is backward when it is behind all pawns of the same color on
-        // the adjacent files and cannot safely advance. Isolated pawns will be
-        // excluded when the pawn is scored.
+        // the adjacent files and cannot safely advance. The bitboard might include
+        // some isolated pawns which are excluded when the pawn is scored.
         backward =  !(neighbours & forward_ranks_bb(Them, s + Up))
                   && (stoppers & (leverPush | (s + Up)));
 
-        // Span of backward pawns and span behind opposing pawns are not included
-        // in the pawnAttacksSpan bitboard.
         if (!backward)
-        {
-            if (opposed)
-                e->pawnAttacksSpan[Us] |=  pawn_attack_span(Us, s) &
-                                          ~pawn_attack_span(Us, frontmost_sq(Them, opposed));
-            else
-                e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
-        }
+            e->pawnAttacksSpan[Us] |= pawn_attack_span(Us, s);
 
         // A pawn is passed if one of the three following conditions is true:
         // (a) there is no stoppers except some levers
