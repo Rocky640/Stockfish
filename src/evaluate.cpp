@@ -609,7 +609,7 @@ namespace {
             // if some blocked close neighbours, reduce the weight
             //if (more_than_one((PawnAttacks[Them][s] | PawnAttacks[Them][blockSq]) & blocked))
             if (more_than_one(PseudoAttacks[KING][s] & blocked))
-                w -= r;
+                w -= 2 * r;
 
             // Adjust bonus based on the king's proximity
             bonus += make_score(0, (  king_proximity(Them, blockSq) * 5
