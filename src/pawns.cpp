@@ -105,14 +105,14 @@ namespace {
         support    = neighbours & rank_bb(s - Up);
 
         // A pawn is backward when it is behind all pawns of the same color on
-        // the adjacent files and cannot safely advance. Phalanx and isolated
-        // pawns will be excluded when the pawn is scored.
-        backward =  !(neighbours & forward_ranks_bb(Them, s))
+        // the adjacent files and cannot safely advance. Isolated pawns will be
+        // excluded when the pawn is scored.
+        backward =  !(neighbours & forward_ranks_bb(Them, s + Up))
                   && (stoppers & (leverPush | (s + Up)));
 
         // Span of backward pawns and span behind opposing pawns are not included
         // in the pawnAttacksSpan bitboard.
-        if (!backward || phalanx)
+        if (!backward)
         {
             if (opposed)
                 e->pawnAttacksSpan[Us] |=  pawn_attack_span(Us, s) &
