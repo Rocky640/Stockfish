@@ -135,17 +135,23 @@ namespace {
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
-  constexpr Score Outpost            = S( 16,  5);
+  Score Outpost            = S( 16,  5);
   constexpr Score PassedFile         = S( 11,  8);
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
-  constexpr Score RookOnQueenFile    = S(  7,  6);
+  Score RookOnQueenFile[2]    = {S( 7,  6), S(7, 6)};
+  Score RookQBatteryFile[2]   = {S( 7,  6), S(7, 6)};
   constexpr Score SliderOnQueen      = S( 59, 18);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatBySafePawn   = S(173, 94);
   constexpr Score TrappedRook        = S( 47,  4);
   constexpr Score WeakQueen          = S( 49, 15);
+
+  Score RankAdjust[2][8]; //for knight and bishop, temporary, will adjust psqt accordingly
+  TUNE(SetRange(-10, 40),RookOnQueenFile,RookQBatteryFile);
+  TUNE(Outpost);
+  TUNE(SetRange(-30, 30),RankAdjust);
 
 #undef S
 
@@ -295,6 +301,8 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
+            score += RankAdjust[Pt - KNIGHT][relative_rank(Us,s)];
+
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
             if (bb & s)
@@ -342,8 +350,10 @@ namespace {
         if (Pt == ROOK)
         {
             // Bonus for rook on the same file as a queen
-            if (file_bb(s) & pos.pieces(QUEEN))
-                score += RookOnQueenFile;
+            if (file_bb(s) & pos.pieces(Them,QUEEN))
+                score += RookOnQueenFile[pos.is_on_semiopen_file(Us, s)];
+            if (file_bb(s) & pos.pieces(Us,QUEEN))
+                score += RookQBatteryFile[pos.is_on_semiopen_file(Us, s)];
 
             // Bonus for rook on an open or semi-open file
             if (pos.is_on_semiopen_file(Us, s))
