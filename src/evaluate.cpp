@@ -487,7 +487,7 @@ namespace {
     constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
-    Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
+    Bitboard b, bb, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
 
     // Non-pawn enemies
@@ -534,19 +534,16 @@ namespace {
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
 
     // Bonus for attacking enemy pieces with our relatively safe pawns
-    b = pos.pieces(Us, PAWN) & safe;
-    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
+    b = pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & safe) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(b);
 
     // Find squares where our pawns can push on the next move
-    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
-    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
-
-    // Keep only the squares which are relatively safe
-    b &= ~attackedBy[Them][PAWN] & safe;
+    bb = ~pos.pieces() & (~attackedBy[Them][PAWN] | attackedBy[Us][PAWN]);
+    b  = shift<Up>(pos.pieces(Us, PAWN)) & bb;
+    b |= shift<Up>(b & TRank3BB) & bb;
 
     // Bonus for safe pawn threats on the next move
-    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
+    b = pawn_attacks_bb<Us>(b & safe) & nonPawnEnemies;
     score += ThreatByPawnPush * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
