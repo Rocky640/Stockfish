@@ -204,16 +204,10 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAttacksCount[WHITE].
     int kingAttacksCount[COLOR_NB];
-    
-    // pawnPush are squares where pawns can move in one move.
-    // It excludes squares controlled by enemy pawn if we don't 
-    Bitboard pawnPush[COLOR_NB];
 
     // outpostSquares[color] are the pawn protected squares on rank 4, 5 or 6 which
     // which are not attacked by a pawn or by a pawnpush.
-    Bitboard outpostSquares[COLOR_NB];
-
-    
+    Bitboard outpostSquares[COLOR_NB];    
   };
 
 
@@ -246,7 +240,6 @@ namespace {
     bb = pos.pieces() | (pe->pawn_attacks(Them) & ~pe->pawn_attacks(Us));
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~bb;
     b |= shift<Up>(b & LowRanks) & ~bb;
-    pawnPush[Us] = b;
 
     outpostSquares[Them] =  TheirOutpostRanks & pe->pawn_attacks(Them)
                           & ~pawn_attacks_bb<Us>(b | pos.pieces(Us, PAWN));
@@ -504,6 +497,8 @@ namespace {
   Score Evaluation<T>::threats() const {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
+    constexpr Direction Up       = (Us == WHITE ? NORTH   : SOUTH);
+    constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -552,11 +547,19 @@ namespace {
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
 
     // Bonus for attacking enemy pieces with our relatively safe pawns
-    b = pawn_attacks_bb<Us>(pos.pieces(Us, PAWN) & safe) & nonPawnEnemies;
+    b = pos.pieces(Us, PAWN) & safe;
+    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatBySafePawn * popcount(b);
 
+    // Find squares where our pawns can push on the next move
+    b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
+    b |= shift<Up>(b & TRank3BB) & ~pos.pieces();
+
+    // Keep only the squares which are relatively safe
+    b &= ~attackedBy[Them][PAWN] & safe;
+
     // Bonus for safe pawn threats on the next move
-    b = pawn_attacks_bb<Us>(pawnPush[Us] & safe) & nonPawnEnemies;
+    b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatByPawnPush * popcount(b);
 
     // Bonus for threats on the next moves against enemy queen
