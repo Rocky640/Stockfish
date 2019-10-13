@@ -139,8 +139,7 @@ namespace {
   constexpr Score PassedFile         = S( 11,  8);
   constexpr Score PawnlessFlank      = S( 17, 95);
   constexpr Score RestrictedPiece    = S(  7,  7);
-  constexpr Score RookOnQueenFile[2]    = {S(  1,  0), S(14, 14)};
-  constexpr Score RookQBatteryFile[2]   = {S( 11, 10), S(1, 8)};
+  constexpr Score RookOnQueenFile    = S(  7,  6);
   constexpr Score SliderOnQueen      = S( 59, 18);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
@@ -301,7 +300,7 @@ namespace {
             if (bb & s)
                 score += Outpost * (Pt == KNIGHT ? 4 : 2);
 
-            else if (bb & b & ~pos.pieces(Us))
+            else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
                 score += Outpost * (Pt == KNIGHT ? 2 : 1);
 
             // Knight and Bishop bonus for being right behind a pawn
@@ -343,10 +342,8 @@ namespace {
         if (Pt == ROOK)
         {
             // Bonus for rook on the same file as a queen
-            if (file_bb(s) & pos.pieces(Them,QUEEN))
-                score += RookOnQueenFile[pos.is_on_semiopen_file(Us, s)];
-            if (file_bb(s) & pos.pieces(Us,QUEEN))
-                score += RookQBatteryFile[pos.is_on_semiopen_file(Us, s)];
+            if (file_bb(s) & pos.pieces(QUEEN))
+                score += RookOnQueenFile;
 
             // Bonus for rook on an open or semi-open file
             if (pos.is_on_semiopen_file(Us, s))
