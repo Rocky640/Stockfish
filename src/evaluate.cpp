@@ -317,7 +317,7 @@ namespace {
                 Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
                 int weight = popcount(blocked & CenterFiles);
                 score -=   BishopPawns
-                         * clamp(pos.pawns_on_same_color_squares(Us, s), weight, 8 - weight)
+                         * clamp(pos.pawns_on_same_color_squares(Us, s), weight - 2, 6)
                          * (weight + 1);
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
