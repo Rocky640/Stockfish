@@ -127,6 +127,7 @@ namespace {
   };
 
   // Assorted bonuses and penalties
+  constexpr Score BadLever           = S( 10, 10);
   constexpr Score BishopPawns        = S(  3,  7);
   constexpr Score CorneredBishop     = S( 50, 50);
   constexpr Score FlankAttacks       = S(  8,  0);
@@ -515,6 +516,21 @@ namespace {
         b =  ~attackedBy[Them][ALL_PIECES]
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
+    }
+
+    // Bad lever because loose piece behind if pawn capture
+    b = pos.pieces(Them, ROOK) & ~(attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES]);
+    while (b)
+    {
+        if (attacks_bb<ROOK>(pop_lsb(&b), pos.pieces() ^ (pos.pieces(Them, PAWN) & attackedBy[Us][PAWN])) & pos.pieces(Us, ROOK))
+            score += BadLever;
+    }
+
+    b = pos.pieces(Them, BISHOP) & ~(attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES]);
+    while (b)
+    {
+        if (attacks_bb<BISHOP>(pop_lsb(&b), pos.pieces() ^ (pos.pieces(Them, PAWN) & attackedBy[Us][PAWN])) & pos.pieces(Us, BISHOP))
+            score += BadLever;
     }
 
     // Bonus for restricting their piece moves
