@@ -489,7 +489,7 @@ namespace {
 
     // Squares strongly protected by the enemy, either because they defend the
     // square with a pawn, or because they defend the square twice and we don't.
-    stronglyProtected =  attackedBy[Them][PAWN]
+    stronglyProtected =  (attackedBy[Them][PAWN] & ~kingRing[Them])
                        | (attackedBy2[Them] & ~attackedBy2[Us]);
 
     // Non-pawn enemies, strongly protected
