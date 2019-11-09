@@ -505,6 +505,14 @@ namespace {
         while (b)
             score += ThreatByMinor[type_of(pos.piece_on(pop_lsb(&b)))];
 
+        b = attackedBy[Us][KNIGHT] & ~(pos.pieces() | stronglyProtected);
+        Bitboard knightJumpAttack = 0;
+
+        while (b)
+            knightJumpAttack |= PseudoAttacks[KNIGHT][pop_lsb(&b)];
+
+        score += make_score(4, 4) * popcount((defended | weak) & knightJumpAttack);
+
         b = weak & attackedBy[Us][ROOK];
         while (b)
             score += ThreatByRook[type_of(pos.piece_on(pop_lsb(&b)))];
