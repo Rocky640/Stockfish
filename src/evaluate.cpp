@@ -517,8 +517,11 @@ namespace {
         score += Hanging * popcount(weak & b);
     }
 
+    // Interference, or useless overprotection
+    b = pos.pieces(Them, KNIGHT, BISHOP) & attackedBy2[Them] & ~attackedBy[Us][ALL_PIECES];
+
     // Bonus for restricting their piece moves
-    b =   attackedBy[Them][ALL_PIECES]
+    b |=   attackedBy[Them][ALL_PIECES]
        & ~stronglyProtected
        &  attackedBy[Us][ALL_PIECES];
 
