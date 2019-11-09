@@ -523,7 +523,7 @@ namespace {
     score += MinorInterference * popcount(b);
 
     // Bonus for restricting their piece moves
-    b |=   attackedBy[Them][ALL_PIECES]
+    b =   attackedBy[Them][ALL_PIECES]
        & ~stronglyProtected
        &  attackedBy[Us][ALL_PIECES];
 
