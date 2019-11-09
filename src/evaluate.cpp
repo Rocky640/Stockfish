@@ -135,6 +135,7 @@ namespace {
   constexpr Score KnightOnQueen      = S( 16, 12);
   constexpr Score LongDiagonalBishop = S( 45,  0);
   constexpr Score MinorBehindPawn    = S( 18,  3);
+  constexpr Score MinorInterference  = S( 10, 10);
   constexpr Score Outpost            = S( 32, 10);
   constexpr Score PassedFile         = S( 11,  8);
   constexpr Score PawnlessFlank      = S( 17, 95);
@@ -519,6 +520,7 @@ namespace {
 
     // Interference, or useless overprotection
     b = pos.pieces(Them, KNIGHT, BISHOP) & attackedBy2[Them] & ~attackedBy[Us][ALL_PIECES];
+    score += MinorInterference * popcount(b);
 
     // Bonus for restricting their piece moves
     b |=   attackedBy[Them][ALL_PIECES]
