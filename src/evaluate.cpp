@@ -164,7 +164,7 @@ namespace {
     template<Color Us, PieceType Pt> Score pieces();
     template<Color Us> Score king() const;
     template<Color Us> Score threats() const;
-    template<Color Us> Score passed() const;
+    //template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
     ScaleFactor scale_factor(Value eg) const;
     Score initiative(Score score) const;
@@ -567,7 +567,7 @@ namespace {
 
   // Evaluation::passed() evaluates the passed pawns and candidate passed
   // pawns of the given color.
-
+  /*
   template<Tracing T> template<Color Us>
   Score Evaluation<T>::passed() const {
 
@@ -647,6 +647,7 @@ namespace {
 
     return score;
   }
+  */
 
 
   // Evaluation::space() computes the space evaluation for a given side. The
@@ -801,7 +802,7 @@ namespace {
 
     score +=  king<   WHITE>() - king<   BLACK>()
             + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
+            //+ passed< WHITE>() - passed< BLACK>()
             + space<  WHITE>() - space<  BLACK>();
 
     score += initiative(score);
