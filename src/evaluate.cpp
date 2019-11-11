@@ -167,7 +167,7 @@ namespace {
     template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
     ScaleFactor scale_factor(Value eg) const;
-    Score initiative(Score score) const;
+    //Score initiative(Score score) const;
 
     const Position& pos;
     Material::Entry* me;
@@ -688,7 +688,7 @@ namespace {
     return score;
   }
 
-
+/*
   // Evaluation::initiative() computes the initiative correction value
   // for the position. It is a second order bonus/malus based on the
   // known attacking/defending status of the players.
@@ -729,7 +729,7 @@ namespace {
 
     return make_score(u, v);
   }
-
+*/
 
   // Evaluation::scale_factor() computes the scale factor for the winning side
 
@@ -804,7 +804,7 @@ namespace {
             + passed< WHITE>() - passed< BLACK>()
             + space<  WHITE>() - space<  BLACK>();
 
-    score += initiative(score);
+    //score += initiative(score);
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
