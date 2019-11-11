@@ -165,7 +165,7 @@ namespace {
     template<Color Us> Score king() const;
     template<Color Us> Score threats() const;
     template<Color Us> Score passed() const;
-    template<Color Us> Score space() const;
+    //template<Color Us> Score space() const;
     ScaleFactor scale_factor(Value eg) const;
     Score initiative(Score score) const;
 
@@ -648,7 +648,7 @@ namespace {
     return score;
   }
 
-
+/*
   // Evaluation::space() computes the space evaluation for a given side. The
   // space evaluation is a simple bonus based on the number of safe squares
   // available for minor pieces on the central four files on ranks 2--4. Safe
@@ -687,7 +687,7 @@ namespace {
 
     return score;
   }
-
+*/
 
   // Evaluation::initiative() computes the initiative correction value
   // for the position. It is a second order bonus/malus based on the
@@ -801,8 +801,8 @@ namespace {
 
     score +=  king<   WHITE>() - king<   BLACK>()
             + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
-            + space<  WHITE>() - space<  BLACK>();
+            + passed< WHITE>() - passed< BLACK>();
+            //+ space<  WHITE>() - space<  BLACK>();
 
     score += initiative(score);
 
