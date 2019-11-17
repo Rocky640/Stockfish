@@ -179,6 +179,7 @@ namespace {
     Pawns::Entry* pe;
     Bitboard mobilityArea[COLOR_NB];
     Score mobility[COLOR_NB] = { SCORE_ZERO, SCORE_ZERO };
+    Score piece[COLOR_NB]    = { SCORE_ZERO, SCORE_ZERO };
 
     // attackedBy[color][piece type] is a bitboard representing all squares
     // attacked by a given color and piece type. Special "piece types" which
@@ -365,6 +366,8 @@ namespace {
                 score -= WeakQueen;
         }
     }
+
+    piece[Us] += score;
     if (T)
         Trace::add(Pt, Us, score);
 
@@ -455,7 +458,7 @@ namespace {
                  +  69 * kingAttacksCount[Them]
                  +   4 * (kingFlankAttack - kingFlankDefense)
                  +   3 * kingFlankAttack * kingFlankAttack / 8
-                 +       mg_value(mobility[Them] - mobility[Us])
+                 +       mg_value(piece[Them] - piece[Us])
                  - 873 * !pos.count<QUEEN>(Them)
                  - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
                  -  35 * bool(attackedBy[Us][BISHOP] & attackedBy[Us][KING])
