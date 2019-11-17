@@ -88,22 +88,29 @@ namespace {
 
 #define S(mg, eg) make_score(mg, eg)
 
+//calibrate mobility so that the "average" piece will have mobility S(0, 0)
+//piece values in types.h will be adjusted accordingly.
+#define S1(mg, eg) make_score(mg-9, eg-8)
+#define S2(mg, eg) make_score(mg-45, eg-37)
+#define S3(mg, eg) make_score(mg-19, eg-117)
+#define S4(mg, eg) make_score(mg-56, eg-101)
+
   // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
   // indexed by piece type and number of attacked squares in the mobility area.
   constexpr Score MobilityBonus[][32] = {
-    { S(-62,-81), S(-53,-56), S(-12,-30), S( -4,-14), S(  3,  8), S( 13, 15), // Knights
-      S( 22, 23), S( 28, 27), S( 33, 33) },
-    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
-      S( 55, 54), S( 63, 57), S( 63, 65), S( 68, 73), S( 81, 78), S( 81, 86),
-      S( 91, 88), S( 98, 97) },
-    { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rooks
-      S(  9,112), S( 16,118), S( 30,132), S( 29,142), S( 32,155), S( 38,165),
-      S( 46,166), S( 48,169), S( 58,171) },
-    { S(-39,-36), S(-21,-15), S(  3,  8), S(  3, 18), S( 14, 34), S( 22, 54), // Queens
-      S( 28, 61), S( 41, 73), S( 43, 79), S( 48, 92), S( 56, 94), S( 60,104),
-      S( 60,113), S( 66,120), S( 67,123), S( 70,126), S( 71,133), S( 73,136),
-      S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
-      S(106,184), S(109,191), S(113,206), S(116,212) }
+    { S1(-62,-81), S1(-53,-56), S1(-12,-30), S1( -4,-14), S1(  3,  8), S1( 13, 15), // Knight
+      S1( 22, 23), S1( 28, 27), S1( 33, 33) },
+    { S2(-48,-59), S2(-20,-23), S2( 16, -3), S2( 26, 13), S2( 38, 24), S2( 51, 42), // Bishops
+      S2( 55, 54), S2( 63, 57), S2( 63, 65), S2( 68, 73), S2( 81, 78), S2( 81, 86),
+      S2( 91, 88), S2( 98, 97) },
+    { S3(-58,-76), S3(-27,-18), S3(-15, 28), S3(-10, 55), S3( -5, 69), S3( -2, 82), // Rooks
+      S3(  9,112), S3( 16,118), S3( 30,132), S3( 29,142), S3( 32,155), S3( 38,165),
+      S3( 46,166), S3( 48,169), S3( 58,171) },
+    { S4(-39,-36), S4(-21,-15), S4(  3,  8), S4(  3, 18), S4( 14, 34), S4( 22, 54), // Queens
+      S4( 28, 61), S4( 41, 73), S4( 43, 79), S4( 48, 92), S4( 56, 94), S4( 60,104),
+      S4( 60,113), S4( 66,120), S4( 67,123), S4( 70,126), S4( 71,133), S4( 73,136),
+      S4( 79,140), S4( 88,143), S4( 88,148), S4( 99,166), S4(102,170), S4(102,175),
+      S4(106,184), S4(109,191), S4(113,206), S4(116,212) }
   };
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
@@ -152,6 +159,10 @@ namespace {
   constexpr Score TrappedRook        = S( 47,  4);
   constexpr Score WeakQueen          = S( 49, 15);
 
+#undef S1
+#undef S2
+#undef S3
+#undef S4
 #undef S
 
   // Evaluation class computes and stores attacks tables and other working data
