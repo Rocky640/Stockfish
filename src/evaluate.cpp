@@ -229,6 +229,9 @@ namespace {
     // enemy pawns are excluded from the mobility area.
     mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pe->pawn_attacks(Them));
 
+    // Include our advanced and unblocked levered pawns
+    mobilityArea[Us] |= pos.pieces(Us, PAWN) & ~b & pe->pawn_attacks(Them);
+
     // Initialize attackedBy[] for king and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
