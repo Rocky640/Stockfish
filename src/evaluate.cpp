@@ -601,9 +601,12 @@ namespace {
             int w = 5 * r - 13;
             Square blockSq = s + Up;
 
+            // If pawn is real protected passer, friendly king proximity is less important
+            int kpUs = 2 - ((attackedBy[Us][PAWN] & s) && pos.pawn_passed(Us, s));
+
             // Adjust bonus based on the king's proximity
             bonus += make_score(0, (  king_proximity(Them, blockSq) * 5
-                                    - king_proximity(Us,   blockSq) * 2) * w);
+                                    - king_proximity(Us,   blockSq) * kpUs) * w);
 
             // If blockSq is not the queening square then consider also a second push
             if (r != RANK_7)
