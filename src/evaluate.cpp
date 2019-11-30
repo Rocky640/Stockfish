@@ -602,7 +602,7 @@ namespace {
             Square blockSq = s + Up;
 
             // If pawn is real protected passer, friendly king proximity is less important
-            int kpUs = 2 - ((attackedBy[Us][PAWN] & s) && pos.pawn_passed(Us, s));
+            int kpUs = 3 - ((attackedBy[Us][PAWN] & s) && pos.pawn_passed(Us, s));
 
             // Adjust bonus based on the king's proximity
             bonus += make_score(0, (  king_proximity(Them, blockSq) * 5
