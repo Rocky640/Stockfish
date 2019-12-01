@@ -603,7 +603,7 @@ namespace {
 
             // Adjust bonus based on the king's proximity
             bonus += make_score(0, (  (king_proximity(Them, blockSq) * 38)
-                                     - king_proximity(Us,   blockSq) * 17) * w / 8);
+                                     - king_proximity(Us,   blockSq) * 15) * w / 8);
 
             // If blockSq is not the queening square then consider also a second push
             if (r != RANK_7)
