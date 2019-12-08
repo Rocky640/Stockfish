@@ -449,14 +449,13 @@ namespace {
                  + 148 * popcount(unsafeChecks)
                  +  98 * popcount(pos.blockers_for_king(Us))
                  +  69 * kingAttacksCount[Them]
-                 +   4 * (kingFlankAttack - kingFlankDefense)
                  +   3 * kingFlankAttack * kingFlankAttack / 8
                  +       mg_value(mobility[Them] - mobility[Us])
                  - 873 * !pos.count<QUEEN>(Them)
                  - 100 * bool(attackedBy[Us][KNIGHT] & attackedBy[Us][KING])
-                 -  35 * bool(attackedBy[Us][BISHOP] & attackedBy[Us][KING])
                  -   6 * mg_value(score) / 8
-                 -   7;
+                 -   4 * kingFlankDefense
+                 +  37;
 
     // Transform the kingDanger units into a Score, and subtract it from the evaluation
     if (kingDanger > 100)
@@ -603,8 +602,8 @@ namespace {
             Square blockSq = s + Up;
 
             // Adjust bonus based on the king's proximity
-            bonus += make_score(0, (  king_proximity(Them, blockSq) * 5
-                                    - king_proximity(Us,   blockSq) * 2) * w);
+            bonus += make_score(0, (  (king_proximity(Them, blockSq) * 19) / 4
+                                     - king_proximity(Us,   blockSq) *  2) * w);
 
             // If blockSq is not the queening square then consider also a second push
             if (r != RANK_7)
@@ -748,7 +747,7 @@ namespace {
     {
         if (   pos.opposite_bishops()
             && pos.non_pawn_material() == 2 * BishopValueMg)
-            sf = 16 + 4 * pe->passed_count();
+            sf = 22 ;
         else
             sf = std::min(sf, 36 + (pos.opposite_bishops() ? 2 : 7) * pos.count<PAWN>(strongSide));
 
@@ -847,6 +846,9 @@ Value Eval::evaluate(const Position& pos) {
 /// descriptions and values of each evaluation term. Useful for debugging.
 
 std::string Eval::trace(const Position& pos) {
+
+  if (pos.checkers())
+      return "Total evaluation: none (in check)";
 
   std::memset(scores, 0, sizeof(scores));
 
