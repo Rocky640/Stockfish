@@ -205,6 +205,10 @@ namespace {
     // a white knight on g5 and black's king is on g8, this white knight adds 2
     // to kingAttacksCount[WHITE].
     int kingAttacksCount[COLOR_NB];
+
+    // lowMobilityPieces[color] contains non-pawns with mobility < 2, and always include kings.
+    Bitboard lowMobilityPieces[COLOR_NB];
+
   };
 
 
@@ -224,6 +228,8 @@ namespace {
 
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+
+    lowMobilityPieces[Us] = SquareBB[ksq];
 
     // Squares occupied by those pawns, by our king or queen or controlled by
     // enemy pawns are excluded from the mobility area.
@@ -285,6 +291,8 @@ namespace {
         }
 
         int mob = popcount(b & mobilityArea[Us]);
+        if (mob < 2)
+            lowMobilityPieces[Us] |= s;
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -482,6 +490,7 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = pawn_push(Us);
+	constexpr Direction Down     = pawn_push(Them);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
@@ -526,6 +535,17 @@ namespace {
        &  attackedBy[Us][ALL_PIECES];
 
     score += RestrictedPiece * popcount(b);
+
+    // Find our pawns blocked by pawns or by our low mobility pieces
+    b  = pos.pieces(Us, PAWN) & shift<Down>(lowMobilityPieces[Us] | pos.pieces(PAWN));
+    b &= ~pawn_attacks_bb<Them>(pos.pieces(Them));
+
+    // Include also our low mobility pieces
+    b |= lowMobilityPieces[Us];
+
+    // Penalty for defending such pieces
+    b &= (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP] | attackedBy[Us][ROOK]);
+    score -= RestrictedPiece * popcount(b);
 
     // Protected or unattacked squares
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
