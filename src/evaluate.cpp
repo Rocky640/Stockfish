@@ -141,6 +141,7 @@ namespace {
   constexpr Score RestrictedPiece    = S(  7,  7);
   constexpr Score ReachableOutpost   = S( 32, 10);
   constexpr Score RookOnQueenFile    = S(  7,  6);
+  constexpr Score SelfBlock          = S(  4,  4);
   constexpr Score SliderOnQueen      = S( 59, 18);
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
@@ -544,8 +545,8 @@ namespace {
     b |= lowMobilityPieces[Us];
 
     // Penalty for defending such pieces
-    b &= (attackedBy[Us][KNIGHT] | attackedBy[Us][ROOK]);
-    score -= RestrictedPiece * popcount(b);
+    b &= (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP] | attackedBy[Us][ROOK]);
+    score -= SelfBlock * (popcount(b) + popcount(b & attackedBy2[Us]));
 
     // Protected or unattacked squares
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
