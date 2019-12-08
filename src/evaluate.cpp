@@ -490,7 +490,7 @@ namespace {
 
     constexpr Color     Them     = (Us == WHITE ? BLACK   : WHITE);
     constexpr Direction Up       = pawn_push(Us);
-	constexpr Direction Down     = pawn_push(Them);
+    constexpr Direction Down     = pawn_push(Them);
     constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
@@ -544,7 +544,7 @@ namespace {
     b |= lowMobilityPieces[Us];
 
     // Penalty for defending such pieces
-    b &= (attackedBy[Us][KNIGHT] | attackedBy[Us][BISHOP] | attackedBy[Us][ROOK]);
+    b &= (attackedBy[Us][KNIGHT] | attackedBy[Us][ROOK]);
     score -= RestrictedPiece * popcount(b);
 
     // Protected or unattacked squares
