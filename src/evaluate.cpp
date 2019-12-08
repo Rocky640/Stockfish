@@ -145,9 +145,12 @@ namespace {
   constexpr Score ThreatByKing       = S( 24, 89);
   constexpr Score ThreatByPawnPush   = S( 48, 39);
   constexpr Score ThreatBySafePawn   = S(173, 94);
-  constexpr Score TrappedRook        = S( 47,  4);
-  constexpr Score WeakQueen          = S( 49, 15);
-
+  Score TrappedRook[2] = { S(47, 4), S(47, 4) };
+  Score KingAdjust[16] = { S( 0, 0),S( 0, 0), S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),
+                           S( 0, 0),S( 0, 0), S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0),S( 0, 0)};
+  constexpr Score WeakQueen          = S(49, 15);
+  TUNE (SetRange(  0, 100), TrappedRook);
+  TUNE (SetRange(-100, 100), KingAdjust);
 #undef S
 
   // Evaluation class computes and stores attacks tables and other working data
@@ -344,12 +347,12 @@ namespace {
             if (pos.is_on_semiopen_file(Us, s))
                 score += RookOnFile[pos.is_on_semiopen_file(Them, s)];
 
-            // Penalty when trapped by the king, even more if the king cannot castle
+            // Penalty when trapped by the king
             else if (mob <= 3)
             {
                 File kf = file_of(pos.square<KING>(Us));
                 if ((kf < FILE_E) == (file_of(s) < kf))
-                    score -= TrappedRook * (1 + !pos.castling_rights(Us));
+                    score -= TrappedRook[file_of(s) < kf] * 2;
             }
         }
 
@@ -383,6 +386,9 @@ namespace {
 
     // Init the score with king shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos);
+
+	if (relative_rank(Us, ksq) < RANK_3)
+		score += (Us == WHITE ? KingAdjust[ksq] : KingAdjust[~ksq]);
 
     // Attacked squares defended at most once by our queen or king
     weak =  attackedBy[Them][ALL_PIECES]

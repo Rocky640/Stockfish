@@ -40,7 +40,6 @@ namespace Zobrist {
 
   Key psq[PIECE_NB][SQUARE_NB];
   Key enpassant[FILE_NB];
-  Key castling[CASTLING_RIGHT_NB];
   Key side, noPawns;
 }
 
@@ -109,8 +108,7 @@ std::ostream& operator<<(std::ostream& os, const Position& pos) {
   for (Bitboard b = pos.checkers(); b; )
       os << UCI::square(pop_lsb(&b)) << " ";
 
-  if (    int(Tablebases::MaxCardinality) >= popcount(pos.pieces())
-      && !pos.can_castle(ANY_CASTLING))
+  if (    int(Tablebases::MaxCardinality) >= popcount(pos.pieces()))
   {
       StateInfo st;
       Position p;
@@ -152,17 +150,6 @@ void Position::init() {
 
   for (File f = FILE_A; f <= FILE_H; ++f)
       Zobrist::enpassant[f] = rng.rand<Key>();
-
-  for (int cr = NO_CASTLING; cr <= ANY_CASTLING; ++cr)
-  {
-      Zobrist::castling[cr] = 0;
-      Bitboard b = cr;
-      while (b)
-      {
-          Key k = Zobrist::castling[1ULL << pop_lsb(&b)];
-          Zobrist::castling[cr] ^= k ? k : rng.rand<Key>();
-      }
-  }
 
   Zobrist::side = rng.rand<Key>();
   Zobrist::noPawns = rng.rand<Key>();
@@ -214,11 +201,6 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si, Th
 
    2) Active color. "w" means white moves next, "b" means black.
 
-   3) Castling availability. If neither side can castle, this is "-". Otherwise,
-      this has one or more letters: "K" (White can castle kingside), "Q" (White
-      can castle queenside), "k" (Black can castle kingside), and/or "q" (Black
-      can castle queenside).
-
    4) En passant target square (in algebraic notation). If there's no en passant
       target square, this is "-". If a pawn has just made a 2-square move, this
       is the position "behind" the pawn. This is recorded only if there is a pawn
@@ -266,33 +248,9 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si, Th
   sideToMove = (token == 'w' ? WHITE : BLACK);
   ss >> token;
 
-  // 3. Castling availability. Compatible with 3 standards: Normal FEN standard,
-  // Shredder-FEN that uses the letters of the columns on which the rooks began
-  // the game instead of KQkq and also X-FEN standard that, in case of Chess960,
-  // if an inner rook is associated with the castling right, the castling tag is
-  // replaced by the file letter of the involved rook, as for the Shredder-FEN.
+  // 3. Consume castling token
   while ((ss >> token) && !isspace(token))
-  {
-      Square rsq;
-      Color c = islower(token) ? BLACK : WHITE;
-      Piece rook = make_piece(c, ROOK);
-
-      token = char(toupper(token));
-
-      if (token == 'K')
-          for (rsq = relative_square(c, SQ_H1); piece_on(rsq) != rook; --rsq) {}
-
-      else if (token == 'Q')
-          for (rsq = relative_square(c, SQ_A1); piece_on(rsq) != rook; ++rsq) {}
-
-      else if (token >= 'A' && token <= 'H')
-          rsq = make_square(File(token - 'A'), relative_rank(c, RANK_1));
-
-      else
-          continue;
-
-      set_castling_right(c, rsq);
-  }
+     continue;
 
   // 4. En passant square. Ignore if no pawn capture is possible
   if (   ((ss >> col) && (col >= 'a' && col <= 'h'))
@@ -321,27 +279,6 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si, Th
   assert(pos_is_ok());
 
   return *this;
-}
-
-
-/// Position::set_castling_right() is a helper function used to set castling
-/// rights given the corresponding color and the rook starting square.
-
-void Position::set_castling_right(Color c, Square rfrom) {
-
-  Square kfrom = square<KING>(c);
-  CastlingRights cr = c & (kfrom < rfrom ? KING_SIDE: QUEEN_SIDE);
-
-  st->castlingRights |= cr;
-  castlingRightsMask[kfrom] |= cr;
-  castlingRightsMask[rfrom] |= cr;
-  castlingRookSquare[cr] = rfrom;
-
-  Square kto = relative_square(c, cr & KING_SIDE ? SQ_G1 : SQ_C1);
-  Square rto = relative_square(c, cr & KING_SIDE ? SQ_F1 : SQ_D1);
-
-  castlingPath[cr] =   (between_bb(rfrom, rto) | between_bb(kfrom, kto) | rto | kto)
-                    & ~(square_bb(kfrom) | rfrom);
 }
 
 
@@ -395,8 +332,6 @@ void Position::set_state(StateInfo* si) const {
 
   if (sideToMove == BLACK)
       si->key ^= Zobrist::side;
-
-  si->key ^= Zobrist::castling[si->castlingRights];
 
   for (Piece pc : Pieces)
       for (int cnt = 0; cnt < pieceCount[pc]; ++cnt)
@@ -453,20 +388,7 @@ const string Position::fen() const {
 
   ss << (sideToMove == WHITE ? " w " : " b ");
 
-  if (can_castle(WHITE_OO))
-      ss << (chess960 ? char('A' + file_of(castling_rook_square(WHITE_OO ))) : 'K');
-
-  if (can_castle(WHITE_OOO))
-      ss << (chess960 ? char('A' + file_of(castling_rook_square(WHITE_OOO))) : 'Q');
-
-  if (can_castle(BLACK_OO))
-      ss << (chess960 ? char('a' + file_of(castling_rook_square(BLACK_OO ))) : 'k');
-
-  if (can_castle(BLACK_OOO))
-      ss << (chess960 ? char('a' + file_of(castling_rook_square(BLACK_OOO))) : 'q');
-
-  if (!can_castle(ANY_CASTLING))
-      ss << '-';
+  ss << '-';
 
   ss << (ep_square() == SQ_NONE ? " - " : " " + UCI::square(ep_square()) + " ")
      << st->rule50 << " " << 1 + (gamePly - (sideToMove == BLACK)) / 2;
@@ -553,25 +475,6 @@ bool Position::legal(Move m) const {
             && !(attacks_bb<BISHOP>(ksq, occupied) & pieces(~us, QUEEN, BISHOP));
   }
 
-  // Castling moves generation does not check if the castling path is clear of
-  // enemy attacks, it is delayed at a later time: now!
-  if (type_of(m) == CASTLING)
-  {
-      // After castling, the rook and king final positions are the same in
-      // Chess960 as they would be in standard chess.
-      to = relative_square(us, to > from ? SQ_G1 : SQ_C1);
-      Direction step = to > from ? WEST : EAST;
-
-      for (Square s = to; s != from; s += step)
-          if (attackers_to(s) & pieces(~us))
-              return false;
-
-      // In case of Chess960, verify that when moving the castling rook we do
-      // not discover some hidden checker.
-      // For instance an enemy queen in SQ_A1 when castling rook is in SQ_B1.
-      return   !chess960
-            || !(attacks_bb<ROOK>(to, pieces() ^ to_sq(m)) & pieces(~us, ROOK, QUEEN));
-  }
 
   // If the moving piece is a king, check whether the destination square is
   // attacked by the opponent.
@@ -696,16 +599,7 @@ bool Position::gives_check(Move m) const {
       return  (attacks_bb<  ROOK>(square<KING>(~sideToMove), b) & pieces(sideToMove, QUEEN, ROOK))
             | (attacks_bb<BISHOP>(square<KING>(~sideToMove), b) & pieces(sideToMove, QUEEN, BISHOP));
   }
-  case CASTLING:
-  {
-      Square kfrom = from;
-      Square rfrom = to; // Castling is encoded as 'King captures the rook'
-      Square kto = relative_square(sideToMove, rfrom > kfrom ? SQ_G1 : SQ_C1);
-      Square rto = relative_square(sideToMove, rfrom > kfrom ? SQ_F1 : SQ_D1);
-
-      return   (PseudoAttacks[ROOK][rto] & square<KING>(~sideToMove))
-            && (attacks_bb<ROOK>(rto, (pieces() ^ kfrom ^ rfrom) | rto | kto) & square<KING>(~sideToMove));
-  }
+ 
   default:
       assert(false);
       return false;
@@ -746,20 +640,9 @@ void Position::do_move(Move m, StateInfo& newSt, bool givesCheck) {
   Piece captured = type_of(m) == ENPASSANT ? make_piece(them, PAWN) : piece_on(to);
 
   assert(color_of(pc) == us);
-  assert(captured == NO_PIECE || color_of(captured) == (type_of(m) != CASTLING ? them : us));
+  assert(captured == NO_PIECE || color_of(captured) == them);
   assert(type_of(captured) != KING);
 
-  if (type_of(m) == CASTLING)
-  {
-      assert(pc == make_piece(us, KING));
-      assert(captured == make_piece(us, ROOK));
-
-      Square rfrom, rto;
-      do_castling<true>(us, from, to, rfrom, rto);
-
-      k ^= Zobrist::psq[captured][rfrom] ^ Zobrist::psq[captured][rto];
-      captured = NO_PIECE;
-  }
 
   if (captured)
   {
@@ -809,17 +692,7 @@ void Position::do_move(Move m, StateInfo& newSt, bool givesCheck) {
       st->epSquare = SQ_NONE;
   }
 
-  // Update castling rights if needed
-  if (st->castlingRights && (castlingRightsMask[from] | castlingRightsMask[to]))
-  {
-      int cr = castlingRightsMask[from] | castlingRightsMask[to];
-      k ^= Zobrist::castling[st->castlingRights & cr];
-      st->castlingRights &= ~cr;
-  }
-
-  // Move the piece. The tricky Chess960 castling is handled earlier
-  if (type_of(m) != CASTLING)
-      move_piece(pc, from, to);
+  move_piece(pc, from, to);
 
   // If the moving piece is a pawn do some special extra work
   if (type_of(pc) == PAWN)
@@ -910,7 +783,7 @@ void Position::undo_move(Move m) {
   Square to = to_sq(m);
   Piece pc = piece_on(to);
 
-  assert(empty(from) || type_of(m) == CASTLING);
+  assert(empty(from));
   assert(type_of(st->capturedPiece) != KING);
 
   if (type_of(m) == PROMOTION)
@@ -924,12 +797,7 @@ void Position::undo_move(Move m) {
       put_piece(pc, to);
   }
 
-  if (type_of(m) == CASTLING)
-  {
-      Square rfrom, rto;
-      do_castling<false>(us, from, to, rfrom, rto);
-  }
-  else
+ 
   {
       move_piece(pc, to, from); // Put the piece back at the source square
 
@@ -958,26 +826,6 @@ void Position::undo_move(Move m) {
 
   assert(pos_is_ok());
 }
-
-
-/// Position::do_castling() is a helper used to do/undo a castling move. This
-/// is a bit tricky in Chess960 where from/to squares can overlap.
-template<bool Do>
-void Position::do_castling(Color us, Square from, Square& to, Square& rfrom, Square& rto) {
-
-  bool kingSide = to > from;
-  rfrom = to; // Castling is encoded as "king captures friendly rook"
-  rto = relative_square(us, kingSide ? SQ_F1 : SQ_D1);
-  to = relative_square(us, kingSide ? SQ_G1 : SQ_C1);
-
-  // Remove both pieces first since squares could overlap in Chess960
-  remove_piece(make_piece(us, KING), Do ? from : to);
-  remove_piece(make_piece(us, ROOK), Do ? rfrom : rto);
-  board[Do ? from : to] = board[Do ? rfrom : rto] = NO_PIECE; // Since remove_piece doesn't do it for us
-  put_piece(make_piece(us, KING), Do ? to : from);
-  put_piece(make_piece(us, ROOK), Do ? rto : rfrom);
-}
-
 
 /// Position::do(undo)_null_move() is used to do(undo) a "null move": It flips
 /// the side to move without executing any move on the board.
@@ -1297,18 +1145,6 @@ bool Position::pos_is_ok() const {
           if (board[pieceList[pc][i]] != pc || index[pieceList[pc][i]] != i)
               assert(0 && "pos_is_ok: Index");
   }
-
-  for (Color c : { WHITE, BLACK })
-      for (CastlingRights cr : {c & KING_SIDE, c & QUEEN_SIDE})
-      {
-          if (!can_castle(cr))
-              continue;
-
-          if (   piece_on(castlingRookSquare[cr]) != make_piece(c, ROOK)
-              || castlingRightsMask[castlingRookSquare[cr]] != cr
-              || (castlingRightsMask[square<KING>(c)] & cr) != cr)
-              assert(0 && "pos_is_ok: Castling");
-      }
 
   return true;
 }

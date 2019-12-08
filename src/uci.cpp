@@ -276,9 +276,6 @@ std::string UCI::square(Square s) {
 
 
 /// UCI::move() converts a Move to a string in coordinate notation (g1f3, a7a8q).
-/// The only special case is castling, where we print in the e1g1 notation in
-/// normal chess mode, and in e1h1 notation in chess960 mode. Internally all
-/// castling moves are always encoded as 'king captures rook'.
 
 string UCI::move(Move m, bool chess960) {
 
@@ -290,9 +287,6 @@ string UCI::move(Move m, bool chess960) {
 
   if (m == MOVE_NULL)
       return "0000";
-
-  if (type_of(m) == CASTLING && !chess960)
-      to = make_square(to > from ? FILE_G : FILE_C, rank_of(from));
 
   string move = UCI::square(from) + UCI::square(to);
 

@@ -124,28 +124,11 @@ enum Move : int {
 enum MoveType {
   NORMAL,
   PROMOTION = 1 << 14,
-  ENPASSANT = 2 << 14,
-  CASTLING  = 3 << 14
+  ENPASSANT = 2 << 14
 };
 
 enum Color {
   WHITE, BLACK, COLOR_NB = 2
-};
-
-enum CastlingRights {
-  NO_CASTLING,
-  WHITE_OO,
-  WHITE_OOO = WHITE_OO << 1,
-  BLACK_OO  = WHITE_OO << 2,
-  BLACK_OOO = WHITE_OO << 3,
-
-  KING_SIDE      = WHITE_OO  | BLACK_OO,
-  QUEEN_SIDE     = WHITE_OOO | BLACK_OOO,
-  WHITE_CASTLING = WHITE_OO  | WHITE_OOO,
-  BLACK_CASTLING = BLACK_OO  | BLACK_OOO,
-  ANY_CASTLING   = WHITE_CASTLING | BLACK_CASTLING,
-
-  CASTLING_RIGHT_NB = 16
 };
 
 enum Phase {
@@ -360,10 +343,6 @@ constexpr Piece operator~(Piece pc) {
 
 inline File map_to_queenside(File f) {
   return std::min(f, File(FILE_H - f)); // Map files ABCDEFGH to files ABCDDCBA
-}
-
-constexpr CastlingRights operator&(Color c, CastlingRights cr) {
-  return CastlingRights((c == WHITE ? WHITE_CASTLING : BLACK_CASTLING) & cr);
 }
 
 constexpr Value mate_in(int ply) {
