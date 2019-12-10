@@ -562,6 +562,15 @@ namespace {
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
 
+    if (pos.castling_rights(Us))
+    {
+        if (pos.castling_impeded(Us == WHITE ? WHITE_OOO : BLACK_OOO, attackedBy[Them][ALL_PIECES]))
+            score -= make_score(25, 0);
+
+        if (pos.castling_impeded(Us == WHITE ? WHITE_OO  : BLACK_OO , attackedBy[Them][ALL_PIECES]))
+            score -= make_score(25, 0);
+    }
+
     if (T)
         Trace::add(THREAT, Us, score);
 
