@@ -382,15 +382,7 @@ namespace {
     const Square ksq = pos.square<KING>(Us);
 
     // Init the score with king shelter and enemy pawns storm
-    Score score = pe->king_safety<Us>(pos);
-
-    // If we can castle, how far are we
-    if (pos.castling_rights(Us))
-    {
-        int sq = std::min(pos.castling_impeded_count(Us == WHITE ? WHITE_OOO : BLACK_OOO, attackedBy[Them][ALL_PIECES]),
-                          pos.castling_impeded_count(Us == WHITE ? WHITE_OO  : BLACK_OO , attackedBy[Them][ALL_PIECES]));
-        score -= make_score(20 * sq, 0);
-    }
+    Score score = pe->king_safety<Us>(pos, attackedBy[Them][ALL_PIECES]);
 
     // Attacked squares defended at most once by our queen or king
     weak =  attackedBy[Them][ALL_PIECES]

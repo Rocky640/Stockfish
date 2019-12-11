@@ -282,7 +282,7 @@ inline bool Position::castling_impeded(CastlingRights cr) const {
 }
 
 inline int Position::castling_impeded_count(CastlingRights cr, Bitboard attacks) const {
-  return can_castle(cr) ? popcount(((byTypeBB[ALL_PIECES] | attacks) & castlingPath[cr])) : 8;
+  return popcount((byTypeBB[ALL_PIECES] | attacks) & castlingPath[cr]);
 }
 
 inline Square Position::castling_rook_square(CastlingRights cr) const {

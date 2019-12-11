@@ -40,13 +40,26 @@ struct Entry {
   int passed_count() const { return popcount(passedPawns[WHITE] | passedPawns[BLACK]); }
 
   template<Color Us>
-  Score king_safety(const Position& pos) {
-    return  kingSquares[Us] == pos.square<KING>(Us) && castlingRights[Us] == pos.castling_rights(Us)
-          ? kingSafety[Us] : (kingSafety[Us] = do_king_safety<Us>(pos));
+  Score king_safety(const Position& pos, Bitboard attacks) {
+    if ((kingSquares[Us] != pos.square<KING>(Us)) || ((castlingRights[Us] & pos.castling_rights(Us)) != pos.castling_rights(Us)))
+        do_king_safety<Us>(pos);
+
+    auto compare = [](Score a, Score b) { return mg_value(a) < mg_value(b); };
+
+    Score score = shelter[Us][0];
+
+    // If we can castle, use the shelter score of the castled king (minus some penalty) if better than shelter of Ke1/e8
+    if (pos.can_castle(Us & KING_SIDE))
+        score = std::max(score, shelter[Us][1] - make_score(pos.castling_impeded_count(Us & KING_SIDE,  attacks) * 25, 0), compare);
+
+    if (pos.can_castle(Us & QUEEN_SIDE))
+        score = std::max(score, shelter[Us][2] - make_score(pos.castling_impeded_count(Us & QUEEN_SIDE, attacks) * 25, 0), compare);
+
+    return score + shelter[Us][3];
   }
 
   template<Color Us>
-  Score do_king_safety(const Position& pos);
+  void do_king_safety(const Position& pos);
 
   template<Color Us>
   Score evaluate_shelter(const Position& pos, Square ksq);
@@ -57,8 +70,8 @@ struct Entry {
   Bitboard pawnAttacks[COLOR_NB];
   Bitboard pawnAttacksSpan[COLOR_NB];
   Square kingSquares[COLOR_NB];
-  Score kingSafety[COLOR_NB];
   int castlingRights[COLOR_NB];
+  Score shelter[COLOR_NB][4];
 };
 
 typedef HashTable<Entry, 131072> Table;
