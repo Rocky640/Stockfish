@@ -384,6 +384,14 @@ namespace {
     // Init the score with king shelter and enemy pawns storm
     Score score = pe->king_safety<Us>(pos);
 
+    // If we can castle, how far are we
+    if (pos.castling_rights(Us))
+    {
+        int sq = std::min(pos.castling_impeded_count(Us == WHITE ? WHITE_OOO : BLACK_OOO, attackedBy[Them][ALL_PIECES]),
+                          pos.castling_impeded_count(Us == WHITE ? WHITE_OO  : BLACK_OO , attackedBy[Them][ALL_PIECES]));
+        score -= make_score(20 * sq, 0);
+    }
+
     // Attacked squares defended at most once by our queen or king
     weak =  attackedBy[Them][ALL_PIECES]
           & ~attackedBy2[Us]
@@ -560,15 +568,6 @@ namespace {
            | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
 
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
-    }
-
-    if (pos.castling_rights(Us))
-    {
-        if (pos.castling_impeded(Us == WHITE ? WHITE_OOO : BLACK_OOO, attackedBy[Them][ALL_PIECES]))
-            score -= make_score(25, 0);
-
-        if (pos.castling_impeded(Us == WHITE ? WHITE_OO  : BLACK_OO , attackedBy[Them][ALL_PIECES]))
-            score -= make_score(25, 0);
     }
 
     if (T)

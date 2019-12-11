@@ -102,7 +102,7 @@ public:
   int castling_rights(Color c) const;
   bool can_castle(CastlingRights cr) const;
   bool castling_impeded(CastlingRights cr) const;
-  bool castling_impeded(CastlingRights cr, Bitboard attacks) const;
+  int castling_impeded_count(CastlingRights cr, Bitboard attacks) const;
   Square castling_rook_square(CastlingRights cr) const;
 
   // Checking
@@ -281,8 +281,8 @@ inline bool Position::castling_impeded(CastlingRights cr) const {
   return byTypeBB[ALL_PIECES] & castlingPath[cr];
 }
 
-inline bool Position::castling_impeded(CastlingRights cr, Bitboard attacks) const {
-  return can_castle(cr) && ((byTypeBB[ALL_PIECES] | attacks) & castlingPath[cr]);
+inline int Position::castling_impeded_count(CastlingRights cr, Bitboard attacks) const {
+  return can_castle(cr) ? popcount(((byTypeBB[ALL_PIECES] | attacks) & castlingPath[cr])) : 8;
 }
 
 inline Square Position::castling_rook_square(CastlingRights cr) const {
