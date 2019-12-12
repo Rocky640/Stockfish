@@ -102,7 +102,7 @@ public:
   int castling_rights(Color c) const;
   bool can_castle(CastlingRights cr) const;
   bool castling_impeded(CastlingRights cr) const;
-  bool castling_legal(CastlingRights cr, Bitboard attacks) const;
+  bool castling_safe(CastlingRights cr, Bitboard attacks) const;
   Square castling_rook_square(CastlingRights cr) const;
 
   // Checking
@@ -281,8 +281,8 @@ inline bool Position::castling_impeded(CastlingRights cr) const {
   return byTypeBB[ALL_PIECES] & castlingPath[cr];
 }
 
-inline bool Position::castling_legal(CastlingRights cr, Bitboard attacks) const {
-  return can_castle(cr) && !((byTypeBB[ALL_PIECES] | attacks) & castlingPath[cr]);
+inline bool Position::castling_safe(CastlingRights cr, Bitboard attacks) const {
+  return can_castle(cr) && !(attacks & castlingPath[cr]);
 }
 
 inline Square Position::castling_rook_square(CastlingRights cr) const {
