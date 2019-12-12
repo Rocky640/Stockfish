@@ -48,12 +48,15 @@ struct Entry {
 
     Score score = shelter[Us][0];
 
-    // If we can castle, use the shelter score of the castled king (minus some penalty) if better than shelter of Ke1/e8
-    if (pos.can_castle(Us & KING_SIDE))
-        score = std::max(score, shelter[Us][1] - make_score(pos.castling_impeded_count(Us & KING_SIDE,  attacks) * 25, 0), compare);
+    if (pos.castling_rights(Us))
+    {
+    // If we can castle on next move, use the shelter score of the castled king if it is better
+    if (pos.castling_legal(Us & KING_SIDE, attacks))
+        score = std::max(score, shelter[Us][1], compare);
 
-    if (pos.can_castle(Us & QUEEN_SIDE))
-        score = std::max(score, shelter[Us][2] - make_score(pos.castling_impeded_count(Us & QUEEN_SIDE, attacks) * 25, 0), compare);
+    if (pos.castling_legal(Us & QUEEN_SIDE, attacks))
+        score = std::max(score, shelter[Us][2], compare);
+    }
 
     return score + shelter[Us][3];
   }
