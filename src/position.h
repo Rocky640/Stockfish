@@ -142,6 +142,9 @@ public:
 
   // Static Exchange Evaluation
   bool see_ge(Move m, Value threshold = VALUE_ZERO) const;
+  PieceType min_attacker(Square to,
+                              Bitboard stmAttackers, Bitboard& occupied,
+                              Bitboard& attackers) const;
 
   // Accessing hash keys
   Key key() const;

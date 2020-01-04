@@ -51,40 +51,6 @@ const string PieceToChar(" PNBRQK  pnbrqk");
 constexpr Piece Pieces[] = { W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
                              B_PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING };
 
-// min_attacker() is a helper function used by see_ge() to locate the least
-// valuable attacker for the side to move, remove the attacker we just found
-// from the bitboards and scan for new X-ray attacks behind it.
-
-template<PieceType Pt>
-PieceType min_attacker(const Bitboard* byTypeBB, Square to, Bitboard stmAttackers,
-                       Bitboard& occupied, Bitboard& attackers) {
-
-  Bitboard b = stmAttackers & byTypeBB[Pt];
-  if (!b)
-      return min_attacker<PieceType(Pt + 1)>(byTypeBB, to, stmAttackers, occupied, attackers);
-
-  occupied ^= lsb(b); // Remove the attacker from occupied
-
-  // Add any X-ray attack behind the just removed piece. For instance with
-  // rooks in a8 and a7 attacking a1, after removing a7 we add rook in a8.
-  // Note that new added attackers can be of any color.
-  if (Pt == PAWN || Pt == BISHOP || Pt == QUEEN)
-      attackers |= attacks_bb<BISHOP>(to, occupied) & (byTypeBB[BISHOP] | byTypeBB[QUEEN]);
-
-  if (Pt == ROOK || Pt == QUEEN)
-      attackers |= attacks_bb<ROOK>(to, occupied) & (byTypeBB[ROOK] | byTypeBB[QUEEN]);
-
-  // X-ray may add already processed pieces because byTypeBB[] is constant: in
-  // the rook example, now attackers contains _again_ rook in a7, so remove it.
-  attackers &= occupied;
-  return Pt;
-}
-
-template<>
-PieceType min_attacker<KING>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&) {
-  return KING; // No need to update bitboards: it is the last cycle
-}
-
 } // namespace
 
 
@@ -1040,6 +1006,52 @@ Key Position::key_after(Move m) const {
 }
 
 
+PieceType Position::min_attacker(Square to,
+                              Bitboard stmAttackers, Bitboard& occupied,
+                              Bitboard& attackers) const {
+  PieceType pt;
+  Bitboard b;
+  
+  if (!more_than_one(stmAttackers))
+  {
+     b = stmAttackers;
+     pt = type_of(piece_on(lsb(b)));
+  }
+  else
+    for (pt = PAWN; pt < KING; ++ pt)
+    {
+      b = stmAttackers & byTypeBB[pt];
+      if (b)
+          break;
+    }
+
+  if (pt == KING)
+     return KING;
+
+  occupied ^= lsb(b); // Remove the attacker from occupied
+
+  // Add any X-ray attacker behind the removed piece. For instance with
+  // rooks in a8 and a7 attacking a1, after removing a7 we add rook in a8.
+  // The added attackers can be of any color.
+  
+  if (pt % 2 == 1) 
+    // PAWN, BISHOP, QUEEN
+    attackers |=  attacks_bb<BISHOP>(to, occupied)
+                & (byTypeBB[BISHOP] | byTypeBB[QUEEN]);
+
+  if (pt >= ROOK)
+    // ROOK, QUEEN
+    attackers |=  attacks_bb<ROOK>(to, occupied)
+                & (byTypeBB[ROOK] | byTypeBB[QUEEN]);
+
+  // X-ray may add already processed pieces because byTypeBB[] is constant:
+  // in the rook example, attackers now contains again the Ra7.
+  // This is why we wait till this line to adjust attackers.
+  attackers &= occupied;
+
+  return pt;
+}
+
 /// Position::see_ge (Static Exchange Evaluation Greater or Equal) tests if the
 /// SEE value of move is greater or equal to the given threshold. We'll use an
 /// algorithm similar to alpha-beta pruning with a null window.
@@ -1095,22 +1107,22 @@ bool Position::see_ge(Move m, Value threshold) const {
           break;
 
       // Locate and remove the next least valuable attacker, and add to
-      // the bitboard 'attackers' the possibly X-ray attackers behind it.
-      nextVictim = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers);
+      // the bitboard 'attackers' any X-ray attackers behind it.
+      nextVictim = min_attacker(to, stmAttackers, occupied, attackers);
 
       stm = ~stm; // Switch side to move
 
       // Negamax the balance with alpha = balance, beta = balance+1 and
       // add nextVictim's value.
       //
-      //      (balance, balance+1) -> (-balance-1, -balance)
+      //      (balance, balance + 1) -> (-balance - 1, -balance)
       //
       assert(balance < VALUE_ZERO);
 
       balance = -balance - 1 - PieceValue[MG][nextVictim];
 
       // If balance is still non-negative after giving away nextVictim then we
-      // win. The only thing to be careful about it is that we should revert
+      // win. The only thing to be careful about is that we should revert
       // stm if we captured with the king when the opponent still has attackers.
       if (balance >= VALUE_ZERO)
       {
