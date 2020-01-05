@@ -1005,28 +1005,29 @@ Key Position::key_after(Move m) const {
   return k ^ Zobrist::psq[pc][to] ^ Zobrist::psq[pc][from];
 }
 
+
+// decisive_take is a helper function used by see_ge. It updates the balance and find if we can stop.
+inline bool decisive_take (int &balance, Value takerValue) {
+  
+  assert(balance < VALUE_ZERO);
+
+  // Negamax the balance with alpha = balance, beta = balance + 1 and
+  // add nextVictim's value.
+  //
+  //      (balance, balance + 1) -> (-balance - 1, -balance)
+  //
+
+  balance = -takerValue - balance - 1;
+
+  // If the balance is positive, it means that even if the piece with takerValue
+  // is lost, his owner (stm) is ahead and wins the SEE, so no need to consider more captures,
+  // and the algorithm can stop.
+  return balance >= 0;
+};
+  
 bool Position::see_ge(Move m, Value threshold) const {
 
   assert(is_ok(m));
-
-  // decisive_take is a helper function to update the balance and find if we can stop.
-  auto decisive_take = [&](int &balance, Value takerValue) {
-      
-      assert(balance < VALUE_ZERO);
-
-      // Negamax the balance with alpha = balance, beta = balance + 1 and
-      // add nextVictim's value.
-      //
-      //      (balance, balance + 1) -> (-balance - 1, -balance)
-      //
-
-      balance = -takerValue - balance - 1;
-
-      // If the balance is positive, it means that even if the piece with takerValue
-      // is lost, his owner (stm) is ahead and wins the SEE, so no need to consider more captures,
-      // and the algorithm can stop.
-      return balance >= 0;
-  };
 
   // Only deal with normal moves, assume others pass a simple see
   if (type_of(m) != NORMAL)
@@ -1035,29 +1036,28 @@ bool Position::see_ge(Move m, Value threshold) const {
   Square from = from_sq(m), to = to_sq(m);
 
 #if true 
+  // Note that the "to" square can be empty, or threshold can be positive
   int bal = -PieceValue[MG][piece_on(to)] + threshold - 1;
-  // The opponent may be able to recapture so this is the best result
-  // we can hope for.
 
   if (bal >= 0)
-      return false; // Move m is not good enough compared to given threshold
+      // Moving or even capturing a piece on that square gives the opponent a positive balance
+      return false; // stm lose
 
 #else
-  //same result as above, but harder to "explain"
+  // Another way to code this, more elegant, same result as above, but harder to "explain"
   int bal = -threshold;
 
-  // Note that the "to" square can be empty.
   if (decisive_take(bal, PieceValue[MG][piece_on(to)]))
-      return false;
+      return false; // stm lose
 #endif
 
   assert(bal < VALUE_ZERO);
   
   // If taking on square "to" is enough (like in PxQ) then return immediately.
-  // Note that in case piece on "from" is a KING we always return here,
-  // because bal will switch sign. This is ok if the given move m is legal.
+  // Note that in case piece on "from" is a KING, ba; will switch sign and we always return true.
+  // This is ok if the given move m is legal.
   if (decisive_take(bal, PieceValue[MG][piece_on(from)]))
-      return true;
+      return true; // stm wins 
   
   Bitboard occ = pieces() ^ from ^ to;
   Color initialStm = color_of(piece_on(from));
@@ -1089,41 +1089,41 @@ bool Position::see_ge(Move m, Value threshold) const {
       // if there is an X-ray attacker behind it, it is added to the attackers.
 
       if ((bb = stmAttackers & pieces(PAWN))) {
-          if (decisive_take(bal, PawnValueMg)) return (stm == initialStm);
+          if (decisive_take(bal, PawnValueMg)) break;
           occ ^= lsb(bb);
           attackers |= attacks_bb<BISHOP>(to, occ) & pieces(BISHOP, QUEEN);
       }
 
       else if ((bb = stmAttackers & pieces(KNIGHT))) {
-          if (decisive_take(bal, KnightValueMg)) return (stm == initialStm);
+          if (decisive_take(bal, KnightValueMg)) break;
           occ ^= lsb(bb);
       }
 
       else if ((bb = stmAttackers & pieces(BISHOP))) {
-          if (decisive_take(bal, BishopValueMg)) return (stm == initialStm);
+          if (decisive_take(bal, BishopValueMg)) break;
           occ ^= lsb(bb);
           attackers |= attacks_bb<BISHOP>(to, occ) & pieces(BISHOP, QUEEN);
       }
 
       else if ((bb = stmAttackers & pieces(ROOK))) {
-          if (decisive_take(bal, RookValueMg))  return (stm == initialStm);
+          if (decisive_take(bal, RookValueMg))  break;
           occ ^= lsb(bb);
           attackers |= attacks_bb<ROOK>(to, occ) & pieces(ROOK, QUEEN);
       }
 
       else if ((bb = stmAttackers & pieces(QUEEN))) {
-          if (decisive_take(bal, QueenValueMg)) return (stm == initialStm);
+          if (decisive_take(bal, QueenValueMg)) break;
           occ ^= lsb(bb);
           attackers |=  (attacks_bb<BISHOP>(to, occ) & pieces(BISHOP, QUEEN))
                       | (attacks_bb<ROOK  >(to, occ) & pieces(ROOK, QUEEN));
       }
 
       else // KING
-          // If stm cannot "capture" legally with the king, stm lose, else stm wins
+          // stm is about to "capture" with his KING. If this is legal, stm lose, else stm wins
           return (attackers & ~pieces(stm)) ? stm != initialStm : stm == initialStm;
   }
-
-  assert(false); // will always return earlier.
+  
+  return (stm == initialStm);
 
 }
 
