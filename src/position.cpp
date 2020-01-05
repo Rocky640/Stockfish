@@ -51,40 +51,6 @@ const string PieceToChar(" PNBRQK  pnbrqk");
 constexpr Piece Pieces[] = { W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
                              B_PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING };
 
-// min_attacker() is a helper function used by see_ge() to locate the least
-// valuable attacker for the side to move, remove the attacker we just found
-// from the bitboards and scan for new X-ray attacks behind it.
-
-template<PieceType Pt>
-PieceType min_attacker(const Bitboard* byTypeBB, Square to, Bitboard stmAttackers,
-                       Bitboard& occupied, Bitboard& attackers) {
-
-  Bitboard b = stmAttackers & byTypeBB[Pt];
-  if (!b)
-      return min_attacker<PieceType(Pt + 1)>(byTypeBB, to, stmAttackers, occupied, attackers);
-
-  occupied ^= lsb(b); // Remove the attacker from occupied
-
-  // Add any X-ray attack behind the just removed piece. For instance with
-  // rooks in a8 and a7 attacking a1, after removing a7 we add rook in a8.
-  // Note that new added attackers can be of any color.
-  if (Pt == PAWN || Pt == BISHOP || Pt == QUEEN)
-      attackers |= attacks_bb<BISHOP>(to, occupied) & (byTypeBB[BISHOP] | byTypeBB[QUEEN]);
-
-  if (Pt == ROOK || Pt == QUEEN)
-      attackers |= attacks_bb<ROOK>(to, occupied) & (byTypeBB[ROOK] | byTypeBB[QUEEN]);
-
-  // X-ray may add already processed pieces because byTypeBB[] is constant: in
-  // the rook example, now attackers contains _again_ rook in a7, so remove it.
-  attackers &= occupied;
-  return Pt;
-}
-
-template<>
-PieceType min_attacker<KING>(const Bitboard*, Square, Bitboard, Bitboard&, Bitboard&) {
-  return KING; // No need to update bitboards: it is the last cycle
-}
-
 } // namespace
 
 
@@ -1039,88 +1005,126 @@ Key Position::key_after(Move m) const {
   return k ^ Zobrist::psq[pc][to] ^ Zobrist::psq[pc][from];
 }
 
-
-/// Position::see_ge (Static Exchange Evaluation Greater or Equal) tests if the
-/// SEE value of move is greater or equal to the given threshold. We'll use an
-/// algorithm similar to alpha-beta pruning with a null window.
-
 bool Position::see_ge(Move m, Value threshold) const {
 
   assert(is_ok(m));
+
+  // decisive_take is a helper function to update the balance and find if we can stop.
+  auto decisive_take = [&](int &balance, Value takerValue) {
+      
+      assert(balance < VALUE_ZERO);
+
+      // Negamax the balance with alpha = balance, beta = balance + 1 and
+      // add nextVictim's value.
+      //
+      //      (balance, balance + 1) -> (-balance - 1, -balance)
+      //
+
+      balance = -takerValue - balance - 1;
+
+      // If the balance is positive, it means that even if the piece with takerValue
+      // is lost, his owner (stm) is ahead and wins the SEE, so no need to consider more captures,
+      // and the algorithm can stop.
+      return balance >= 0;
+  };
 
   // Only deal with normal moves, assume others pass a simple see
   if (type_of(m) != NORMAL)
       return VALUE_ZERO >= threshold;
 
-  Bitboard stmAttackers;
   Square from = from_sq(m), to = to_sq(m);
-  PieceType nextVictim = type_of(piece_on(from));
-  Color us = color_of(piece_on(from));
-  Color stm = ~us; // First consider opponent's move
-  Value balance;   // Values of the pieces taken by us minus opponent's ones
 
+#if true 
+  int bal = -PieceValue[MG][piece_on(to)] + threshold - 1;
   // The opponent may be able to recapture so this is the best result
   // we can hope for.
-  balance = PieceValue[MG][piece_on(to)] - threshold;
 
-  if (balance < VALUE_ZERO)
+  if (bal >= 0)
+      return false; // Move m is not good enough compared to given threshold
+
+#else
+  //same result as above, but harder to "explain"
+  int bal = -threshold;
+
+  // Note that the "to" square can be empty.
+  if (decisive_take(bal, PieceValue[MG][piece_on(to)]))
       return false;
+#endif
 
-  // Now assume the worst possible result: that the opponent can
-  // capture our piece for free.
-  balance -= PieceValue[MG][nextVictim];
-
-  // If it is enough (like in PxQ) then return immediately. Note that
-  // in case nextVictim == KING we always return here, this is ok
-  // if the given move is legal.
-  if (balance >= VALUE_ZERO)
+  assert(bal < VALUE_ZERO);
+  
+  // If taking on square "to" is enough (like in PxQ) then return immediately.
+  // Note that in case piece on "from" is a KING we always return here,
+  // because bal will switch sign. This is ok if the given move m is legal.
+  if (decisive_take(bal, PieceValue[MG][piece_on(from)]))
       return true;
+  
+  Bitboard occ = pieces() ^ from ^ to;
+  Color initialStm = color_of(piece_on(from));
+  Color stm = initialStm; // stm will alternate as moves are being played.
 
-  // Find all attackers to the destination square, with the moving piece
-  // removed, but possibly an X-ray attacker added behind it.
-  Bitboard occupied = pieces() ^ from ^ to;
-  Bitboard attackers = attackers_to(to, occupied) & occupied;
+  Bitboard attackers = attackers_to(to, occ); // pieces from either color attacking "to"
+  Bitboard stmAttackers, bb;
 
   while (true)
   {
-      stmAttackers = attackers & pieces(stm);
+      stm = ~stm;
+      attackers &= occ;
+
+      // If stm has no more attackers, he stays with his negative balance and lose
+      if (!(stmAttackers = attackers & pieces(stm)))
+          return (initialStm != stm); //stm lose
 
       // Don't allow pinned pieces to attack (except the king) as long as
-      // any pinners are on their original square.
-      if (st->pinners[~stm] & occupied)
+      // there are pinners on their original square.
+      if (st->pinners[~stm] & occ)
           stmAttackers &= ~st->blockersForKing[stm];
 
-      // If stm has no more attackers then give up: stm loses
       if (!stmAttackers)
-          break;
+          return (initialStm != stm); //stm lose
 
-      // Locate and remove the next least valuable attacker, and add to
-      // the bitboard 'attackers' the possibly X-ray attackers behind it.
-      nextVictim = min_attacker<PAWN>(byTypeBB, to, stmAttackers, occupied, attackers);
+      // Locate the next least valuable attacker (LVA) for stm.
+      // If stm can do a decisive take, stm wins and we exit.
+      // Otherwise we remove the LVA from the occ bitboard, and
+      // if there is an X-ray attacker behind it, it is added to the attackers.
 
-      stm = ~stm; // Switch side to move
-
-      // Negamax the balance with alpha = balance, beta = balance+1 and
-      // add nextVictim's value.
-      //
-      //      (balance, balance+1) -> (-balance-1, -balance)
-      //
-      assert(balance < VALUE_ZERO);
-
-      balance = -balance - 1 - PieceValue[MG][nextVictim];
-
-      // If balance is still non-negative after giving away nextVictim then we
-      // win. The only thing to be careful about it is that we should revert
-      // stm if we captured with the king when the opponent still has attackers.
-      if (balance >= VALUE_ZERO)
-      {
-          if (nextVictim == KING && (attackers & pieces(stm)))
-              stm = ~stm;
-          break;
+      if ((bb = stmAttackers & pieces(PAWN))) {
+          if (decisive_take(bal, PawnValueMg)) return (stm == initialStm);
+          occ ^= lsb(bb);
+          attackers |= attacks_bb<BISHOP>(to, occ) & pieces(BISHOP, QUEEN);
       }
-      assert(nextVictim != KING);
+
+      else if ((bb = stmAttackers & pieces(KNIGHT))) {
+          if (decisive_take(bal, KnightValueMg)) return (stm == initialStm);
+          occ ^= lsb(bb);
+      }
+
+      else if ((bb = stmAttackers & pieces(BISHOP))) {
+          if (decisive_take(bal, BishopValueMg)) return (stm == initialStm);
+          occ ^= lsb(bb);
+          attackers |= attacks_bb<BISHOP>(to, occ) & pieces(BISHOP, QUEEN);
+      }
+
+      else if ((bb = stmAttackers & pieces(ROOK))) {
+          if (decisive_take(bal, RookValueMg))  return (stm == initialStm);
+          occ ^= lsb(bb);
+          attackers |= attacks_bb<ROOK>(to, occ) & pieces(ROOK, QUEEN);
+      }
+
+      else if ((bb = stmAttackers & pieces(QUEEN))) {
+          if (decisive_take(bal, QueenValueMg)) return (stm == initialStm);
+          occ ^= lsb(bb);
+          attackers |=  (attacks_bb<BISHOP>(to, occ) & pieces(BISHOP, QUEEN))
+                      | (attacks_bb<ROOK  >(to, occ) & pieces(ROOK, QUEEN));
+      }
+
+      else // KING
+          // If stm cannot "capture" legally with the king, stm lose, else stm wins
+          return (attackers & ~pieces(stm)) ? stm != initialStm : stm == initialStm;
   }
-  return us != stm; // We break the above loop when stm loses
+
+  assert(false); // will always return earlier.
+
 }
 
 
