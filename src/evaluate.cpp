@@ -185,6 +185,10 @@ namespace {
     // color, including x-rays. But diagonal x-rays through pawns are not computed.
     Bitboard attackedBy2[COLOR_NB];
 
+    // xRayDefense[color] are the squares attacked by a bishop through opponent bishop,
+    // or by a rook through opponent rook.
+    Bitboard xRayDefense[COLOR_NB];
+
     // kingRing[color] are the squares adjacent to the king plus some other
     // very near squares, depending on king position.
     Bitboard kingRing[COLOR_NB];
@@ -234,6 +238,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
+    xRayDefense[Us] = 0;
 
     // Init our king safety tables
     Square s = make_square(clamp(file_of(ksq), FILE_B, FILE_G),
@@ -351,6 +356,12 @@ namespace {
                     score -= TrappedRook * (1 + !pos.castling_rights(Us));
             }
         }
+
+        
+        if (Pt == ROOK || Pt == BISHOP)
+            // Add x-ray attacks through same piece type.
+            // This will help to find pieces which are hanging.
+            xRayDefense[Us] |= attacks_bb<Pt>(s, pos.pieces() ^ pos.pieces(Pt));
 
         if (Pt == QUEEN)
         {
@@ -514,7 +525,7 @@ namespace {
         if (weak & attackedBy[Us][KING])
             score += ThreatByKing;
 
-        b =  ~attackedBy[Them][ALL_PIECES]
+        b = ~(attackedBy[Them][ALL_PIECES] | (xRayDefense[Them] & ~attackedBy2[Us]))
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
     }
