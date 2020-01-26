@@ -698,8 +698,8 @@ namespace {
   template<Tracing T>
   Score Evaluation<T>::initiative(Score score) const {
 
-    Value mg = mg_value(score);
-    Value eg = eg_value(score);
+    Value mg = mg_value(score) * 3 / 4;
+    Value eg = eg_value(score) * 3 / 4;
 
     int outflanking =  distance<File>(pos.square<KING>(WHITE), pos.square<KING>(BLACK))
                      - distance<Rank>(pos.square<KING>(WHITE), pos.square<KING>(BLACK));
