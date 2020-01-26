@@ -770,6 +770,10 @@ namespace {
 
     assert(!pos.checkers());
 
+    auto f = [&](Score s, int w) {
+      return (s * w) / 16;
+    };
+
     // Probe the material hash table
     me = Material::probe(pos);
 
@@ -785,7 +789,7 @@ namespace {
 
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
-    score += pe->pawn_score(WHITE) - pe->pawn_score(BLACK);
+    score += f(pe->pawn_score(WHITE) - pe->pawn_score(BLACK), 15);
 
     // Early exit if score is high
     Value v = (mg_value(score) + eg_value(score)) / 2;
@@ -806,8 +810,8 @@ namespace {
     score += mobility[WHITE] - mobility[BLACK];
 
     score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
+            + f(threats<WHITE>() - threats<BLACK>(), 15)
+            + f(passed< WHITE>() - passed< BLACK>(), 12)
             + space<  WHITE>() - space<  BLACK>();
 
     score += initiative(score);
