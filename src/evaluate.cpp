@@ -148,6 +148,9 @@ namespace {
   constexpr Score TrappedRook        = S( 52, 30);
   constexpr Score WeakQueen          = S( 49, 15);
 
+  int factors[12] = {64,64,64,64,64,64,64,64,64,64,64,32};
+  TUNE (factors);
+
 #undef S
 
   // Evaluation class computes and stores attacks tables and other working data
@@ -168,7 +171,7 @@ namespace {
     template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
     ScaleFactor scale_factor(Value eg) const;
-    Score initiative(Score score) const;
+    Score initiative(Score score, Score materialScore) const;
 
     const Position& pos;
     Material::Entry* me;
@@ -696,7 +699,10 @@ namespace {
   // known attacking/defending status of the players.
 
   template<Tracing T>
-  Score Evaluation<T>::initiative(Score score) const {
+  Score Evaluation<T>::initiative(Score score, Score materialScore) const {
+
+    //score = (score * 2 - materialScore) / 2;
+    score = (score * factors[10] - materialScore * factors[11]) / 64;
 
     Value mg = mg_value(score);
     Value eg = eg_value(score);
@@ -785,12 +791,15 @@ namespace {
 
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
-    score += pe->pawn_score(WHITE) - pe->pawn_score(BLACK);
+    score += (pe->pawn_score(WHITE) - pe->pawn_score(BLACK)) * factors[0] / 64;
 
     // Early exit if score is high
     Value v = (mg_value(score) + eg_value(score)) / 2;
     if (abs(v) > LazyThreshold + pos.non_pawn_material() / 64)
        return pos.side_to_move() == WHITE ? v : -v;
+
+    // Remember this
+    Score materialScore = score;
 
     // Main evaluation begins here
 
@@ -798,19 +807,19 @@ namespace {
     initialize<BLACK>();
 
     // Pieces should be evaluated first (populate attack tables)
-    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+    score +=  ((pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()) * factors[1]
+            + (pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()) * factors[2]
+            + (pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()) * factors[3]
+            + (pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >()) * factors[4])/64;
 
-    score += mobility[WHITE] - mobility[BLACK];
+    score += ((mobility[WHITE] - mobility[BLACK]) * factors[5])/64;
 
-    score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
-            + space<  WHITE>() - space<  BLACK>();
+    score +=  ((king<   WHITE>() - king<   BLACK>()) * factors[6]
+            + (threats<WHITE>() - threats<BLACK>()) * factors[7]
+            + (passed< WHITE>() - passed< BLACK>()) * factors[8]
+            + (space<  WHITE>() - space<  BLACK>()) * factors[9])/64;
 
-    score += initiative(score);
+    score += initiative(score, materialScore);
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
