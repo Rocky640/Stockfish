@@ -759,6 +759,8 @@ namespace {
 
     return ScaleFactor(sf);
   }
+  
+
 
 
   // Evaluation::value() is the main function of the class. It computes the various
@@ -769,6 +771,10 @@ namespace {
   Value Evaluation<T>::value() {
 
     assert(!pos.checkers());
+
+    auto f = [&](Score s, int w) {
+      return (s * w) / 64;
+    };
 
     // Probe the material hash table
     me = Material::probe(pos);
@@ -785,7 +791,7 @@ namespace {
 
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
-    score += pe->pawn_score(WHITE) - pe->pawn_score(BLACK);
+    score += f(pe->pawn_score(WHITE) - pe->pawn_score(BLACK), 55);
 
     // Early exit if score is high
     Value v = (mg_value(score) + eg_value(score)) / 2;
@@ -805,10 +811,10 @@ namespace {
 
     score += mobility[WHITE] - mobility[BLACK];
 
-    score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
-            + space<  WHITE>() - space<  BLACK>();
+    score +=  f(king<   WHITE>() - king<   BLACK>(), 58)
+            + f(threats<WHITE>() - threats<BLACK>(), 49)
+            + f(passed< WHITE>() - passed< BLACK>(), 32)
+            + f(space<  WHITE>() - space<  BLACK>(), 59);
 
     score += initiative(score);
 
