@@ -811,7 +811,7 @@ namespace {
 
     score +=  king<   WHITE>() - king<   BLACK>()
             + f(threats<WHITE>() - threats<BLACK>(), 15)
-            + f(passed< WHITE>() - passed< BLACK>(), 12)
+            + f(passed< WHITE>() - passed< BLACK>(), 15)
             + space<  WHITE>() - space<  BLACK>();
 
     score += initiative(score);
