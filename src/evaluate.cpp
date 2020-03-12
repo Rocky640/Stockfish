@@ -121,7 +121,7 @@ namespace {
     S(0, 0), S(2, 44), S(36, 71), S(36, 61), S(0, 38), S(51, 38)
   };
   
-  //ThreatBySafePawn/ByPawnPush[base bonus/extra center bonus]
+  //ThreatBySafePawn/ByPawnPush[base bonus/extra edge bonus]
   constexpr Score ThreatBySafePawn[2] = {
     S(173-17, 94-9),  S(34, 18)
   };
@@ -542,7 +542,7 @@ namespace {
     b = pos.pieces(Us, PAWN) & safe;
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
      score +=  ThreatBySafePawn[0] * popcount(b)
-             + ThreatBySafePawn[1] * popcount(b & CenterFiles);
+             + ThreatBySafePawn[1] * popcount(b & ~CenterFiles);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
@@ -554,7 +554,7 @@ namespace {
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatByPawnPush[0] * popcount(b)
-            +ThreatByPawnPush[1] * popcount(b & CenterFiles);
+            +ThreatByPawnPush[1] * popcount(b & ~CenterFiles);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
