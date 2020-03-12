@@ -120,6 +120,15 @@ namespace {
   constexpr Score ThreatByRook[PIECE_TYPE_NB] = {
     S(0, 0), S(2, 44), S(36, 71), S(36, 61), S(0, 38), S(51, 38)
   };
+  
+  //ThreatBySafePawn/ByPawnPush[base bonus/extra center bonus]
+  constexpr Score ThreatBySafePawn[2] = {
+    S(173-17, 94-9),  S(34, 18)
+  };
+
+  constexpr Score ThreatByPawnPush[2] = {
+    S( 48-5, 39-4) , S( 10, 8)
+  };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   constexpr Score PassedRank[RANK_NB] = {
@@ -142,8 +151,6 @@ namespace {
   constexpr Score RookOnQueenFile     = S(  7,  6);
   constexpr Score SliderOnQueen       = S( 59, 18);
   constexpr Score ThreatByKing        = S( 24, 89);
-  constexpr Score ThreatByPawnPush    = S( 48, 39);
-  constexpr Score ThreatBySafePawn    = S(173, 94);
   constexpr Score TrappedRook         = S( 52, 10);
   constexpr Score WeakQueen           = S( 49, 15);
   constexpr Score WeakQueenProtection = S( 14,  0);
@@ -534,7 +541,8 @@ namespace {
     // Bonus for attacking enemy pieces with our relatively safe pawns
     b = pos.pieces(Us, PAWN) & safe;
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatBySafePawn * popcount(b);
+     score +=  ThreatBySafePawn[0] * popcount(b)
+             + ThreatBySafePawn[1] * popcount(b & CenterFiles);
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
@@ -545,7 +553,8 @@ namespace {
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush[0] * popcount(b)
+            +ThreatByPawnPush[1] * popcount(b & CenterFiles);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
