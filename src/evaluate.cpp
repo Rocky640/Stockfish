@@ -281,6 +281,13 @@ namespace {
         {
             kingAttackersCount[Us]++;
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
+
+            if (Pt == BISHOP)
+            {
+               bool opposedBishop = ((DarkSquares & s) ? DarkSquares : ~DarkSquares) & pos.pieces(Them,BISHOP);
+               kingAttackersWeight[Us] += 11 * !opposedBishop;
+            }
+
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
