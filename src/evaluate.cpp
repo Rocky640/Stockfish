@@ -91,15 +91,15 @@ namespace {
   // MobilityBonus[PieceType-2][attacked] contains bonuses for middle and end game,
   // indexed by piece type and number of attacked squares in the mobility area.
   constexpr Score MobilityBonus[][32] = {
-    { S(-62,-81), S(-53,-56), S(-12,-30), S( -4,-14), S(  3,  8), S( 13, 15), // Knights
+    { S(-62,-81), S(-53,-56), S(-12,-30), S( -4,-14), S(  3,  8), S( 13, 15), // Knight
       S( 22, 23), S( 28, 27), S( 33, 33) },
-    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
+    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishop
       S( 55, 54), S( 63, 57), S( 63, 65), S( 68, 73), S( 81, 78), S( 81, 86),
       S( 91, 88), S( 98, 97) },
-    { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rooks
+    { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rook
       S(  9,112), S( 16,118), S( 30,132), S( 29,142), S( 32,155), S( 38,165),
       S( 46,166), S( 48,169), S( 58,171) },
-    { S(-39,-36), S(-21,-15), S(  3,  8), S(  3, 18), S( 14, 34), S( 22, 54), // Queens
+    { S(-39,-36), S(-21,-15), S(  3,  8), S(  3, 18), S( 14, 34), S( 22, 54), // Queen
       S( 28, 61), S( 41, 73), S( 43, 79), S( 48, 92), S( 56, 94), S( 60,104),
       S( 60,113), S( 66,120), S( 67,123), S( 70,126), S( 71,133), S( 73,136),
       S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
@@ -290,21 +290,25 @@ namespace {
 
         if (Pt == BISHOP || Pt == KNIGHT)
         {
-            // Bonus if piece is on an outpost square or can reach one
-            bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
-            if (bb & s)
-                score += Outpost * (Pt == KNIGHT ? 2 : 1);
-
-            else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
-                score += Outpost;
-
-            // Knight and Bishop bonus for being right behind a pawn
+            // Bonus for minor piece being right behind a pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
                 score += MinorBehindPawn;
 
             // Penalty if the piece is far from the king
             score -= KingProtector * distance(s, pos.square<KING>(Us));
 
+            if (Pt == KNIGHT)
+            {
+                // Bonus for knight which is on a pawn-protected outpost square or can reach one
+                bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
+                if (bb & s)
+                    score += Outpost * 2;
+
+                else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
+                    score += Outpost;
+            }
+
+            
             if (Pt == BISHOP)
             {
                 // Penalty according to number of pawns on the same color square as the
