@@ -141,6 +141,7 @@ namespace {
   constexpr Score RestrictedPiece     = S(  7,  7);
   constexpr Score RookOnQueenFile     = S(  7,  6);
   constexpr Score SliderOnQueen       = S( 59, 18);
+  constexpr Score SquareControl       = S(  7,  7);
   constexpr Score ThreatByKing        = S( 24, 89);
   constexpr Score ThreatByPawnPush    = S( 48, 39);
   constexpr Score ThreatBySafePawn    = S(173, 94);
@@ -225,9 +226,11 @@ namespace {
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
 
-    // Squares occupied by those pawns, by our king or queen, by blockers to attacks on our king
-    // or controlled by enemy pawns are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pos.blockers_for_king(Us) | pe->pawn_attacks(Them));
+    // Consider also squares controlled by enemy pawns, or occupied by our king, queen, or pinned pieces
+    b |= pe->pawn_attacks(Them) | pos.pieces(Us, KING, QUEEN) | pos.blockers_for_king(Us);
+
+    // Exclude all those squares from our mobility area.
+    mobilityArea[Us] = ~b;
 
     // Initialize attackedBy[] for king and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
@@ -480,9 +483,11 @@ namespace {
   template<Tracing T> template<Color Us>
   Score Evaluation<T>::threats() const {
 
-    constexpr Color     Them     = ~Us;
-    constexpr Direction Up       = pawn_push(Us);
-    constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Color     Them      = ~Us;
+    constexpr Direction Up        = pawn_push(Us);
+    constexpr Bitboard  WhiteCamp = Rank1BB | Rank2BB | Rank3BB | Rank4BB;
+    constexpr Bitboard  TRank3BB  = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  Camp      = (Us == WHITE ? WhiteCamp : ~WhiteCamp);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -531,6 +536,9 @@ namespace {
 
     // Protected or unattacked squares
     safe = ~attackedBy[Them][ALL_PIECES] | attackedBy[Us][ALL_PIECES];
+
+    // Bonus for control in our Camp
+    score += SquareControl * popcount(safe & Camp);
 
     // Bonus for attacking enemy pieces with our relatively safe pawns
     b = pos.pieces(Us, PAWN) & safe;
