@@ -146,7 +146,8 @@ namespace {
 
         else if (backward)
             score -=   Backward
-                     + WeakUnopposed * !opposed;
+                     + WeakUnopposed * !opposed
+                     + Isolated * !opposed * !(e->pawnAttacks[Us] & neighbours);
 
         if (!support)
             score -=   Doubled * doubled
