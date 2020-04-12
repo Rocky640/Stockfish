@@ -222,12 +222,21 @@ namespace {
 
     Bitboard dblAttackByPawn = pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
 
-    // Find our pawns that are blocked or on the first two ranks
-    Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+    
+    Bitboard b;
 
-    // Squares occupied by those pawns, by our king or queen, by blockers to attacks on our king
+    if (pos.count<PAWN>(Us) < 7)
+    {
+        // Find our pawns that are blocked or on the first two ranks, and our blocking pieces
+        b  = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
+        b |= pos.pieces(Us, KING, QUEEN);
+    }
+    else
+        b  = pos.pieces(Us);
+
+    // Squares occupied by those pieces, by blockers to attacks on our king
     // or controlled by enemy pawns are excluded from the mobility area.
-    mobilityArea[Us] = ~(b | pos.pieces(Us, KING, QUEEN) | pos.blockers_for_king(Us) | pe->pawn_attacks(Them));
+    mobilityArea[Us] = ~(b | pos.blockers_for_king(Us) | pe->pawn_attacks(Them));
 
     // Initialize attackedBy[] for king and pawns
     attackedBy[Us][KING] = pos.attacks_from<KING>(ksq);
