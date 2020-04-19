@@ -523,8 +523,8 @@ namespace {
 
         score += WeakQueenProtection * popcount(weak & attackedBy[Them][QUEEN]);
 
-        // Weak pawn defended by rook just behind
-        b = weak & attackedBy[Them][ROOK] & HighRanks & pos.pieces(PAWN) & ~attackedBy[Us][PAWN];
+        // Bonus for attacking a non levered weak pawn defended by a rook just behind
+        b = weak & HighRanks & pos.pieces(PAWN) & ~attackedBy[Us][PAWN];
         if (shift<Up>(b) & pos.pieces(Them, ROOK))
             score += WeakRookProtection;
     }
