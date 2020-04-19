@@ -525,7 +525,7 @@ namespace {
         score += WeakQueenProtection * popcount(weak & attackedBy[Them][QUEEN]);
 
         // ... if weak piece on opponent low ranks with some rook behind
-        b = weak & attackedBy[Them][ROOK] & HighRanks;
+        b = weak & attackedBy[Them][ROOK] & HighRanks & pos.pieces(PAWN);
         while (b)
             score += WeakRookProtection * bool(forward_file_bb(Us, pop_lsb(&b)) & pos.pieces(Them, ROOK));
     }
