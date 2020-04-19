@@ -521,13 +521,12 @@ namespace {
            | (nonPawnEnemies & attackedBy2[Us]);
         score += Hanging * popcount(weak & b);
 
-        // Additional bonus if weak piece is only protected by a queen
         score += WeakQueenProtection * popcount(weak & attackedBy[Them][QUEEN]);
 
-        // ... if weak piece on opponent low ranks with some rook behind
-        b = weak & attackedBy[Them][ROOK] & HighRanks & pos.pieces(PAWN);
-        while (b)
-            score += WeakRookProtection * bool(forward_file_bb(Us, pop_lsb(&b)) & pos.pieces(Them, ROOK));
+        // Weak pawn defended by rook just behind
+        b = weak & attackedBy[Them][ROOK] & HighRanks & pos.pieces(PAWN) & ~attackedBy[Us][PAWN];
+        if (shift<Up>(b) & pos.pieces(Them, ROOK))
+            score += WeakRookProtection;
     }
 
     // Bonus for restricting their piece moves
