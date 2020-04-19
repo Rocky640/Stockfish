@@ -145,6 +145,7 @@ namespace {
   constexpr Score ThreatByPawnPush    = S( 48, 39);
   constexpr Score ThreatBySafePawn    = S(173, 94);
   constexpr Score TrappedRook         = S( 55, 13);
+  constexpr Score WeakRookProtection  = S( 10, 10);
   constexpr Score WeakQueen           = S( 51, 14);
   constexpr Score WeakQueenProtection = S( 15,  0);
 
@@ -480,9 +481,10 @@ namespace {
   template<Tracing T> template<Color Us>
   Score Evaluation<T>::threats() const {
 
-    constexpr Color     Them     = ~Us;
-    constexpr Direction Up       = pawn_push(Us);
-    constexpr Bitboard  TRank3BB = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Color     Them      = ~Us;
+    constexpr Direction Up        = pawn_push(Us);
+    constexpr Bitboard  TRank3BB  = (Us == WHITE ? Rank3BB : Rank6BB);
+    constexpr Bitboard  HighRanks = (Us == WHITE ? Rank6BB | Rank7BB : Rank3BB | Rank2BB);
 
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safe;
     Score score = SCORE_ZERO;
@@ -521,6 +523,11 @@ namespace {
 
         // Additional bonus if weak piece is only protected by a queen
         score += WeakQueenProtection * popcount(weak & attackedBy[Them][QUEEN]);
+
+        // ... if weak piece on opponent low ranks with some rook behind
+        b = weak & attackedBy[Them][ROOK] & HighRanks;
+        while (b)
+            score += WeakRookProtection * bool(forward_file_bb(Us, pop_lsb(&b)) & pos.pieces(Them, ROOK));
     }
 
     // Bonus for restricting their piece moves
