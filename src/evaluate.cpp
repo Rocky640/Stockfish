@@ -562,8 +562,8 @@ namespace {
         b |= attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s);
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
 
-        b  = attackedBy[Us][QUEEN ] & pos.attacks_from<QUEEN >(s);
-        score += QueenCanTrade * popcount(b & safe & attackedBy2[Us] & ~attackedBy2[Them]);
+        b  = (attackedBy[Us][QUEEN ] | pos.pieces(Us, QUEEN)) & pos.attacks_from<QUEEN >(s);
+        score += QueenCanTrade * bool(b & safe & attackedBy2[Us] & ~attackedBy2[Them]);
     }
 
     if (T)
