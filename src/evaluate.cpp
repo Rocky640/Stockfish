@@ -555,12 +555,10 @@ namespace {
         safe = mobilityArea[Us] & ~stronglyProtected;
 
         b = attackedBy[Us][KNIGHT] & pos.attacks_from<KNIGHT>(s);
-
         score += KnightOnQueen * popcount(b & safe);
 
-        b =  (attackedBy[Us][BISHOP] & pos.attacks_from<BISHOP>(s))
-           | (attackedBy[Us][ROOK  ] & pos.attacks_from<ROOK  >(s));
-
+        b  = (attackedBy[Us][BISHOP] | attackedBy[Us][QUEEN]) & pos.attacks_from<BISHOP>(s);
+        b |= (attackedBy[Us][ROOK  ] | attackedBy[Us][QUEEN]) & pos.attacks_from<ROOK  >(s);
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
 
