@@ -563,7 +563,7 @@ namespace {
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
 
         b  = attackedBy[Us][QUEEN ] & pos.attacks_from<QUEEN >(s);
-        score += QueenCanTrade * popcount(b & safe & attackedBy2[Us] & ~attackedBy2[Them]);
+        score += QueenCanTrade * std::min(2, popcount(b & safe & attackedBy2[Us] & ~attackedBy2[Them]));
     }
 
     if (T)
