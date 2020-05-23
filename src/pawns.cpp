@@ -148,8 +148,8 @@ namespace {
             score -=   Isolated
                      + WeakUnopposed * !opposed;
 
-            if (   (ourPawns & forward_file_bb(Them, s))
-                && !more_than_one(stoppers))
+            if (   (ourPawns & forward_file_bb(Us, s))
+                && (stoppers == opposed))
                 score -= DoubledIsolated;
         }
 
