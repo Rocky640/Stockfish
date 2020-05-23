@@ -149,8 +149,7 @@ namespace {
                      + WeakUnopposed * !opposed;
 
             if (   (ourPawns & forward_file_bb(Them, s))
-                && popcount(opposed) == 1
-                && !(theirPawns & adjacent_files_bb(s)))
+                && !more_than_one(stoppers))
                 score -= DoubledIsolated;
         }
 
