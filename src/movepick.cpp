@@ -122,6 +122,12 @@ void MovePicker::score() {
                        + (*continuationHistory[0])[pos.moved_piece(m)][to_sq(m)]
                        - (1 << 28);
       }
+      
+      if (type_of(pos.moved_piece(m)) == KNIGHT && PseudoAttacks[KNIGHT][to_sq(m)] & pos.pieces(Them))
+          m.value += 50;
+      if (PawnAttacks[pos.side_to_move()][to_sq(m)] & pos.pieces(Them, PAWN))
+          m.value -= 50;
+      
 }
 
 /// MovePicker::select() returns the next move satisfying a predicate function.
