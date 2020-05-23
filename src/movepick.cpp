@@ -126,9 +126,9 @@ void MovePicker::score() {
       Color stm = pos.side_to_move();
       if (   type_of(pos.moved_piece(m)) == KNIGHT
           && PseudoAttacks[KNIGHT][to_sq(m)] & pos.pieces(~stm))
-          m.value += 50;
+          m.value += 20;
       if (PawnAttacks[stm][to_sq(m)] & pos.pieces(~stm, PAWN))
-          m.value -= 50;
+          m.value -= 20;
   }
 }
 
