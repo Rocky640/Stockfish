@@ -287,6 +287,11 @@ namespace {
             kingAttackersWeight[Us] += KingAttackWeights[Pt];
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
+        
+        if (Pt == QUEEN && (attackedBy[Them][BISHOP] & s))
+            b &= ~attackedBy[Them][BISHOP];
+        if (Pt == QUEEN && (attackedBy[Them][ROOK] & s))
+            b &= ~attackedBy[Them][ROOK];
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -819,11 +824,12 @@ namespace {
     initialize<BLACK>();
 
     // Pieces evaluated first (also populates attackedBy, attackedBy2).
-    // Note that the order of evaluation of the terms is left unspecified
+    // Note that the order of evaluation of the terms is left unspecified,
+    // except for queen which must be last.
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
             + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >();
+    score +=  pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
 
