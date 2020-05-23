@@ -100,18 +100,23 @@ void MovePicker::score() {
   static_assert(Type == CAPTURES || Type == QUIETS || Type == EVASIONS, "Wrong type");
 
   for (auto& m : *this)
-  {
       if (Type == CAPTURES)
           m.value =  int(PieceValue[MG][pos.piece_on(to_sq(m))]) * 6
                    + (*captureHistory)[pos.moved_piece(m)][to_sq(m)][type_of(pos.piece_on(to_sq(m)))];
 
       else if (Type == QUIETS)
+      {
           m.value =      (*mainHistory)[pos.side_to_move()][from_to(m)]
                    + 2 * (*continuationHistory[0])[pos.moved_piece(m)][to_sq(m)]
                    + 2 * (*continuationHistory[1])[pos.moved_piece(m)][to_sq(m)]
                    + 2 * (*continuationHistory[3])[pos.moved_piece(m)][to_sq(m)]
                    +     (*continuationHistory[5])[pos.moved_piece(m)][to_sq(m)]
                    + (ply < MAX_LPH ?  4 * (*lowPlyHistory)[ply][from_to(m)] : 0);
+
+          if (   type_of(pos.moved_piece(m)) == KNIGHT
+              && PseudoAttacks[KNIGHT][to_sq(m)] & pos.pieces(~pos.side_to_move()))
+              m.value += 20;
+      }
 
       else // Type == EVASIONS
       {
@@ -123,13 +128,7 @@ void MovePicker::score() {
                        + (*continuationHistory[0])[pos.moved_piece(m)][to_sq(m)]
                        - (1 << 28);
       }
-      Color stm = pos.side_to_move();
-      if (   type_of(pos.moved_piece(m)) == KNIGHT
-          && PseudoAttacks[KNIGHT][to_sq(m)] & pos.pieces(~stm))
-          m.value += 20;
-      if (PawnAttacks[stm][to_sq(m)] & pos.pieces(~stm, PAWN))
-          m.value -= 20;
-  }
+
 }
 
 /// MovePicker::select() returns the next move satisfying a predicate function.
