@@ -314,7 +314,7 @@ namespace {
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += mob * (Pt == KNIGHT) ? KnightOutpost : BishopOutpost;
+                score += ((Pt == KNIGHT) ? KnightOutpost : BishopOutpost) * mob;
             else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
                 score += ReachableOutpost;
 
