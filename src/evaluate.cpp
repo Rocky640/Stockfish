@@ -272,7 +272,7 @@ namespace {
     for (Square s = *pl; s != SQ_NONE; s = *++pl)
     {
         // Find attacked squares, including x-ray attacks for bishops and rooks
-        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
+        b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces(PAWN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
                          : attacks_bb<Pt>(s, pos.pieces());
 
@@ -292,9 +292,6 @@ namespace {
 
         else if (Pt == ROOK && (file_bb(s) & kingRing[Them]))
             score += RookOnKingRing;
-
-        else if (Pt == BISHOP && (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & kingRing[Them]))
-            score += BishopOnKingRing;
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -331,7 +328,7 @@ namespace {
                 score -= BishopXRayPawns * popcount(attacks_bb<BISHOP>(s) & pos.pieces(Them, PAWN));
 
                 // Bonus for bishop on a long diagonal which can "see" both center squares
-                if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
+                if (more_than_one(b & Center))
                     score += LongDiagonalBishop;
 
                 // An important Chess960 pattern: a cornered bishop blocked by a friendly
