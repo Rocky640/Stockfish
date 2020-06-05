@@ -146,8 +146,8 @@ namespace {
   //averaga knightoupost mobiity is  5.3
   //average bishopoupost mobiity is  6.4
   
-  constexpr Score KnightOutpost       = S( 11,  7);
-  constexpr Score BishopOutpost       = S(  5,  4);
+  constexpr Score Outpost   [2] = { S( 28, 18), S( 15, 12) };
+  constexpr Score OutpostMob[2] = { S(  5,  3), S(  2,  2) };
   constexpr Score ReachableOutpost    = S( 31, 22);
   
   constexpr Score PassedFile          = S( 11,  8);
@@ -314,7 +314,7 @@ namespace {
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += ((Pt == KNIGHT) ? KnightOutpost : BishopOutpost) * mob;
+                score += Outpost[Pt - 1] + OutpostMob[Pt - 1] * mob;
             else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
                 score += ReachableOutpost;
 
