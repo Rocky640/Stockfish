@@ -143,11 +143,11 @@ namespace {
   //constexpr Score BishopOutpost       = S( 30, 23);  
   //constexpr Score ReachableOutpost    = S( 31, 22);
   
-  //averaga knightoupost mobiity is  5.3
-  //average bishopoupost mobiity is  6.4
-  
-  constexpr Score Outpost   [2] = { S( 28, 18), S( 15, 12) };
-  constexpr Score OutpostMob[2] = { S(  5,  3), S(  2,  2) };
+  //average knightoutpost mobiity is  5.3
+  //average bishopoutpost mobiity is  6.4
+
+  constexpr Score Outpost   [2] = { S( 46, 30), S( 24, 17) };
+  constexpr Score OutpostMob[2] = { S(  2,  1), S(  1,  1) };
   constexpr Score ReachableOutpost    = S( 31, 22);
   
   constexpr Score PassedFile          = S( 11,  8);
