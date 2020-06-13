@@ -562,9 +562,9 @@ namespace {
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatByPawnPush * popcount(b);
 
-    // Bonus for keeping both rooks when we have doubled pawns
+    // Penalty for keeping both rooks when we are stormed
     if (pos.count<ROOK>(Us) == 2 && (pe->semiopen_count(Us) > pe->semiopen_count(Them)))
-        score += make_score(10, 4);
+        score -= make_score(10, 4);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
