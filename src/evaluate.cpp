@@ -564,7 +564,7 @@ namespace {
 
     // Bonus for keeping both rooks when we have doubled pawns
     if (pos.count<ROOK>(Us) == 2 && (pe->semiopen_count(Us) > pe->semiopen_count(Them)))
-        score += RookOnFile[0];
+        score += make_score(10, 4);
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
