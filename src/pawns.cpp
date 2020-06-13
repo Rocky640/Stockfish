@@ -156,7 +156,7 @@ namespace {
 
         else if (backward)
             score -=   Backward
-                     + WeakUnopposed * !opposed;
+                     + WeakUnopposed * !opposed * (1 + more_than_one(neighbours));
 
         if (!support)
             score -=   Doubled * doubled
