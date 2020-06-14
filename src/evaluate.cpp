@@ -122,8 +122,9 @@ namespace {
   };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
+  // for rank_7, this is stored in psqt table for more accurate lazy eval
   constexpr Score PassedRank[RANK_NB] = {
-    S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(276, 260)
+    S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(0, 0)
   };
 
   // Assorted bonuses and penalties

@@ -86,6 +86,9 @@ constexpr Score Bonus[][RANK_NB][int(FILE_NB) / 2] = {
   }
 };
 
+constexpr Score R7Pawn = S(276, 260);
+#define R(mg, eg) S(mg, eg) + R7Pawn
+
 constexpr Score PBonus[RANK_NB][FILE_NB] =
   { // Pawn (asymmetric distribution)
    { },
@@ -94,9 +97,9 @@ constexpr Score PBonus[RANK_NB][FILE_NB] =
    { S( -8,  6), S(-23, -2), S(  6, -8), S( 20, -4), S( 40,-13), S( 17,-12), S(  4,-10), S(-12, -9) },
    { S( 13,  9), S(  0,  4), S(-13,  3), S(  1,-12), S( 11,-12), S( -2, -6), S(-13, 13), S(  5,  8) },
    { S( -5, 28), S(-12, 20), S( -7, 21), S( 22, 28), S( -8, 30), S( -5,  7), S(-15,  6), S(-18, 13) },
-   { S( -7,  0), S(  7,-11), S( -3, 12), S(-13, 21), S(  5, 25), S(-16, 19), S( 10,  4), S( -8,  7) }
+   { R( -7,  0), R(  7,-11), R( -3, 12), R(-13, 21), R(  5, 25), R(-16, 19), R( 10,  4), R( -8,  7) }
   };
-
+#undef R
 #undef S
 
 Score psq[PIECE_NB][SQUARE_NB];
