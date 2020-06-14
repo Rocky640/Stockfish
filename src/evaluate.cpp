@@ -578,6 +578,9 @@ namespace {
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
 
+    if (pos.non_pawn_material(Us) == BishopValueMg)
+        score -= make_score(20, 20) * pe->doubled_count(Us);
+
     if (T)
         Trace::add(THREAT, Us, score);
 

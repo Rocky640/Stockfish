@@ -84,7 +84,7 @@ namespace {
 
     Bitboard doubleAttackThem = pawn_double_attacks_bb<Them>(theirPawns);
 
-    e->passedPawns[Us] = 0;
+    e->passedPawns[Us] = e->doubledCount[Us] = 0;
     e->kingSquares[Us] = SQ_NONE;
     e->pawnAttacks[Us] = e->pawnAttacksSpan[Us] = pawn_attacks_bb<Us>(ourPawns);
     e->blockedCount += popcount(shift<Up>(ourPawns) & (theirPawns | doubleAttackThem));
@@ -102,7 +102,8 @@ namespace {
         stoppers   = theirPawns & passed_pawn_span(Us, s);
         lever      = theirPawns & pawn_attacks_bb(Us, s);
         leverPush  = theirPawns & pawn_attacks_bb(Us, s + Up);
-        doubled    = ourPawns   & (s - Up);
+
+        doubled    = ourPawns   & forward_file_bb(Us, s);
         neighbours = ourPawns   & adjacent_files_bb(s);
         phalanx    = neighbours & rank_bb(s);
         support    = neighbours & rank_bb(s - Up);
@@ -127,7 +128,7 @@ namespace {
                 || (   stoppers == blocked && r >= RANK_5
                     && (shift<Up>(support) & ~(theirPawns | doubleAttackThem)));
 
-        passed &= !(forward_file_bb(Us, s) & ourPawns);
+        passed &= !doubled;
 
         // Passed pawns will be properly scored later in evaluation when we have
         // full attack info.
@@ -159,8 +160,10 @@ namespace {
                      + WeakUnopposed * !opposed;
 
         if (!support)
-            score -=   Doubled * doubled
+            score -=   Doubled * bool(ourPawns & (s - Up));
                      + WeakLever * more_than_one(lever);
+
+        e->doubledCount[Us] += doubled;
     }
 
     return score;
