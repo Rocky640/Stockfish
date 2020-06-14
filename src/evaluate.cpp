@@ -338,7 +338,7 @@ namespace {
                 if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
                     score += LongDiagonalBishop;
 
-                if (shift<Down>(pos.pieces(Them, PAWN)) & (s - Down))
+               if (relative_rank(Us, s) < RANK_6 && (pos.pieces(Them, PAWN) & (s - Down - Down)))
                     score -= make_score(10, 10);
 
                 // An important Chess960 pattern: a cornered bishop blocked by a friendly
