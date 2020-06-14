@@ -856,7 +856,7 @@ namespace {
     }
 
     // Evaluation grain
-    v = (v / 16) * 16;
+    v = (v / 8) * 8;
 
     // Side to move point of view
     v = (pos.side_to_move() == WHITE ? v : -v) + Tempo;
