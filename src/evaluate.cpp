@@ -315,6 +315,11 @@ namespace {
             // Penalty if the piece is far from the king
             score -= (Pt == KNIGHT ? KnightKingProtector
                                    : BishopKingProtector) * distance(pos.square<KING>(Us), s);
+            if (Pt == KNIGHT)
+            {
+                if (relative_rank(Us, s) < RANK_5 && (pos.pieces(Them, PAWN) & (s - Down - Down - Down)))
+                    score -= make_score(10, 10);
+            }
 
             if (Pt == BISHOP)
             {
@@ -332,6 +337,9 @@ namespace {
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & Center))
                     score += LongDiagonalBishop;
+
+                if (shift<Down>(pos.pieces(Them, PAWN)) & (s - Down))
+                    score -= make_score(10, 10);
 
                 // An important Chess960 pattern: a cornered bishop blocked by a friendly
                 // pawn diagonally in front of it is a very serious problem, especially
