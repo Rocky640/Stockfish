@@ -706,7 +706,7 @@ namespace {
     behind |= shift<Down+Down>(behind);
 
     int bonus = popcount(safe) + popcount(behind & safe & ~attackedBy[Them][ALL_PIECES]);
-    int weight = pos.count<ALL_PIECES>(Us) - 3 - pe->doubled_count(Them) + std::min(pe->blocked_count(), 9);
+    int weight = pos.count<ALL_PIECES>(Us) - 3 - std::min(pe->blocked_count(), 9);
     Score score = make_score(bonus * weight * weight / 16, 0);
 
     if (T)
