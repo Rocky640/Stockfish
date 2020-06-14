@@ -160,7 +160,7 @@ namespace {
                      + WeakUnopposed * !opposed;
 
         if (!support)
-            score -=   Doubled * bool(ourPawns & (s - Up));
+            score -=   Doubled * bool(ourPawns & (s - Up))
                      + WeakLever * more_than_one(lever);
 
         e->doubledCount[Us] += doubled;
