@@ -578,9 +578,6 @@ namespace {
         score += SliderOnQueen * popcount(b & safe & attackedBy2[Us]);
     }
 
-    if (pos.non_pawn_material(Us) == BishopValueMg)
-        score -= make_score(20, 20) * pe->doubled_count(Us);
-
     if (T)
         Trace::add(THREAT, Us, score);
 
@@ -709,7 +706,7 @@ namespace {
     behind |= shift<Down+Down>(behind);
 
     int bonus = popcount(safe) + popcount(behind & safe & ~attackedBy[Them][ALL_PIECES]);
-    int weight = pos.count<ALL_PIECES>(Us) - 3 + std::min(pe->blocked_count(), 9);
+    int weight = pos.count<ALL_PIECES>(Us) - 3 + std::min(pe->blocked_count() + pe->doubled_count(Them), 9);
     Score score = make_score(bonus * weight * weight / 16, 0);
 
     if (T)
