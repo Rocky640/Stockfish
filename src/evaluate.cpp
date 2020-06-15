@@ -226,7 +226,7 @@ namespace {
     const Square ksq = pos.square<KING>(Us);
 
     Bitboard dblAttackByPawn = pawn_double_attacks_bb<Us>(pos.pieces(Us, PAWN));
-    dblAttackByPawn &= ~pawn_attacks_bb<Us>(pos.blockers_for_king(Us) & pos.pieces(Us, PAWN)) | attacks_bb<QUEEN>(ksq);
+    Bitboard pinnedPawnAttacks = pawn_attacks_bb<Us>(pos.blockers_for_king(Us) & pos.pieces(Us, PAWN)) & ~attacks_bb<QUEEN>(ksq);
 
     // Find our pawns that are blocked or on the first two ranks
     Bitboard b = pos.pieces(Us, PAWN) & (shift<Down>(pos.pieces()) | LowRanks);
@@ -237,7 +237,7 @@ namespace {
 
     // Initialize attackedBy[] for king and pawns
     attackedBy[Us][KING] = attacks_bb<KING>(ksq);
-    attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
+    attackedBy[Us][PAWN] = pe->pawn_attacks(Us) & (~pinnedPawnAttacks | dblAttackByPawn);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
 
