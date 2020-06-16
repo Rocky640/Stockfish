@@ -323,7 +323,7 @@ namespace {
                 // when the bishop is outside the pawn chain.
                 Bitboard blocked = pos.pieces(Us, PAWN) & shift<Down>(pos.pieces());
 
-                score -= BishopPawns * pos.pawns_on_same_color_squares(Us, s, 0)
+                score -= BishopPawns * pos.pawns_on_same_color_squares(Us, s, AllSquares)
                                      * (!(attackedBy[Us][PAWN] & s) + popcount(blocked & CenterFiles));
 
                 // Penalty for same color protected enemy pawns
