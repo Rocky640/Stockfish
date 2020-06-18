@@ -363,10 +363,9 @@ namespace {
                 else
                 {
                     Square pawnSq = frontmost_sq(Them, b);
-                    if (Us == WHITE)
-                        score += RookOnFile[0] - make_score(4,1)
-                              * (Us == WHITE ? (s < pawnSq) * (8 - rank_of(pawnSq))
-                                             : (s > pawnSq) *      rank_of(pawnSq));
+                    score +=  RookOnFile[0]
+                            - make_score(4,1) * (Us == WHITE ? (s < pawnSq) * (8 - rank_of(pawnSq))
+                                                             : (s > pawnSq) *      rank_of(pawnSq));
                 }
             }
 
