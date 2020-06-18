@@ -108,7 +108,7 @@ namespace {
 
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
-  constexpr Score RookOnFile[] = { S(23, 8), S(48, 29) };
+  constexpr Score RookOnFile[] = { S(19, 7), S(48, 29) };
 
   // ThreatByMinor/ByRook[attacked PieceType] contains bonuses according to
   // which piece type attacks which one. Attacks on lesser pieces which are
@@ -356,18 +356,7 @@ namespace {
 
             // Bonus for rook on an open or semi-open file
             if (pos.is_on_semiopen_file(Us, s))
-            {
-                b = file_bb(s) & pos.pieces(Them, PAWN);
-                if (!b)
-                    score += RookOnFile[1];
-                else
-                {
-                    Square pawnSq = frontmost_sq(Them, b);
-                    score +=  RookOnFile[0]
-                            - make_score(3,1) * (Us == WHITE ? (s < pawnSq) * (7 - rank_of(pawnSq))
-                                                             : (s > pawnSq) *      rank_of(pawnSq));
-                }
-            }
+                score +=  RookOnFile[pos.is_on_semiopen_file(Them, s)];
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (mob <= 3)
@@ -397,17 +386,24 @@ namespace {
   template<Tracing T> template<Color Us>
   Score Evaluation<T>::king() const {
 
-    constexpr Color    Them = ~Us;
+    constexpr Color    Them = ~Us; 
+    const Square ksq = pos.square<KING>(Us);
+    // Init the score with king shelter and enemy pawns storm
+    Score score = pe->king_safety<Us>(pos);
+
+    // Penalty when our king is on a pawnless flank
+    if (!(pos.pieces(PAWN) & KingFlank[file_of(ksq)]))
+        score -= PawnlessFlank;
+
+    if (pos.non_pawn_material(Them) <= 2 * RookValueMg)
+        return score;
+
     constexpr Bitboard Camp = (Us == WHITE ? AllSquares ^ Rank6BB ^ Rank7BB ^ Rank8BB
                                            : AllSquares ^ Rank1BB ^ Rank2BB ^ Rank3BB);
 
     Bitboard weak, b1, b2, b3, safe, unsafeChecks = 0;
     Bitboard rookChecks, queenChecks, bishopChecks, knightChecks;
     int kingDanger = 0;
-    const Square ksq = pos.square<KING>(Us);
-
-    // Init the score with king shelter and enemy pawns storm
-    Score score = pe->king_safety<Us>(pos);
 
     // Attacked squares defended at most once by our queen or king
     weak =  attackedBy[Them][ALL_PIECES]
@@ -485,12 +481,8 @@ namespace {
     // Transform the kingDanger units into a Score, and subtract it from the evaluation
     if (kingDanger > 100)
         score -= make_score(kingDanger * kingDanger / 4096, kingDanger / 16);
-
-    // Penalty when our king is on a pawnless flank
-    if (!(pos.pieces(PAWN) & KingFlank[file_of(ksq)]))
-        score -= PawnlessFlank;
-
-    // Penalty if king flank is under attack, potentially moving toward the king
+     
+     // Penalty if king flank is under attack, potentially moving toward the king
     score -= FlankAttacks * kingFlankAttack;
 
     if (T)
