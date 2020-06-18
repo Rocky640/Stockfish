@@ -364,7 +364,7 @@ namespace {
                 {
                     Square pawnSq = frontmost_sq(Them, b);
                     score +=  RookOnFile[0]
-                            - make_score(4,1) * (Us == WHITE ? (s < pawnSq) * (8 - rank_of(pawnSq))
+                            - make_score(3,1) * (Us == WHITE ? (s < pawnSq) * (7 - rank_of(pawnSq))
                                                              : (s > pawnSq) *      rank_of(pawnSq));
                 }
             }
