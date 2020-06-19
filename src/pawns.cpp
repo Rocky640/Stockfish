@@ -71,6 +71,7 @@ namespace {
 
     constexpr Color     Them = ~Us;
     constexpr Direction Up   = pawn_push(Us);
+    constexpr Bitboard Edges = FileABB | FileHBB;
 
     Bitboard neighbours, stoppers, support, phalanx, opposed;
     Bitboard lever, leverPush, blocked;
@@ -150,17 +151,17 @@ namespace {
                 && !(theirPawns & adjacent_files_bb(s)))
                 score -= Doubled;
             else
-                score -=   Isolated
-                         + WeakUnopposed * !opposed;
+                score -=  Isolated
+                        + WeakUnopposed * !opposed;
         }
 
         else if (backward)
-            score -=   Backward
-                     + WeakUnopposed * !opposed;
+            score -=  Backward + Isolated * bool(neighbours & Edges & ~e->pawnAttacks[Us])
+                    + WeakUnopposed * !opposed;
 
         if (!support)
-            score -=   Doubled * doubled
-                     + WeakLever * more_than_one(lever);
+            score -=  Doubled * doubled
+                    + WeakLever * more_than_one(lever);
     }
 
     return score;
