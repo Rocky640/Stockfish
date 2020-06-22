@@ -541,7 +541,7 @@ namespace {
         // Additional bonus if weak piece is only protected by a queen
         score += WeakQueenProtection * popcount(weak & attackedBy[Them][QUEEN]);
 
-        score += RestrictedPiece * popcount(weak & attackedBy[Them][7] & (Us == WHITE ? Rank2BB : Rank7BB));
+        score += RestrictedPiece * popcount(weak & attackedBy[Them][7] & (Us == WHITE ? Rank7BB : Rank2BB));
     }
 
     // Bonus for restricting their piece moves
