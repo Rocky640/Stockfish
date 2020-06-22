@@ -239,6 +239,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
+    attackedBy[Us][7] = 0;
 
     // Init our king safety tables
     Square s = make_square(Utility::clamp(file_of(ksq), FILE_B, FILE_G),
@@ -261,6 +262,7 @@ namespace {
     constexpr Direction Down = -pawn_push(Us);
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
+    constexpr Bitboard FirstRank    = (Us == WHITE ? Rank1BB : Rank8BB);
     const Square* pl = pos.squares<Pt>(Us);
 
     Bitboard b, bb;
@@ -294,6 +296,9 @@ namespace {
 
         else if (Pt == BISHOP && (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & kingRing[Them]))
             score += BishopOnKingRing;
+
+        if (FirstRank & s)
+            attackedBy[Us][7] |= b;
 
         int mob = popcount(b & mobilityArea[Us]);
 
@@ -535,6 +540,8 @@ namespace {
 
         // Additional bonus if weak piece is only protected by a queen
         score += WeakQueenProtection * popcount(weak & attackedBy[Them][QUEEN]);
+
+        score += RestrictedPiece * popcount(weak & attackedBy[Them][7] & (Us == WHITE ? Rank2BB : Rank7BB));
     }
 
     // Bonus for restricting their piece moves
