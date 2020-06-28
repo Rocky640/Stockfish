@@ -126,6 +126,14 @@ namespace {
     S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(276, 260)
   };
 
+  // Setup tuning
+  Score QueenRank[RANK_NB] = { S(0, 0), S(0, 0), S(0, 0), S(0, 0), S( -2, 14), S( -2, 14), S( -2, 14), S( -2, 14) };
+  
+  Score ThreatBySafePawn[2]   = { S(173, 94), S(0, 0) }; // On any piece/ adjust for queen
+  Score ThreatByPawnPush[3]   = { S( 48, 39), S(0, 0) }; // On any piece/ adjust for queen
+  TUNE(ThreatBySafePawn,ThreatByPawnPush);
+  TUNE(SetRange(-50, 50), QueenRank);
+
   // Assorted bonuses and penalties
   constexpr Score BishopKingProtector = S(  6,  9);
   constexpr Score BishopOnKingRing    = S( 24,  0);
@@ -142,15 +150,12 @@ namespace {
   constexpr Score MinorBehindPawn     = S( 18,  3);
   constexpr Score PassedFile          = S( 11,  8);
   constexpr Score PawnlessFlank       = S( 17, 95);
-  constexpr Score QueenInfiltration   = S( -2, 14);
   constexpr Score ReachableOutpost    = S( 31, 22);
   constexpr Score RestrictedPiece     = S(  7,  7);
   constexpr Score RookOnKingRing      = S( 16,  0);
   constexpr Score RookOnQueenFile     = S(  6, 11);
   constexpr Score SliderOnQueen       = S( 60, 18);
   constexpr Score ThreatByKing        = S( 24, 89);
-  constexpr Score ThreatByPawnPush    = S( 48, 39);
-  constexpr Score ThreatBySafePawn    = S(173, 94);
   constexpr Score TrappedRook         = S( 55, 13);
   constexpr Score WeakQueenProtection = S( 14,  0);
   constexpr Score WeakQueen           = S( 56, 15);
@@ -378,9 +383,8 @@ namespace {
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
 
-            // Bonus for queen on weak square in enemy camp
-            if (relative_rank(Us, s) > RANK_4 && (~pe->pawn_attacks_span(Them) & s))
-                score += QueenInfiltration;
+            // just for tuning, will move result to psqt
+            score += QueenRank[relative_rank(Us, s)];
         }
     }
     if (T)
@@ -559,7 +563,7 @@ namespace {
     // Bonus for attacking enemy pieces with our relatively safe pawns
     b = pos.pieces(Us, PAWN) & safe;
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatBySafePawn * popcount(b);
+    score += ThreatBySafePawn[0] * popcount(b) + ThreatBySafePawn[1] * bool(b & pos.pieces(QUEEN));
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
@@ -570,7 +574,7 @@ namespace {
 
     // Bonus for safe pawn threats on the next move
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatByPawnPush * popcount(b);
+    score += ThreatByPawnPush[0] * popcount(b) + ThreatByPawnPush[1] * bool(b & pos.pieces(QUEEN));
 
     // Bonus for threats on the next moves against enemy queen
     if (pos.count<QUEEN>(Them) == 1)
