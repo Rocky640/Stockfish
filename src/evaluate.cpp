@@ -83,6 +83,7 @@ namespace {
   // SafeCheck[PieceType][single/multiple] contains bonuses for safe check by each piece type,
   // higher if some piece type can deliver multiple safe check.
   constexpr int SafeCheck[][2] = {
+      {}, {},
       {792, 1283}, // Knight
       {645,  968}, // Bishop
       {1084,1897}, // Rook
