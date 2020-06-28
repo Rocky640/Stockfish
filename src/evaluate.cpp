@@ -77,13 +77,12 @@ namespace {
   constexpr Value LazyThreshold  = Value(1400);
   constexpr Value SpaceThreshold = Value(12222);
 
-  // KingAttackWeights[PieceType] contains king attack weights by piece type
-  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 0, 0, 81, 52, 44, 10 };
+  // KingAttackWeights[PieceType-2] contains king attack weights by piece type
+  constexpr int KingAttackWeights[PIECE_TYPE_NB] = { 81, 52, 44, 10 };
 
-  // SafeCheck[PieceType][single/multiple] contains bonuses for safe check by each piece type,
-  // higher if some piece type can deliver multiple safe check.
+  // SafeCheck[PieceType-2][single/multiple] contains safe check bonus by piece type,
+  // higher if multiple safe checks are possible for that piece type.
   constexpr int SafeCheck[][2] = {
-      {}, {},
       {792, 1283}, // Knight
       {645,  968}, // Bishop
       {1084,1897}, // Rook
@@ -110,6 +109,18 @@ namespace {
       S(110,182), S(114,182), S(114,192), S(116,219) }
   };
 
+  // KingProtector[PieceType-2] contains penalty for each distance unit to own king
+  constexpr Score KingProtector[2] = { S(8, 9), S(6, 9) };
+
+  // Outpost[PieceType-2] contains bonuses for knight or bishop outpost, which is a 
+  // pawn protected square on rank 4 to 6 which is safe from a pawn attack.
+  constexpr Score Outpost[2]  = { S( 56, 36), S( 30, 23) };
+
+  // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
+  constexpr Score PassedRank[RANK_NB] = {
+    S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(276, 260)
+  };
+
   // RookOnFile[semiopen/open] contains bonuses for each rook when there is
   // no (friendly) pawn on the rook file.
   constexpr Score RookOnFile[] = { S(19, 7), S(48, 29) };
@@ -125,23 +136,14 @@ namespace {
     S(0, 0), S(3, 46), S(37, 68), S(42, 60), S(0, 38), S(58, 41)
   };
 
-  // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
-  constexpr Score PassedRank[RANK_NB] = {
-    S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(276, 260)
-  };
-
   // Assorted bonuses and penalties
-  constexpr Score BishopKingProtector = S(  6,  9);
   constexpr Score BishopOnKingRing    = S( 24,  0);
-  constexpr Score BishopOutpost       = S( 30, 23);
   constexpr Score BishopPawns         = S(  3,  7);
   constexpr Score BishopXRayPawns     = S(  4,  5);
   constexpr Score CorneredBishop      = S( 50, 50);
   constexpr Score FlankAttacks        = S(  8,  0);
   constexpr Score Hanging             = S( 69, 36);
-  constexpr Score KnightKingProtector = S(  8,  9);
   constexpr Score KnightOnQueen       = S( 16, 11);
-  constexpr Score KnightOutpost       = S( 56, 36);
   constexpr Score LongDiagonalBishop  = S( 45,  0);
   constexpr Score MinorBehindPawn     = S( 18,  3);
   constexpr Score PassedFile          = S( 11,  8);
@@ -159,8 +161,8 @@ namespace {
   constexpr Score WeakQueenProtection = S( 14,  0);
   constexpr Score WeakQueen           = S( 56, 15);
 
-
 #undef S
+
 
   // Evaluation class computes and stores attacks tables and other working data
   template<Tracing T>
@@ -293,7 +295,7 @@ namespace {
         if (b & kingRing[Them])
         {
             kingAttackersCount[Us]++;
-            kingAttackersWeight[Us] += KingAttackWeights[Pt];
+            kingAttackersWeight[Us] += KingAttackWeights[Pt - 2];
             kingAttacksCount[Us] += popcount(b & attackedBy[Them][KING]);
         }
 
@@ -312,7 +314,7 @@ namespace {
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
             if (bb & s)
-                score += (Pt == KNIGHT) ? KnightOutpost : BishopOutpost;
+                score += Outpost[Pt - 2];
             else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
                 score += ReachableOutpost;
 
@@ -321,8 +323,7 @@ namespace {
                 score += MinorBehindPawn;
 
             // Penalty if the piece is far from the king
-            score -= (Pt == KNIGHT ? KnightKingProtector
-                                   : BishopKingProtector) * distance(pos.square<KING>(Us), s);
+            score -= KingProtector[Pt - 2] * distance(pos.square<KING>(Us), s);
 
             if (Pt == BISHOP)
             {
@@ -426,7 +427,7 @@ namespace {
     // Enemy rooks checks
     rookChecks = b1 & safe & attackedBy[Them][ROOK];
     if (rookChecks)
-        kingDanger += SafeCheck[ROOK][more_than_one(rookChecks)];
+        kingDanger += SafeCheck[ROOK-2][more_than_one(rookChecks)];
     else
         unsafeChecks |= b1 & attackedBy[Them][ROOK];
 
@@ -438,7 +439,7 @@ namespace {
                  & ~attackedBy[Us][QUEEN]
                  & ~rookChecks;
     if (queenChecks)
-        kingDanger += SafeCheck[QUEEN][more_than_one(queenChecks)];
+        kingDanger += SafeCheck[QUEEN-2][more_than_one(queenChecks)];
 
     // Enemy bishops checks: we count them only if they are from squares from
     // which we can't give a queen check, because queen checks are more valuable.
@@ -447,7 +448,7 @@ namespace {
                   & safe
                   & ~queenChecks;
     if (bishopChecks)
-        kingDanger += SafeCheck[BISHOP][more_than_one(bishopChecks)];
+        kingDanger += SafeCheck[BISHOP-2][more_than_one(bishopChecks)];
 
     else
         unsafeChecks |= b2 & attackedBy[Them][BISHOP];
@@ -455,7 +456,7 @@ namespace {
     // Enemy knights checks
     knightChecks = attacks_bb<KNIGHT>(ksq) & attackedBy[Them][KNIGHT];
     if (knightChecks & safe)
-        kingDanger += SafeCheck[KNIGHT][more_than_one(knightChecks & safe)];
+        kingDanger += SafeCheck[KNIGHT-2][more_than_one(knightChecks & safe)];
     else
         unsafeChecks |= knightChecks;
 
@@ -742,8 +743,8 @@ namespace {
     bool almostUnwinnable =   outflanking < 0
                            && !pawnsOnBothFlanks;
 
-    bool infiltration = rank_of(pos.square<KING>(WHITE)) > RANK_4
-                     || rank_of(pos.square<KING>(BLACK)) < RANK_5;
+    bool infiltration =   rank_of(pos.square<KING>(WHITE)) > RANK_4
+                       || rank_of(pos.square<KING>(BLACK)) < RANK_5;
 
     // Compute the initiative bonus for the attacking side
     int complexity =   9 * pe->passed_count()
