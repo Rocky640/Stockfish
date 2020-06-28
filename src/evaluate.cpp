@@ -131,8 +131,8 @@ namespace {
   
   Score ThreatBySafePawn[2]   = { S(173, 94), S(0, 0) }; // On any piece/ adjust for queen
   Score ThreatByPawnPush[3]   = { S( 48, 39), S(0, 0) }; // On any piece/ adjust for queen
-  TUNE(ThreatBySafePawn,ThreatByPawnPush);
-  TUNE(SetRange(-50, 50), QueenRank);
+  TUNE(ThreatBySafePawn[0],ThreatByPawnPush[0]);
+  TUNE(SetRange(-50, 50), QueenRank,ThreatBySafePawn[1],ThreatByPawnPush[1]);
 
   // Assorted bonuses and penalties
   constexpr Score BishopKingProtector = S(  6,  9);
