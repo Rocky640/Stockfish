@@ -112,7 +112,7 @@ namespace {
   // Outpost[bad knight/good/reachable bad/good/bishop] contains bonuses knight or bishop occupying a
   // pawn protected square on rank 4 to 6 which is also safe from a pawn attack.
   // Less bonus if knight is not on center files and only one enemy non pawn on this side of the board.
-  constexpr Score Outpost[] = { S( -7, 36), S(56, 36), S(31, 22), S(31, 22), S(30, 23) };
+  constexpr Score Outpost[] = { S(-7, 36), S(56, 36), S(0, 22), S(31, 22), S(30, 23) };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   constexpr Score PassedRank[RANK_NB] = {
@@ -330,7 +330,7 @@ namespace {
 
             // Bonus if piece is on an outpost square, or can reach one.
             if (bb & s)
-                score += Outpost[good_outpost(square_bb(s)) || (b & pos.pieces(Them) & ~pos.pieces(PAWN))];
+                score += Outpost[good_outpost(square_bb(s))];
             else if (bb & b & ~pos.pieces(Us))
                 score += Outpost[2 + good_outpost(bb & b & ~pos.pieces(Us))];
         }
