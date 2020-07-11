@@ -155,7 +155,8 @@ namespace {
   constexpr Score ThreatByKing        = S( 24, 89);
   constexpr Score ThreatByPawnPush    = S( 48, 39);
   constexpr Score ThreatBySafePawn    = S(173, 94);
-  constexpr Score TrappedRook         = S( 55, 13);
+  constexpr Score TrappedRookByMinor  = S( 25, 13);
+  constexpr Score TrappedRookByKing   = S( 55, 13);
   constexpr Score WeakQueenProtection = S( 14,  0);
   constexpr Score WeakQueen           = S( 56, 15);
 
@@ -376,7 +377,12 @@ namespace {
             {
                 File kf = file_of(pos.square<KING>(Us));
                 if ((kf < FILE_E) == (file_of(s) < kf))
-                    score -= TrappedRook * (1 + !pos.castling_rights(Us));
+                    score -= TrappedRookByKing * (1 + !pos.castling_rights(Us));
+                else 
+                {
+                    bb = mobilityArea[Us] & ~(pos.pieces(Us) | attackedBy[Them][KNIGHT] | attackedBy[Them][BISHOP]);
+                    score -= TrappedRookByMinor * bool(bb & b);
+                }
             }
         }
 
