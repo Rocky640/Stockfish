@@ -380,8 +380,9 @@ namespace {
                     score -= TrappedRookByKing * (1 + !pos.castling_rights(Us));
                 else 
                 {
-                    bb = mobilityArea[Us] & ~(pos.pieces(Us) | attackedBy[Them][KNIGHT] | attackedBy[Them][BISHOP]);
-                    score -= TrappedRookByMinor * bool(bb & b);
+                    bb =   b & mobilityArea[Us]
+                         & ~(pos.pieces(Us) | attackedBy[Them][KNIGHT] | attackedBy[Them][BISHOP]);
+                    score -= TrappedRookByMinor * !bb;
                 }
             }
         }
@@ -852,10 +853,11 @@ namespace {
     initialize<BLACK>();
 
     // Pieces evaluated first (also populates attackedBy, attackedBy2).
-    // Note that the order of evaluation of the terms is left unspecified.
+    // Note that the order of evaluation of the terms is left unspecified
+    // but minor are evaluated first.
     score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
+            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>();
+    score +=  pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
     score += mobility[WHITE] - mobility[BLACK];
