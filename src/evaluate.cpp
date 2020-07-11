@@ -372,12 +372,9 @@ namespace {
                 score += RookOnFile[pos.is_on_semiopen_file(Them, s)];
 
             // Penalty when trapped by the king, even more if the king cannot castle
-            else if (mob <= 3)
-            {
-                File kf = file_of(pos.square<KING>(Us));
-                if ((kf < FILE_E) == (file_of(s) < kf))
+            else if (   mob <= 3
+                     && (KingSide & pos.square<KING>(Us)) == (KingSide & s))
                     score -= TrappedRook * (1 + !pos.castling_rights(Us));
-            }
         }
 
         if (Pt == QUEEN)
