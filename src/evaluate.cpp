@@ -373,8 +373,8 @@ namespace {
 
             // Penalty when trapped by the king, even more if the king cannot castle
             else if (   mob <= 3
-                     && (KingSide & pos.square<KING>(Us)) == (KingSide & s))
-                    score -= TrappedRook * (1 + !pos.castling_rights(Us));
+                     && bool(KingSide & pos.square<KING>(Us)) == bool(KingSide & s))
+                score -= TrappedRook * (1 + !pos.castling_rights(Us));
         }
 
         if (Pt == QUEEN)
