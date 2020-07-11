@@ -109,9 +109,9 @@ namespace {
   // KingProtector[knight/bishop] contains penalty for each distance unit to own king
   constexpr Score KingProtector[] = { S(8, 9), S(6, 9) };
 
-  // Outpost[knight/bishop] contains bonuses for each knight or bishop occupying a
+  // Outpost[knight/bishop][ contains bonuses for each knight or bishop occupying a
   // pawn protected square on rank 4 to 6 which is also safe from a pawn attack.
-  constexpr Score Outpost[] = { S(56, 36), S(30, 23) };
+  constexpr Score Outpost[] = { S(28, 18), S(15, 11) };
 
   // PassedRank[Rank] contains a bonus according to the rank of a passed pawn
   constexpr Score PassedRank[RANK_NB] = {
@@ -146,7 +146,7 @@ namespace {
   constexpr Score PassedFile          = S( 11,  8);
   constexpr Score PawnlessFlank       = S( 17, 95);
   constexpr Score QueenInfiltration   = S( -2, 14);
-  constexpr Score ReachableOutpost    = S( 31, 22);
+  constexpr Score ReachableOutpost    = S( 16, 11);
   constexpr Score RestrictedPiece     = S(  7,  7);
   constexpr Score RookOnKingRing      = S( 16,  0);
   constexpr Score RookOnQueenFile     = S(  6, 11);
@@ -270,7 +270,7 @@ namespace {
                                                    : Rank5BB | Rank4BB | Rank3BB);
     const Square* pl = pos.squares<Pt>(Us);
 
-    Bitboard b, bb;
+    Bitboard b, b1, b2;
     Score score = SCORE_ZERO;
 
     attackedBy[Us][Pt] = 0;
@@ -309,12 +309,12 @@ namespace {
         if (Pt == BISHOP || Pt == KNIGHT)
         {
             // Bonus if piece is on an outpost square or can reach one
-            bb =   OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them)
-                 & (CenterFiles | KingFlank[file_of(pos.square<KING>(Them))]);
-            if (bb & s)
-                score += Outpost[Pt == BISHOP];
-            else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
-                score += ReachableOutpost;
+            b1 = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
+            b2 = CenterFiles | KingFlank[file_of(pos.square<KING>(Them))];
+            if (b1 & s)
+                score += Outpost[Pt == BISHOP] * (1 + bool(b2 & s));
+            else if (Pt == KNIGHT && b1 & b & ~pos.pieces(Us))
+                score += ReachableOutpost * (1 + bool(b2 & b & ~pos.pieces(Us)));
 
             // Bonus for a knight or bishop shielded by pawn
             if (shift<Down>(pos.pieces(PAWN)) & s)
