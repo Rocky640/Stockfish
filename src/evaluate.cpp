@@ -313,7 +313,7 @@ namespace {
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
             if (bb & s)
                 if (   Pt == BISHOP || (CenterFiles & s)
-                    || more_than_one(pos.pieces(Us) & ~pos.pieces(PAWN, KING) & KingFlank[s]))
+                    || more_than_one(pos.pieces(Us) & ~pos.pieces(PAWN, KING) & KingFlank[file_of(s)]))
                     score += Outpost[Pt == BISHOP];
                 else
                     score += BadOutpost;
