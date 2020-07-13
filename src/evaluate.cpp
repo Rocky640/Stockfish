@@ -311,14 +311,12 @@ namespace {
         {
             // Bonus if piece is on an outpost square or can reach one
             bb = OutpostRanks & attackedBy[Us][PAWN] & ~pe->pawn_attacks_span(Them);
-            if (   Pt == KNIGHT
-                && bb & s & ~CenterFiles
-                && !(b & pos.pieces(Them) & ~pos.pieces(PAWN))
-                && !conditional_more_than_two(
-                      pos.pieces(Them) & ~pos.pieces(PAWN) & (s & QueenSide ? QueenSide : KingSide)))
-                score += BadOutpost;
-            else if (bb & s)
-                score += Outpost[Pt == BISHOP];
+            if (bb & s)
+                if (   Pt == BISHOP || (CenterFiles & s)
+                    || more_than_one(pos.pieces(Us) & ~pos.pieces(PAWN, KING) & KingFlank[s]))
+                    score += Outpost[Pt == BISHOP];
+                else
+                    score += BadOutpost;
             else if (Pt == KNIGHT && bb & b & ~pos.pieces(Us))
                 score += ReachableOutpost;
 
