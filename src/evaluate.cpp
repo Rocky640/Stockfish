@@ -273,6 +273,7 @@ namespace {
   constexpr Score ThreatByKing        = S( 24, 89);
   constexpr Score ThreatByPawnPush    = S( 48, 39);
   constexpr Score ThreatBySafePawn    = S(173, 94);
+  constexpr Score ThreatBySafePawn2   = S( 20, 20);
   constexpr Score TrappedRook         = S( 55, 13);
   constexpr Score WeakQueenProtection = S( 14,  0);
   constexpr Score WeakQueen           = S( 56, 15);
@@ -685,7 +686,8 @@ namespace {
     // Bonus for attacking enemy pieces with our relatively safe pawns
     b = pos.pieces(Us, PAWN) & safe;
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
-    score += ThreatBySafePawn * popcount(b);
+    score += ThreatBySafePawn  * popcount(b);
+    score += ThreatBySafePawn2 * popcount(b & ~pe->pawn_attacks_span(Them));
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
