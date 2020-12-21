@@ -687,7 +687,14 @@ namespace {
     b = pos.pieces(Us, PAWN) & safe;
     b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
     score += ThreatBySafePawn  * popcount(b);
-    score += ThreatBySafePawn2 * popcount(b & ~pe->pawn_attacks_span(Them));
+
+    // More bonus for threatening passed pawn creation on capture
+    if (b)
+    {
+        b = pos.pieces(Us, PAWN) & safe & ~pe->passed_pawns(Us);
+        b = pawn_attacks_bb<Us>(b) & nonPawnEnemies;
+        score += ThreatBySafePawn2 * popcount(b);
+    }
 
     // Find squares where our pawns can push on the next move
     b  = shift<Up>(pos.pieces(Us, PAWN)) & ~pos.pieces();
