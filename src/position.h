@@ -355,7 +355,10 @@ inline bool Position::is_chess960() const {
 }
 
 inline bool Position::advanced_pawn(Color c) const {
-  return pieces(c, PAWN) & (c == WHITE ? Rank6BB | Rank7BB : Rank3BB | Rank2BB);
+  if (c == WHITE)
+    return pawn_attacks_bb<WHITE>(pieces(c, PAWN)) & (Rank6BB | Rank7BB | Rank8BB);
+  else 
+    return pawn_attacks_bb<BLACK>(pieces(c, PAWN)) & (Rank3BB | Rank2BB | Rank1BB);
 }
 
 inline bool Position::capture_or_promotion(Move m) const {

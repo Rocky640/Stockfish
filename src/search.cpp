@@ -1031,7 +1031,7 @@ moves_loop: // When in check, search starts here
                   continue;
 
               // Prune moves with negative SEE (~20 Elo)
-              if (!pos.see_ge(move, Value( pos.advanced_pawn(us) ? -25 : -21) * lmrDepth * (lmrDepth + 1)))
+              if (!pos.see_ge(move, Value( pos.advanced_pawn(us) ? -42 : -21) * lmrDepth * (lmrDepth + 1)))
                   continue;
           }
       }
