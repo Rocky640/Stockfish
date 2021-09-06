@@ -125,7 +125,9 @@ public:
   bool legal(Move m) const;
   bool pseudo_legal(const Move m) const;
   bool capture(Move m) const;
+  bool advanced_pawn(Color c) const;
   bool capture_or_promotion(Move m) const;
+
   bool gives_check(Move m) const;
   Piece moved_piece(Move m) const;
   Piece captured_piece() const;
@@ -350,6 +352,10 @@ inline bool Position::opposite_bishops() const {
 
 inline bool Position::is_chess960() const {
   return chess960;
+}
+
+inline bool Position::advanced_pawn(Color c) const {
+  return pieces(c, PAWN) & (c == WHITE ? Rank6BB | Rank7BB : Rank3BB | Rank2BB);
 }
 
 inline bool Position::capture_or_promotion(Move m) const {
