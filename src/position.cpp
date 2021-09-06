@@ -1066,6 +1066,10 @@ bool Position::see_ge(Move m, Value threshold) const {
 
   assert(is_ok(m));
 
+  constexpr int PassedRank[RANK_NB] = {
+    0, 7, 16, 17, 64, 170, 262, QueenValueMg
+  };
+
   // Only deal with normal moves, assume others pass a simple SEE
   if (type_of(m) != NORMAL)
       return VALUE_ZERO >= threshold;
@@ -1110,7 +1114,7 @@ bool Position::see_ge(Move m, Value threshold) const {
       // the bitboard 'attackers' any X-ray attackers behind it.
       if ((bb = stmAttackers & pieces(PAWN)))
       {
-          if ((swap = PawnValueMg - swap) < res)
+          if ((swap = PawnValueMg + (pawn_passed(stm, to) ? PassedRank[relative_rank(stm, to)] : 0) - swap) < res)
               break;
 
           occupied ^= least_significant_square_bb(bb);
