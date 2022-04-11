@@ -295,8 +295,15 @@ inline Bitboard Position::attacks_by(Color c) const {
   {
       Bitboard threats = 0;
       Bitboard attackers = pieces(c, Pt);
-      while (attackers)
-          threats |= attacks_bb<Pt>(pop_lsb(attackers), pieces());
+
+      while (attackers) {
+          Square s = pop_lsb(attackers);
+          if (blockers_for_king(c) & s)
+             threats |= attacks_bb<Pt>(s, pieces()) & line_bb(square<KING>(c), s);
+          else
+             threats |= attacks_bb<Pt>(s, pieces());
+      }
+
       return threats;
   }
 }
