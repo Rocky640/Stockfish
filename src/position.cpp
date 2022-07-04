@@ -1072,6 +1072,7 @@ bool Position::see_ge(Move m, Value threshold) const {
 
   Square from = from_sq(m), to = to_sq(m);
 
+  if (attacks_bb<QUEEN>(square<KING>(~sideToMove)) & to) threshold *= 2;
   int swap = PieceValue[MG][piece_on(to)] - threshold;
   if (swap < 0)
       return false;
