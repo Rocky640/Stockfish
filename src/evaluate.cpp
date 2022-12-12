@@ -319,6 +319,9 @@ namespace {
     // color, including x-rays. But diagonal x-rays through pawns are not computed.
     Bitboard attackedBy2[COLOR_NB];
 
+    // blockingArea[color] are pieces on board except their pawns which can capture something
+    Bitboard blockingArea[COLOR_NB];
+
     // kingRing[color] are the squares adjacent to the king plus some other
     // very near squares, depending on king position.
     Bitboard kingRing[COLOR_NB];
@@ -369,6 +372,7 @@ namespace {
     attackedBy[Us][PAWN] = pe->pawn_attacks(Us);
     attackedBy[Us][ALL_PIECES] = attackedBy[Us][KING] | attackedBy[Us][PAWN];
     attackedBy2[Us] = dblAttackByPawn | (attackedBy[Us][KING] & attackedBy[Us][PAWN]);
+    blockingArea[Us] = pos.pieces(Us) | (pos.pieces(Them, PAWN) & ~pawn_attacks_bb<Us>(pos.pieces(Us)));
 
     // Init our king safety tables
     Square s = make_square(std::clamp(file_of(ksq), FILE_B, FILE_G),
@@ -393,7 +397,7 @@ namespace {
     constexpr Bitboard OutpostRanks = (Us == WHITE ? Rank4BB | Rank5BB | Rank6BB
                                                    : Rank5BB | Rank4BB | Rank3BB);
     Bitboard b1 = pos.pieces(Us, Pt);
-    Bitboard b, bb;
+    Bitboard b, bb, bm;
     Score score = SCORE_ZERO;
 
     attackedBy[Us][Pt] = 0;
@@ -406,6 +410,10 @@ namespace {
         b = Pt == BISHOP ? attacks_bb<BISHOP>(s, pos.pieces() ^ pos.pieces(QUEEN))
           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, pos.pieces() ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
                          : attacks_bb<Pt>(s, pos.pieces());
+
+        bm = Pt == BISHOP ? attacks_bb<BISHOP>(s, blockingArea[Us] ^ pos.pieces(QUEEN) )
+           : Pt ==   ROOK ? attacks_bb<  ROOK>(s, blockingArea[Us] ^ pos.pieces(QUEEN) ^ pos.pieces(Us, ROOK))
+                          : attacks_bb<Pt>(s, blockingArea[Us]);
 
         if (pos.blockers_for_king(Us) & s)
             b &= line_bb(pos.square<KING>(Us), s);
@@ -427,7 +435,7 @@ namespace {
         else if (Pt == BISHOP && (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) & kingRing[Them]))
             score += BishopOnKingRing;
 
-        int mob = popcount(b & mobilityArea[Us]);
+        int mob = popcount(bm & mobilityArea[Us]);
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
         if (Pt == BISHOP || Pt == KNIGHT)
