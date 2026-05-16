@@ -1426,8 +1426,8 @@ bool Position::see_ge(Move m, int threshold) const {
     // Consider only the pieces which are safe from a pawn-attack, 
 	// since otherwise they most likely would be captured first
     attackers &= (pieces(WHITE) & ~attacks_by<PAWN>(BLACK))
-              || (pieces(BLACK) & ~attacks_by<PAWN>(WHITE)) 
-              || pieces(PAWN);
+               | (pieces(BLACK) & ~attacks_by<PAWN>(WHITE)) 
+               | pieces(PAWN);
 
     while (true)
     {
