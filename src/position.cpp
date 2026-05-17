@@ -1446,7 +1446,7 @@ bool Position::see_ge(Move m, int threshold) const {
 
         // Locate and remove the next least valuable attacker, and add to
         // the bitboard 'attackers' any X-ray attackers behind it.
-        if ((bb = stmAttackers & pieces(PAWN)))
+        if ((bb = stmAttackers & pieces(PAWN)) && relative_rank(stm, to) != RANK_8)
         {
             if ((swap = PawnValue - swap) < res)
                 break;
@@ -1479,6 +1479,11 @@ bool Position::see_ge(Move m, int threshold) const {
 
             attackers |= attacks_bb<ROOK>(to, occupied) & pieces(ROOK, QUEEN);
         }
+		else if ((bb = stmAttackers & pieces(PAWN))) {
+		    assert (relative_rank(stm, to) == RANK_8);
+			swap = QueenValue - swap;
+            occupied ^= least_significant_square_bb(bb);
+		}
 
         else if ((bb = stmAttackers & pieces(QUEEN)))
         {
