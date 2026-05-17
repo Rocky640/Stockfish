@@ -1448,7 +1448,7 @@ bool Position::see_ge(Move m, int threshold) const {
         // the bitboard 'attackers' any X-ray attackers behind it.
         if ((bb = stmAttackers & pieces(PAWN)))
         {
-            int pawnValue = relative_rank(stm, to) == RANK_8 ? QueenValue : PawnValue;
+            pawnValue = relative_rank(stm, to) == RANK_8 ? QueenValue : PawnValue;
             if ((swap = pawnValue - swap) < res)
                 break;
             occupied ^= least_significant_square_bb(bb);
