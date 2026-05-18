@@ -611,15 +611,13 @@ string Position::fen() const {
     return ss.str();
 }
 
-// Calculates st->blockersForKing[c] and st->pinners[~c],
-// which store respectively the pieces preventing king of color c from being in check
-// and the slider pieces of color ~c pinning pieces of color c to the king.
+// Calculates st->blockersForKing[c],
+// which store the pieces (black or white) preventing king of color c from being in check
 void Position::update_slider_blockers(Color c) const {
 
     Square ksq = square<KING>(c);
 
     st->blockersForKing[c] = 0;
-    st->pinners[~c]        = 0;
 
     // Snipers are sliders that attack 's' when a piece and other snipers are removed
     Bitboard snipers = ((attacks_bb<ROOK>(ksq) & pieces(QUEEN, ROOK))
@@ -632,12 +630,8 @@ void Position::update_slider_blockers(Color c) const {
         Square   sniperSq = pop_lsb(snipers);
         Bitboard b        = between_bb(ksq, sniperSq) & occupancy;
 
-        if (b && !more_than_one(b))
-        {
-            st->blockersForKing[c] |= b;
-            if (b & pieces(c))
-                st->pinners[~c] |= sniperSq;
-        }
+        if (b && !more_than_one(b))        
+            st->blockersForKing[c] |= b;        
     }
 }
 
@@ -1431,16 +1425,6 @@ bool Position::see_ge(Move m, int threshold) const {
         // If stm has no more attackers then give up: stm loses
         if (!(stmAttackers = attackers & pieces(stm)))
             break;
-
-        // Don't allow pinned pieces to attack as long as there are
-        // pinners on their original square.
-        if (pinners(~stm) & occupied)
-        {
-            stmAttackers &= ~blockers_for_king(stm);
-
-            if (!stmAttackers)
-                break;
-        }
 
         res ^= 1;
 

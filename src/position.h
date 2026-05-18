@@ -59,7 +59,6 @@ struct StateInfo {
     Bitboard   checkersBB;
     StateInfo* previous;
     Bitboard   blockersForKing[COLOR_NB];
-    Bitboard   pinners[COLOR_NB];
     Bitboard   checkSquares[PIECE_TYPE_NB];
     Piece      capturedPiece;
     int        repetition;
@@ -122,7 +121,6 @@ class Position {
     Bitboard checkers() const;
     Bitboard blockers_for_king(Color c) const;
     Bitboard check_squares(PieceType pt) const;
-    Bitboard pinners(Color c) const;
 
     // Attacks to/from a given square
     Bitboard attackers_to(Square s) const;
@@ -309,8 +307,6 @@ inline Bitboard Position::attacks_by(Color c) const {
 inline Bitboard Position::checkers() const { return st->checkersBB; }
 
 inline Bitboard Position::blockers_for_king(Color c) const { return st->blockersForKing[c]; }
-
-inline Bitboard Position::pinners(Color c) const { return st->pinners[c]; }
 
 inline Bitboard Position::check_squares(PieceType pt) const { return st->checkSquares[pt]; }
 
