@@ -1266,8 +1266,8 @@ moves_loop:  // When in check, search starts here
         if (ttCapture)
             r += 1039;
 
-		// Increase reduction if ttMove induce or preserve a pin
-		if (pinners(~sideToMove) & move.to_sq())
+		// Increase reduction if move create or preserve a pin
+		if (pos.pinners(~pos.side_to_move()) & move.to_sq())
             r += 512;
 
         // Increase reduction if next ply has a lot of fail high
