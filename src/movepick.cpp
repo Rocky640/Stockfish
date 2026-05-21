@@ -243,6 +243,10 @@ ExtMove* MovePicker::score(const MoveList<Type>& ml) {
             // or bonus for escaping an attack by a lesser piece.
             int v = 20 * (bool(threatByLesser[pt] & from) - bool(threatByLesser[pt] & to));
             m.value += PieceValue[pt] * v;
+			
+			// bonus for pinning
+			if (pos.pinners(us) & move.to_sq())
+               m.value += PieceValue[pt] * 10;
 
 
             if (ply < LOW_PLY_HISTORY_SIZE)
